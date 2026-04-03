@@ -49,7 +49,7 @@
 
                 <h1 class="text-5xl lg:text-6xl font-extrabold leading-[1.1] mb-6 text-slate-900 tracking-tight">
                     Layanan Publik <br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-500">Lebih Cepat.</span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-500">Jurusan Teknik Elektro</span>
                 </h1>
 
                 <p class="text-slate-500 mb-10 text-lg leading-relaxed max-w-md">

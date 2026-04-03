@@ -14,14 +14,25 @@ class DashboardController extends Controller
      * TAMBAHAN PERBAIKAN: Helper Private Method
      * Menyatukan semua logika filter prodi di satu pintu.
      */
+    /**
+     * PERBAIKAN: Helper Private Method
+     * Filter Kunjungan murni berdasarkan prodi_id Admin.
+     */
     private function applyAccessFilter($query, $user)
     {
-        // Jika BUKAN Super Admin (Role 1) dan BUKAN Kajur Elektro
-        if ($user->role_id != 1 && $user->email !== 'kajur.elektro@poliban.ac.id') {
-            $query->whereHas('prodi', function($q) use ($user) {
-                $q->whereRaw('? LIKE CONCAT("%", nama, "%")', [$user->name]);
-            });
+        // Jika User ADALAH Super Admin (1) atau Kajur (3), mereka melihat SEMUA data (Tidak di-filter)
+        if ($user->role_id == 1 || $user->role_id == 3) {
+            return $query;
         }
+
+        // Jika User adalah Admin Prodi (2) atau Kaprodi (4), mereka HANYA melihat data Prodinya sendiri
+        if ($user->prodi_id) {
+            $query->where('prodi_id', $user->prodi_id);
+        } else {
+            // Jaga-jaga jika ada Admin/Kaprodi yang prodi_id-nya masih kosong, jangan tampilkan data apa pun
+             $query->whereRaw('1 = 0');
+        }
+
         return $query;
     }
 
