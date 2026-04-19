@@ -6,30 +6,26 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Kunjungan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon; // Tambahkan ini agar pemanggilan Carbon lebih bersih
+use Illuminate\Support\Facades\Mail;
+use App\Mail\NotifikasiPimpinanMail;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
     /**
-     * TAMBAHAN PERBAIKAN: Helper Private Method
-     * Menyatukan semua logika filter prodi di satu pintu.
-     */
-    /**
-     * PERBAIKAN: Helper Private Method
-     * Filter Kunjungan murni berdasarkan prodi_id Admin.
+     * Helper Private Method untuk Filter Akses
      */
     private function applyAccessFilter($query, $user)
     {
-        // Jika User ADALAH Super Admin (1) atau Kajur (3), mereka melihat SEMUA data (Tidak di-filter)
+        // Role 1 (Admin) atau Role 3 (Kajur) bisa melihat semua data
         if ($user->role_id == 1 || $user->role_id == 3) {
             return $query;
         }
 
-        // Jika User adalah Admin Prodi (2) atau Kaprodi (4), mereka HANYA melihat data Prodinya sendiri
+        // Role 2 (Admin Prodi) hanya melihat data Prodinya sendiri
         if ($user->prodi_id) {
             $query->where('prodi_id', $user->prodi_id);
         } else {
-            // Jaga-jaga jika ada Admin/Kaprodi yang prodi_id-nya masih kosong, jangan tampilkan data apa pun
              $query->whereRaw('1 = 0');
         }
 
@@ -37,38 +33,33 @@ class DashboardController extends Controller
     }
 
     public function index()
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    // JIKA BUKAN ADMIN (ROLE 1 ATAU 2)
-    // Tampilan langsung dialihkan ke Analytics tanpa pindah URL
-    if (!in_array($user->role_id, [1, 2])) {
-        return $this->analytics();
+        // Jika bukan Admin/Prodi, arahkan ke analytics
+        if (!in_array($user->role_id, [1, 2])) {
+            return $this->analytics();
+        }
+
+        $query = Kunjungan::with(['pengunjung', 'prodi'])->latest();
+        $query = $this->applyAccessFilter($query, $user);
+
+        $isGlobal = ($user->role_id == 1 || $user->email === 'kajur.elektro@poliban.ac.id');
+
+        return view('dashboard.index', [
+            'user' => $user,
+            'isGlobal' => $isGlobal,
+            'judul_dashboard' => 'Dashboard Utama',
+            'data_kunjungan' => $query->get()
+        ]);
     }
-
-    // JIKA ADMIN (Tampilkan Dashboard Antrean seperti foto 1)
-    $query = Kunjungan::with(['pengunjung', 'prodi'])->latest();
-    $query = $this->applyAccessFilter($query, $user);
-
-    $isGlobal = ($user->role_id == 1 || $user->email === 'kajur.elektro@poliban.ac.id');
-
-    return view('dashboard.index', [
-        'user' => $user,
-        'isGlobal' => $isGlobal,
-        'judul_dashboard' => 'Dashboard Utama',
-        'data_kunjungan' => $query->get()
-    ]);
-}
 
     public function analytics()
     {
         $user = Auth::user();
         $query = Kunjungan::query();
-
-        // Gunakan Helper
         $query = $this->applyAccessFilter($query, $user);
 
-        // --- BAGIAN 1: DATA SKOR KEPUASAN ---
         $dataSurvey = (clone $query)->whereHas('survey.detail')->with('survey.detail')->get();
         $puas = 0; $cukup = 0; $kurang = 0;
 
@@ -83,12 +74,10 @@ class DashboardController extends Controller
         $totalCount = $dataSurvey->count();
         $persentasePuas = $totalCount > 0 ? round(($puas / $totalCount) * 100) : 0;
 
-        // --- BAGIAN 2: DATA DISTRIBUSI KEPERLUAN ---
         $distribusi = (clone $query)->join('master_keperluan', 'kunjungan.keperluan_id', '=', 'master_keperluan.id')
             ->select('master_keperluan.keterangan as keperluan', DB::raw('count(*) as total'))
             ->groupBy('master_keperluan.keterangan')->get();
 
-        // --- BAGIAN 3: DATA TREN SLA (7 Hari Terakhir) ---
         $tujuhHariLalu = Carbon::today()->subDays(6);
         $dataSla = (clone $query)->whereDate('created_at', '>=', $tujuhHariLalu)
             ->whereNotNull('status_sla')
@@ -116,13 +105,10 @@ class DashboardController extends Controller
         ]);
     }
 
-
     public function laporan(Request $request)
     {
         $user = Auth::user();
         $query = Kunjungan::query();
-
-        // Gunakan Helper
         $query = $this->applyAccessFilter($query, $user);
 
         $startDate = $request->input('start_date');
@@ -144,7 +130,6 @@ class DashboardController extends Controller
         }
         $rataRataSla = $kunjunganSelesai->count() > 0 ? round($totalMenit / $kunjunganSelesai->count()) : 0;
 
-        // Grafik Kinerja
         $grafikQuery = (clone $query)->where('status_layanan', 'Selesai');
         if (!$startDate || !$endDate) {
             $grafikQuery->whereBetween('waktu_selesai_layanan', [now()->startOfWeek(), now()->endOfWeek()]);
@@ -179,8 +164,6 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $query = Kunjungan::with(['pengunjung', 'prodi'])->latest();
-
-        // Gunakan Helper
         $query = $this->applyAccessFilter($query, $user);
 
         if ($request->has('search')) {
@@ -198,8 +181,6 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $query = Kunjungan::with(['pengunjung', 'survey.detail', 'prodi']);
-
-        // Gunakan Helper
         $query = $this->applyAccessFilter($query, $user);
 
         return view('dashboard.ulasan', [
@@ -208,8 +189,6 @@ class DashboardController extends Controller
             'judul_dashboard' => 'Ulasan Pengunjung'
         ]);
     }
-
-    // --- FUNGSI ACTION (TIDAK BERUBAH) ---
 
     public function mulaiProses(Request $request, Kunjungan $kunjungan)
     {
@@ -238,34 +217,6 @@ class DashboardController extends Controller
         return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' telah ditolak.');
     }
 
-    public function controlPanel()
-{
-    $user = Auth::user();
-
-    // Proteksi ketat: Hanya ID 1 (Super Admin)
-    if ($user->role_id != 1) {
-        return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
-    }
-
-    return view('dashboard.control_panel', [
-        'user' => $user,
-        'judul_dashboard' => 'Sistem Control Panel',
-        'data_users' => \App\Models\User::all(), // Sesuai tabel master_user
-        'data_keperluan' => DB::table('master_keperluan')->get()
-    ]);
-}
-
-public function storeKeperluan(Request $request)
-{
-    $request->validate(['keterangan' => 'required']);
-    DB::table('master_keperluan')->insert([
-        'keterangan' => $request->keterangan,
-        'created_at' => now(),
-        'updated_at' => now()
-    ]);
-    return back()->with('success', 'Keperluan berhasil ditambah');
-}
-
     public function selesai(Kunjungan $kunjungan)
     {
         $waktuSelesai = Carbon::now();
@@ -289,5 +240,80 @@ public function storeKeperluan(Request $request)
         ]);
 
         return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' telah selesai.');
+    }
+
+    /**
+     * FUNGSI KIRIM EMAIL
+     */
+    public function kirimEmailPimpinan(Request $request)
+    {
+        $request->validate([
+            'kunjungan_id' => 'required|exists:kunjungan,id',
+            'email_pimpinan' => 'required|email'
+        ]);
+
+        $kunjungan = Kunjungan::with(['pengunjung', 'prodi'])->findOrFail($request->kunjungan_id);
+
+        try {
+            // Pastikan Mailable NotifikasiPimpinanMail sudah tidak meminta role_name di constructornya
+            Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
+
+            return back()->with('success', 'Email berhasil diteruskan ke pimpinan.');
+        } catch (\Exception $e) {
+            // Jika error, cek apakah .env sudah MAIL_MAILER=log
+            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
+    }
+
+    public function controlPanel()
+    {
+        $user = Auth::user();
+        if ($user->role_id != 1) {
+            return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
+        }
+
+        return view('dashboard.control_panel', [
+            'user' => $user,
+            'judul_dashboard' => 'Sistem Control Panel',
+            'data_users' => \App\Models\User::all(),
+            'data_keperluan' => DB::table('master_keperluan')->get()
+        ]);
+    }
+
+ 
+  public function tanggapanPimpinan(Request $request, $id)
+    {
+        // 1. Validasi input
+        $request->validate([
+            'status_pimpinan' => 'required|in:Disetujui,Ditolak',
+            'catatan_pimpinan' => 'nullable|string'
+        ]);
+
+        // 2. Cari data berdasarkan ID atau nomor kunjungan
+        // Jika parameter di rute menggunakan ID biasa:
+        $kunjungan = Kunjungan::findOrFail($id);
+
+        // CATATAN: Jika di sistemmu menggunakan pencarian berdasarkan 'nomor_kunjungan', ganti baris di atas menjadi:
+        // $kunjungan = Kunjungan::where('nomor_kunjungan', $id)->firstOrFail();
+
+        // 3. Simpan perubahan
+        $kunjungan->status_pimpinan = $request->status_pimpinan;
+        $kunjungan->catatan_pimpinan = $request->catatan_pimpinan;
+        $kunjungan->save();
+
+        // 4. Redirect kembali dengan notifikasi sukses
+        return back()->with('success', 'Tanggapan berhasil disimpan!');
+    }
+
+    public function storeKeperluan(Request $request)
+    {
+        $request->validate(['keterangan' => 'required']);
+        DB::table('master_keperluan')->insert([
+            'keterangan' => $request->keterangan,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return back()->with('success', 'Keperluan berhasil ditambah');
     }
 }

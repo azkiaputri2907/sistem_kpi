@@ -48,6 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/laporan', [DashboardController::class, 'laporan'])->name('dashboard.laporan');
 
     /**
+    /**
      * HALAMAN OPERASIONAL (Admin & Super Admin)
      */
     Route::get('/dashboard/manajemen-antrean', [DashboardController::class, 'manajemenAntrean'])->name('dashboard.antrean');
@@ -55,7 +56,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/dashboard/tolak/{kunjungan}', [DashboardController::class, 'tolak'])->name('kunjungan.tolak');
     Route::post('/dashboard/selesai/{kunjungan}', [DashboardController::class, 'selesai'])->name('kunjungan.selesai');
 
-    /**
+    // ---> TAMBAHKAN BARIS INI: ROUTE TANGGAPAN PIMPINAN <---
+    Route::post('/dashboard/antrean/{kunjungan}/tanggapan', [DashboardController::class, 'tanggapanPimpinan'])->name('kunjungan.tanggapan');
+
+    Route::post('/dashboard/kirim-email', [DashboardController::class, 'kirimEmailPimpinan'])->name('kunjungan.kirim-email');    /**
      * --- BARU: SISTEM CONTROL PANEL (Hanya Super Admin) ---
      * Mengelola master_user dan master_keperluan
      */

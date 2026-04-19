@@ -34,16 +34,17 @@
     <div class="flex-1 px-4 overflow-y-auto">
         <nav class="space-y-2 py-4">
 
-            {{-- MENU UTAMA (FILTER ROLE) --}}
-           @if(in_array(Auth::user()->role_id, [1, 2]))
-        <a href="{{ route('dashboard') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
-            <i class="fa-solid fa-chart-pie text-lg"></i> Dashboard
-        </a>
-        <a href="{{ route('dashboard.antrean') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.antrean') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-semibold transition">
-            <i class="fa-solid fa-users-viewfinder text-lg"></i> Manajemen Antrean
-        </a>
-    @endif
+       {{-- MENU DASHBOARD UTAMA (Hanya Admin) --}}
+            @if(in_array(Auth::user()->role_id, [1, 2]))
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
+                    <i class="fa-solid fa-chart-pie text-lg"></i> Dashboard
+                </a>
+            @endif
 
+            {{-- MENU MANAJEMEN ANTREAN (Semua Role Termasuk Pimpinan Bisa Akses) --}}
+            <a href="{{ route('dashboard.antrean') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.antrean') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-semibold transition">
+                <i class="fa-solid fa-users-viewfinder text-lg"></i> Manajemen Antrean
+            </a>
     {{-- MENU ANALYTICS KPI - Muncul untuk Semua Role (Admin, Kajur, Kaprodi) --}}
     {{-- Pastikan mengarah ke route('dashboard.analytics') --}}
     <a href="{{ route('dashboard.analytics') }}" class="flex items-center gap-4 px-4 py-3.5 {{ request()->routeIs('dashboard.analytics') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:bg-gray-50' }} rounded-2xl font-bold transition">
