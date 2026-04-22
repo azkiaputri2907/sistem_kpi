@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\Kunjungan;
+use App\Models\User; // Ditambahkan agar storeUser tidak error
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash; // Ditambahkan untuk Bcrypt password
 use App\Mail\NotifikasiPimpinanMail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -17,12 +20,10 @@ class DashboardController extends Controller
      */
     private function applyAccessFilter($query, $user)
     {
-        // Role 1 (Admin) atau Role 3 (Kajur) bisa melihat semua data
         if ($user->role_id == 1 || $user->role_id == 3) {
             return $query;
         }
 
-        // Role 2 (Admin Prodi) hanya melihat data Prodinya sendiri
         if ($user->prodi_id) {
             $query->where('prodi_id', $user->prodi_id);
         } else {
@@ -36,7 +37,6 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Jika bukan Admin/Prodi, arahkan ke analytics
         if (!in_array($user->role_id, [1, 2])) {
             return $this->analytics();
         }
@@ -217,34 +217,68 @@ class DashboardController extends Controller
         return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' telah ditolak.');
     }
 
-    public function selesai(Kunjungan $kunjungan)
-    {
-        $waktuSelesai = Carbon::now();
-        $statusSla = null;
+   public function selesai(Request $request, $id)
+{
+    $kunjungan = Kunjungan::where('id', $id)->orWhere('nomor_kunjungan', $id)->firstOrFail();
 
-        if ($kunjungan->estimasi_sla && $kunjungan->satuan_sla) {
-            $batasWaktu = $kunjungan->created_at->copy();
-            if ($kunjungan->satuan_sla == 'Hari') {
-                $batasWaktu->addDays($kunjungan->estimasi_sla);
-            } elseif ($kunjungan->satuan_sla == 'Menit') {
-                $batasWaktu->addMinutes($kunjungan->estimasi_sla);
-            }
-            $statusSla = $waktuSelesai->lessThanOrEqualTo($batasWaktu) ? 'Tepat Waktu' : 'Terlambat';
-        }
+    $request->validate([
+        'file_surat' => 'nullable|mimes:pdf|max:2048',
+    ]);
 
-        $kunjungan->update([
-            'status_layanan' => 'Selesai',
-            'user_id' => Auth::id(),
-            'waktu_selesai_layanan' => $waktuSelesai,
-            'status_sla' => $statusSla
-        ]);
+    $waktuSelesai = Carbon::now();
+    $estimasi = $kunjungan->estimasi_sla ?? 30;
+    $satuan = $kunjungan->satuan_sla ?? 'Menit';
 
-        return back()->with('success', 'Antrean ' . $kunjungan->nomor_kunjungan . ' telah selesai.');
+    $batasWaktu = $kunjungan->created_at->copy();
+    if ($satuan == 'Hari') {
+        $batasWaktu->addDays($estimasi);
+    } else {
+        $batasWaktu->addMinutes($estimasi);
     }
 
-    /**
-     * FUNGSI KIRIM EMAIL
-     */
+    // --- LOGIKA PERHITUNGAN SKOR ---
+    $skorAwal = 1.0;
+    $pengurang = 0.5;
+
+    if ($waktuSelesai->greaterThan($batasWaktu)) {
+        $statusSla = 'Terlambat';
+
+        // Hitung jumlah keterlambatan sesuai satuan (Menit atau Hari)
+        if ($satuan == 'Hari') {
+            $jumlahTerlambat = $waktuSelesai->diffInDays($batasWaktu);
+        } else {
+            $jumlahTerlambat = $waktuSelesai->diffInMinutes($batasWaktu);
+        }
+
+        // Jika lewat sedikit saja, minimal dikurang 0.5 satu kali (max 1)
+        $totalUnitTerlambat = max(1, $jumlahTerlambat);
+        $skorPelayanan = $skorAwal - ($totalUnitTerlambat * $pengurang);
+    } else {
+        $statusSla = 'Tepat Waktu';
+        $skorPelayanan = $skorAwal; // Tetap 1.0
+    }
+    // ------------------------------
+
+    $namaFile = $kunjungan->file_surat;
+    if ($request->hasFile('file_surat')) {
+        $file = $request->file('file_surat');
+        $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.pdf';
+        $file->storeAs('surat', $namaFile, 'public');
+    }
+
+    // Update database (kolom skor_pelayanan akan terisi karena Model menggunakan $guarded)
+    $kunjungan->update([
+        'status_layanan' => 'Selesai',
+        'user_id' => Auth::id(),
+        'waktu_selesai_layanan' => $waktuSelesai,
+        'status_sla' => $statusSla,
+        'file_surat' => $namaFile,
+        'skor_pelayanan' => $skorPelayanan
+    ]);
+
+    return back()->with('success', 'Layanan Selesai. Skor Pelayanan: ' . $skorPelayanan);
+}
+
     public function kirimEmailPimpinan(Request $request)
     {
         $request->validate([
@@ -255,13 +289,10 @@ class DashboardController extends Controller
         $kunjungan = Kunjungan::with(['pengunjung', 'prodi'])->findOrFail($request->kunjungan_id);
 
         try {
-            // Pastikan Mailable NotifikasiPimpinanMail sudah tidak meminta role_name di constructornya
             Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
-
-            return back()->with('success', 'Email berhasil diteruskan ke pimpinan.');
+            return back()->with('success', 'Email berhasil diteruskan.');
         } catch (\Exception $e) {
-            // Jika error, cek apakah .env sudah MAIL_MAILER=log
-            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengirim email.');
         }
     }
 
@@ -275,45 +306,60 @@ class DashboardController extends Controller
         return view('dashboard.control_panel', [
             'user' => $user,
             'judul_dashboard' => 'Sistem Control Panel',
-            'data_users' => \App\Models\User::all(),
+            'data_users' => User::all(),
             'data_keperluan' => DB::table('master_keperluan')->get()
         ]);
     }
 
- 
-  public function tanggapanPimpinan(Request $request, $id)
+    public function destroyKeperluan($id)
     {
-        // 1. Validasi input
-        $request->validate([
-            'status_pimpinan' => 'required|in:Disetujui,Ditolak',
-            'catatan_pimpinan' => 'nullable|string'
-        ]);
-
-        // 2. Cari data berdasarkan ID atau nomor kunjungan
-        // Jika parameter di rute menggunakan ID biasa:
-        $kunjungan = Kunjungan::findOrFail($id);
-
-        // CATATAN: Jika di sistemmu menggunakan pencarian berdasarkan 'nomor_kunjungan', ganti baris di atas menjadi:
-        // $kunjungan = Kunjungan::where('nomor_kunjungan', $id)->firstOrFail();
-
-        // 3. Simpan perubahan
-        $kunjungan->status_pimpinan = $request->status_pimpinan;
-        $kunjungan->catatan_pimpinan = $request->catatan_pimpinan;
-        $kunjungan->save();
-
-        // 4. Redirect kembali dengan notifikasi sukses
-        return back()->with('success', 'Tanggapan berhasil disimpan!');
+        if (Auth::user()->role_id != 1) return abort(403);
+        DB::table('master_keperluan')->where('id', $id)->delete();
+        return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
     }
 
     public function storeKeperluan(Request $request)
     {
-        $request->validate(['keterangan' => 'required']);
+        $request->validate(['keterangan' => 'required|string|max:255']);
         DB::table('master_keperluan')->insert([
             'keterangan' => $request->keterangan,
             'created_at' => now(),
             'updated_at' => now()
         ]);
+        return back()->with('success', 'Keperluan baru berhasil ditambahkan.');
+    }
 
-        return back()->with('success', 'Keperluan berhasil ditambah');
+    public function storeUser(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'role_id' => 'required'
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => $request->role_id,
+        ]);
+
+        return back()->with('success', 'User baru berhasil didaftarkan.');
+    }
+
+    public function tanggapanPimpinan(Request $request, $id)
+    {
+        $request->validate([
+            'status_pimpinan' => 'required|in:Disetujui,Ditolak',
+            'catatan_pimpinan' => 'nullable|string'
+        ]);
+
+        $kunjungan = Kunjungan::where('id', $id)->orWhere('nomor_kunjungan', $id)->firstOrFail();
+        $kunjungan->status_pimpinan = $request->status_pimpinan;
+        $kunjungan->catatan_pimpinan = $request->catatan_pimpinan;
+        $kunjungan->save();
+
+        return back()->with('success', 'Tanggapan berhasil disimpan!');
     }
 }

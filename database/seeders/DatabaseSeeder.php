@@ -41,6 +41,8 @@ class DatabaseSeeder extends Seeder
             ['nama' => 'Teknik Listrik', 'jenis' => 'Prodi'],
             ['nama' => 'Teknologi Rekayasa Pembangkit Energi', 'jenis' => 'Prodi'],
             ['nama' => 'Teknologi Rekayasa Otomasi', 'jenis' => 'Prodi'],
+            ['nama' => 'Pimpinan Jurusan', 'jenis' => 'Prodi'],
+
         ];
 
         foreach ($prodis as $p) {

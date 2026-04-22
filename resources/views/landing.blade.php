@@ -16,9 +16,10 @@
 
     <header class="w-full px-6 lg:px-12 py-6 flex justify-between items-center max-w-[90rem] mx-auto">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xl shadow-md">
-                P
+            <div class="w-14 h-14 flex items-center justify-center">
+                <img src="{{ asset('img/logo-poliban.png') }}" alt="Logo Poliban" class="w-full h-full object-contain">
             </div>
+
             <div>
                 <h2 class="font-extrabold text-slate-900 text-lg lg:text-xl leading-tight tracking-tight">Politeknik Negeri Banjarmasin</h2>
                 <p class="text-xs lg:text-sm text-slate-500 font-medium">Sistem Pelayanan Terpadu</p>

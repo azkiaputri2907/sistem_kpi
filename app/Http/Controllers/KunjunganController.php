@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class KunjunganController extends Controller
 {
@@ -31,6 +32,7 @@ class KunjunganController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi Input
         $request->validate([
             'nama_lengkap' => 'required|string|max:50',
             'no_telepon' => 'required|string|max:15',
@@ -39,56 +41,73 @@ class KunjunganController extends Controller
             'keperluan_id' => 'required|integer'
         ]);
 
-        $pengunjung = Pengunjung::firstOrCreate(
-            ['no_telepon' => $request->no_telepon],
-            [
-                'nama_lengkap' => $request->nama_lengkap,
-                'identitas_no' => $request->identitas_no,
-                'asal_instansi' => $request->asal_instansi
-            ]
-        );
-
-        $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
-
-        $kunjungan = Kunjungan::create([
-            'nomor_kunjungan' => $nomor_kunjungan,
-            'pengunjung_id' => $pengunjung->id,
-            'prodi_id' => $request->prodi_id,
-            'keperluan_id' => $request->keperluan_id,
-            'keperluan' => $request->catatan_keperluan,
-            'hari_kunjungan' => Carbon::now()->isoFormat('dddd'),
-            'tanggal' => Carbon::now()->toDateString(),
-            'status_layanan' => 'Antre'
-        ]);
-
-        // --- LOGIKA EMAIL OTOMATIS KE PIMPINAN ---
         try {
-            // Ambil user pimpinan (Admin Prodi atau Kajur)
-            $pimpinan = User::where('prodi_id', $request->prodi_id)
-                            ->orWhere('role_id', 3)
-                            ->get();
+            // 2. Gunakan Transaction agar data Pengunjung & Kunjungan masuk serentak
+            $kunjungan = DB::transaction(function () use ($request) {
 
-            foreach ($pimpinan as $user) {
-                // Hapus role_name dari array ini karena sudah dihapus di file Blade
-                $dataEmail = [
-                    'kunjungan' => $kunjungan,
-                    'url_login' => url('/login')
-                ];
+                // Simpan atau ambil pengunjung
+                $pengunjung = Pengunjung::firstOrCreate(
+                    ['no_telepon' => $request->no_telepon],
+                    [
+                        'nama_lengkap' => $request->nama_lengkap,
+                        'identitas_no' => $request->identitas_no,
+                        'asal_instansi' => $request->asal_instansi
+                    ]
+                );
 
-                Mail::send('emails.notifikasi_kunjungan', $dataEmail, function($message) use ($user) {
-                    $message->to($user->email)
-                            ->subject('Notifikasi Antrean Baru');
-                });
-            }
+                // Buat nomor antrean
+                $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
+
+                // Simpan data Kunjungan
+              // Simpan data Kunjungan dengan menyertakan status default pimpinan
+        return Kunjungan::create([
+            'nomor_kunjungan' => $nomor_kunjungan,
+            'pengunjung_id'   => $pengunjung->id,
+            'prodi_id'        => $request->prodi_id,
+            'keperluan_id'    => $request->keperluan_id,
+            'keperluan'       => $request->catatan_keperluan ?? '-',
+            'hari_kunjungan'  => Carbon::now()->isoFormat('dddd'),
+            'tanggal'         => Carbon::now()->toDateString(),
+            'status_layanan'  => 'Antre',
+            'status_pimpinan' => 'Menunggu', // Tambahkan ini untuk memenuhi kolom di DB Anda
+        ]);
+            });
+
+            // 3. Logika Email (Ditaruh di luar Transaction agar jika email gagal, data DB tetap aman)
+          // Bagian di KunjunganController
+try {
+    $pimpinan = User::where('prodi_id', $request->prodi_id)
+                    ->orWhere('role_id', 3)
+                    ->get();
+
+    foreach ($pimpinan as $user) {
+        $dataEmail = [
+            'kunjungan' => $kunjungan,
+            'url_login' => url('/login')
+        ];
+
+        // Ganti nama view di sini agar sesuai dengan file yang Anda buat
+        Mail::send('emails.notifikasi_kunjungan', $dataEmail, function($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Notifikasi Antrean Baru');
+        });
+    }
+} catch (\Exception $e) {
+    // Jika email gagal, hanya catat di log, jangan hentikan proses redirect sukses
+    Log::warning("Email pimpinan gagal: " . $e->getMessage());
+}
+
+            // 4. Redirect sukses
+            return redirect()->route('kunjungan.status', ['kunjungan' => $kunjungan->nomor_kunjungan])
+                             ->with('success', 'Pendaftaran antrean berhasil!');
+
         } catch (\Exception $e) {
-            // Jika internet mati atau SMTP bermasalah, catat di log saja
-            // Tamu TIDAK AKAN melihat error, mereka akan tetap lanjut ke halaman nomor antrean
-            \Illuminate\Support\Facades\Log::error("Email pimpinan gagal: " . $e->getMessage());
+            Log::error("Proses pendaftaran gagal: " . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal mendaftar antrean. Silakan coba lagi.');
         }
-
-        return redirect()->route('kunjungan.status', ['kunjungan' => $nomor_kunjungan]);
     }
 
+    // Fungsi lainnya (cekStatus, formSurvey, storeSurvey) tetap sama...
     public function cekStatus(Kunjungan $kunjungan)
     {
         $durasi_menit = 0;

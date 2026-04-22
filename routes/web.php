@@ -36,7 +36,6 @@ Route::middleware('auth')->group(function () {
 
     /**
      * ROUTE UTAMA
-     * Otomatis filter: Admin ke Antrean, Kajur/Kaprodi ke Analytics
      */
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -48,27 +47,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/laporan', [DashboardController::class, 'laporan'])->name('dashboard.laporan');
 
     /**
-    /**
      * HALAMAN OPERASIONAL (Admin & Super Admin)
      */
     Route::get('/dashboard/manajemen-antrean', [DashboardController::class, 'manajemenAntrean'])->name('dashboard.antrean');
     Route::post('/dashboard/mulai-proses/{kunjungan}', [DashboardController::class, 'mulaiProses'])->name('kunjungan.mulaiProses');
     Route::post('/dashboard/tolak/{kunjungan}', [DashboardController::class, 'tolak'])->name('kunjungan.tolak');
-    Route::post('/dashboard/selesai/{kunjungan}', [DashboardController::class, 'selesai'])->name('kunjungan.selesai');
+    
+    // KOREKSI: Gunakan parameter {kunjungan} agar konsisten dengan Route Model Binding Anda
+    Route::post('/dashboard/antrean/{kunjungan}/selesai', [DashboardController::class, 'selesai'])->name('kunjungan.selesai');
 
-    // ---> TAMBAHKAN BARIS INI: ROUTE TANGGAPAN PIMPINAN <---
+    /**
+     * SISTEM TANGGAPAN & EMAIL
+     */
     Route::post('/dashboard/antrean/{kunjungan}/tanggapan', [DashboardController::class, 'tanggapanPimpinan'])->name('kunjungan.tanggapan');
+    Route::post('/dashboard/kirim-email', [DashboardController::class, 'kirimEmailPimpinan'])->name('kunjungan.kirim-email');
 
-    Route::post('/dashboard/kirim-email', [DashboardController::class, 'kirimEmailPimpinan'])->name('kunjungan.kirim-email');    /**
-     * --- BARU: SISTEM CONTROL PANEL (Hanya Super Admin) ---
-     * Mengelola master_user dan master_keperluan
+    /**
+     * --- CONTROL PANEL (Hanya Super Admin) ---
      */
     Route::get('/dashboard/control-panel', [DashboardController::class, 'controlPanel'])->name('dashboard.control_panel');
-
-    // Aksi CRUD Keperluan
     Route::post('/dashboard/keperluan', [DashboardController::class, 'storeKeperluan'])->name('keperluan.store');
     Route::delete('/dashboard/keperluan/{id}', [DashboardController::class, 'destroyKeperluan'])->name('keperluan.destroy');
-
-    // Aksi User (Optional: Tambah/Edit User)
     Route::post('/dashboard/users', [DashboardController::class, 'storeUser'])->name('users.store');
+
 });

@@ -11,10 +11,11 @@ class Kunjungan extends Model {
     protected $guarded = ['id'];
 
     // TAMBAHKAN INI: Agar waktu_selesai otomatis jadi objek format waktu (Carbon)
-    protected $casts = [
-        'waktu_selesai_layanan' => 'datetime',
-        'tanggal' => 'date',
-    ];
+            protected $casts = [
+            'waktu_selesai_layanan' => 'datetime',
+            'tanggal' => 'date',
+            'skor_pelayanan' => 'float', // Tambahkan ini agar angka desimal diproses dengan benar
+        ];
 
     // Pencarian data di URL otomatis menggunakan kolom nomor_kunjungan
     public function getRouteKeyName()

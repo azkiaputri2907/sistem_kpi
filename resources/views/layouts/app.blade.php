@@ -22,9 +22,9 @@
 
 <aside class="w-72 bg-white border-r border-gray-100 flex flex-col shadow-sm z-20">
     <div class="p-8 flex items-center gap-3">
-        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-            <i class="fa-solid fa-layer-group text-xl"></i>
-        </div>
+       <div class="w-12 h-12 flex items-center justify-center">
+    <img src="{{ asset('img/logo-poliban.png') }}" alt="Logo Poliban" class="w-full h-full object-contain">
+</div>
         <div>
             <h1 class="font-extrabold text-gray-800 tracking-tight text-lg leading-tight">Poliban</h1>
             <p class="text-[10px] font-bold text-indigo-500 tracking-[0.2em] uppercase">Command Center</p>
