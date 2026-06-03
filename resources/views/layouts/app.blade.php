@@ -6,9 +6,23 @@
     <title>Dashboard - @yield('title')</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // 1. Konfigurasi Tailwind untuk menggunakan class 'dark'
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
 
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // 2. Skrip Cek Otomatis: Menggunakan localStorage.getItem agar sinkron sempurna tanpa berkedip
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -19,6 +33,13 @@
 
         body{
             background: #f6f7fb;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Styling khusus saat Mode Gelap Aktif */
+        .dark body {
+            background: #0f172a; /* bg-slate-900 */
+            color: #f8fafc;
         }
 
         ::-webkit-scrollbar{
@@ -28,6 +49,10 @@
         ::-webkit-scrollbar-thumb{
             background:#dbe1ea;
             border-radius:20px;
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
         }
 
         .sidebar-scroll::-webkit-scrollbar{
@@ -46,6 +71,11 @@
             position:relative;
         }
 
+        .dark .menu-active {
+            background: linear-gradient(90deg, #3b0764 0%, #1e1b4b 100%);
+            color: #c084fc;
+        }
+
         .menu-active::before{
             content:'';
             position:absolute;
@@ -62,14 +92,23 @@
             color:#0f172a;
         }
 
+        .dark .menu-hover:hover {
+            background: #1e293b;
+            color: #f8fafc;
+        }
+
         .glass{
             background: rgba(255,255,255,0.8);
             backdrop-filter: blur(14px);
         }
+
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.8);
+        }
     </style>
 </head>
 
-<body class="h-screen overflow-hidden">
+<body class="h-screen overflow-hidden text-slate-800 dark:text-slate-100">
 
 {{-- AMBIL DATA USER DARI SESSION MANUAL --}}
 @php
@@ -86,23 +125,23 @@
 
     {{-- SIDEBAR --}}
     <aside id="sidebar"
-        class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-screen w-[290px] bg-white border-r border-slate-100 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
+        class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-screen w-[290px] bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
 
         {{-- LOGO --}}
-        <div class="h-24 px-6 flex items-center border-b border-slate-100">
+        <div class="h-24 px-6 flex items-center border-b border-slate-100 dark:border-slate-700">
 
-            <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-indigo-50 shadow-sm">
+            <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-indigo-50 dark:bg-slate-700 shadow-sm flex-shrink-0">
                 <img src="{{ asset('img/logo-poliban.png') }}"
                     alt="Logo"
                     class="w-9 h-9 object-contain">
             </div>
 
-            <div class="ml-4">
-                <h1 class="font-black text-slate-900 text-sm leading-tight">
+            <div class="ml-4 overflow-hidden">
+                <h1 class="font-black text-slate-900 dark:text-white text-sm leading-tight truncate">
                     Jurusan Teknik Elektro
                 </h1>
 
-                <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 font-bold mt-1">
+                <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500 font-bold mt-1">
                     Admin Panel
                 </p>
             </div>
@@ -118,7 +157,7 @@
                 @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                    {{ request()->routeIs('dashboard') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                     <i class="fa-solid fa-chart-pie text-lg"></i>
 
@@ -133,7 +172,7 @@
                 @if(in_array($userSession->role_id, [1,2]))
                 <a href="{{ route('dashboard.antrean') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.antrean') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                    {{ request()->routeIs('dashboard.antrean') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                     <i class="fa-solid fa-users-viewfinder text-lg"></i>
 
@@ -147,7 +186,7 @@
                 {{-- ANALYTICS --}}
                 <a href="{{ route('dashboard.analytics') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.analytics') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                    {{ request()->routeIs('dashboard.analytics') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                     <i class="fa-solid fa-chart-simple text-lg"></i>
 
@@ -160,7 +199,7 @@
                 {{-- LAPORAN --}}
                 <a href="{{ route('dashboard.laporan') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.laporan') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                    {{ request()->routeIs('dashboard.laporan') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                     <i class="fa-solid fa-file-export text-lg"></i>
 
@@ -173,7 +212,7 @@
                 {{-- ULASAN --}}
                 <a href="{{ route('dashboard.ulasan') }}"
                     class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.ulasan') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                    {{ request()->routeIs('dashboard.ulasan') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                     <i class="fa-solid fa-comment-dots text-lg"></i>
 
@@ -186,23 +225,23 @@
                 {{-- PIMPINAN --}}
                 @if($userSession->role_id != 1 && $userSession->role_id != 2)
 
-                <div class="pt-5 mt-5 border-t border-slate-100">
+                <div class="pt-5 mt-5 border-t border-slate-100 dark:border-slate-700">
 
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 font-black">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 dark:text-slate-600 font-black">
                         Tugas Pimpinan
                     </p>
 
                     <a href="{{ route('pimpinan.konfirmasi') }}"
                         class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
-                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-amber-50 text-amber-600 font-black' : 'menu-hover text-slate-400' }}">
+                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-black' : 'menu-hover text-slate-400' }}">
 
-                        <i class="fa-solid fa-file-signature text-lg"></i>
+                    <i class="fa-solid fa-file-signature text-lg"></i>
 
-                        <span class="font-bold text-sm">
-                            Konfirmasi Masuk
-                        </span>
+                    <span class="font-bold text-sm">
+                        Konfirmasi Masuk
+                    </span>
 
-                        <span class="absolute right-5 w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                    <span class="absolute right-5 w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
 
                     </a>
 
@@ -213,15 +252,15 @@
                 {{-- SUPER ADMIN --}}
                 @if($userSession->role_id == 1)
 
-                <div class="pt-5 mt-5 border-t border-slate-100">
+                <div class="pt-5 mt-5 border-t border-slate-100 dark:border-slate-700">
 
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 font-black">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-slate-300 dark:text-slate-600 font-black">
                         System Admin
                     </p>
 
                     <a href="{{ route('dashboard.control_panel') }}"
                         class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.control_panel') ? 'menu-active' : 'menu-hover text-slate-400' }}">
+                        {{ request()->routeIs('dashboard.control_panel') ? 'menu-active' : 'menu-hover text-slate-400 dark:text-slate-500' }}">
 
                         <i class="fa-solid fa-gears text-lg"></i>
 
@@ -240,7 +279,7 @@
         </div>
 
         {{-- LOGOUT --}}
-        <div class="p-5 border-t border-slate-100">
+        <div class="p-5 border-t border-slate-100 dark:border-slate-700">
 
             <form action="{{ route('logout') }}"
                 method="POST"
@@ -250,7 +289,7 @@
 
                 <button type="button"
                     onclick="confirmLogout()"
-                    class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 transition-all">
+                    class="w-full flex items-center gap-3 px-5 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all">
 
                     <i class="fa-solid fa-arrow-right-from-bracket"></i>
 
@@ -267,10 +306,10 @@
     </aside>
 
     {{-- MAIN --}}
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {{-- TOPBAR --}}
-        <header class="h-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100 glass sticky top-0 z-30">
+        <header class="h-24 px-4 sm:px-6 lg:px-8 border-b border-slate-100 dark:border-slate-700 glass sticky top-0 z-30 flex-shrink-0">
 
             <div class="h-full flex items-center justify-between">
 
@@ -280,18 +319,18 @@
                     {{-- MOBILE BUTTON --}}
                     <button
                         onclick="toggleSidebar()"
-                        class="lg:hidden w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-sm">
+                        class="lg:hidden w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm">
 
                         <i class="fa-solid fa-bars"></i>
 
                     </button>
 
-                    <div class="hidden sm:flex items-center gap-3 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-100">
+                    <div class="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
 
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse flex-shrink-0"></span>
 
-                        <span class="text-[11px] uppercase tracking-widest text-emerald-600 font-black">
-                            Auto-Refresh: ON
+                        <span id="refresh-timer-text" class="text-[9px] sm:text-[11px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-black">
+                            Auto-Refresh: 30s
                         </span>
 
                     </div>
@@ -299,32 +338,34 @@
                 </div>
 
                 {{-- RIGHT --}}
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 sm:gap-4">
+
+                    {{-- BUTTON TOGGLE DARK MODE --}}
+                    <button id="theme-toggle" class="p-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 hover:scale-105 active:scale-95 transition-all">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-amber-500 animate-[spin_4s_linear_infinite]" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.05a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zm-.707-4.95a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm3.182-5.657a1 1 0 010 1.414l-.707.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0z" fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
 
                     {{-- NOTIF --}}
                     @if($userSession->role_id == 2)
-                    <button class="relative w-11 h-11 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500 shadow-sm hover:bg-slate-50 transition-all">
+                    <button class="relative w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
                         <i class="fa-regular fa-bell"></i>
-
                         <span id="notif-dot" class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full hidden animate-ping"></span>
-
-                        <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 rounded-full font-bold hidden">
-                            0
-                        </span>
+                        <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 rounded-full font-bold hidden">0</span>
                     </button>
                     @endif
 
                     {{-- USER --}}
                     <div class="flex items-center gap-3">
-
-                        <div class="hidden sm:block text-right">
-
-                            <h3 class="text-sm font-black text-slate-900 leading-tight">
+                        <div class="hidden md:block text-right">
+                            <h3 class="text-sm font-black text-slate-900 dark:text-white leading-tight">
                                 {{ $userSession->name }}
                             </h3>
-
-                            <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">
-
+                            <p class="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mt-1">
                                 @if($userSession->role_id == 1)
                                     Master Administrator
                                 @elseif($userSession->email === 'kajur.elektro@poliban.ac.id')
@@ -334,17 +375,11 @@
                                 @else
                                     Ketua Program Studi
                                 @endif
-
                             </p>
-
                         </div>
-
-                        <div class="w-12 h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-black shadow-lg">
-
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-indigo-500 text-white flex items-center justify-center font-black shadow-lg text-sm sm:text-base flex-shrink-0">
                             {{ strtoupper(substr($userSession->name, 0, 2)) }}
-
                         </div>
-
                     </div>
 
                 </div>
@@ -353,14 +388,49 @@
 
         </header>
 
-        {{-- CONTENT --}}
-        <div class="p-4 sm:p-6 lg:p-8">
+        {{-- CONTENT CONTAINER --}}
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
             @yield('content')
         </div>
 
     </main>
 
 </div>
+
+{{-- MODAL KUSTOM 1: AUTO IDLE LOGOUT (BISA BATAL / LANJUTKAN SESI) --}}
+<div id="idle-logout-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-full text-center">
+        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Sesi Berakhir</h3>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-4">Sistem otomatis keluar karena tidak ada aktivitas selama 5 menit.</p>
+        
+        {{-- Progress Bar --}}
+        <div class="w-full bg-slate-100 dark:bg-slate-800 h-1 rounded-full overflow-hidden mb-5">
+            <div id="idle-progress" class="bg-indigo-600 dark:bg-indigo-400 h-full w-full transition-all duration-1000 linear"></div>
+        </div>
+
+        {{-- Tombol Batal / Lanjutkan Sesi --}}
+        <button onclick="batalkanAutoLogout()" class="w-full py-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+            Lanjutkan Sesi (Batal)
+        </button>
+    </div>
+</div>
+
+{{-- MODAL KUSTOM 2: KONFIRMASI TOMBOL KELUAR MANUAL --}}
+<div id="confirm-logout-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-full text-center">
+        <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mb-4 text-rose-500 dark:text-rose-400">
+            <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
+        </div>
+        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Keluar dari sistem?</h3>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-5">Sesi login Anda akan diakhiri. Anda harus memasukkan akun kembali untuk mengakses dashboard.</p>
+        <div class="flex gap-2 w-full">
+            <button onclick="tutupConfirmModal()" class="flex-1 py-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Batal</button>
+            <button onclick="eksekusiLogout()" class="flex-1 py-3 rounded-full bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all">Ya, Keluar</button>
+        </div>
+    </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @if($userSession->role_id == 2)
@@ -379,43 +449,34 @@ document.addEventListener('click',function initAudio(){
 
 function playNotifSound(){
     notifAudio.currentTime=0;
-
     notifAudio.play()
     .then(()=>console.log('Notif bunyi'))
     .catch(err=>console.log('Audio gagal:',err));
 }
 
-let lastNotifCount=0;
-let isFirstLoad=true;
-let lastReminderTime=0;
+let lastNotifCount = 0;
+let isFirstLoad = true;
+let lastReminderTime = Date.now(); 
 
 function fetchNotifications(){
-
     fetch("{{ route('dashboard.check-notif') }}")
     .then(response=>response.json())
     .then(data=>{
-
         const countBadge=document.getElementById('notif-count');
         const notifDot=document.getElementById('notif-dot');
 
         if(data.count>0){
-
             countBadge.innerText=data.count;
             countBadge.classList.remove('hidden');
             notifDot.classList.remove('hidden');
-
         }else{
-
             countBadge.innerText='0';
             countBadge.classList.add('hidden');
             notifDot.classList.add('hidden');
         }
 
-        // notif antrean baru
-        if(!isFirstLoad && data.count>lastNotifCount){
-
+        if(!isFirstLoad && data.count > lastNotifCount){
             playNotifSound();
-
             Swal.fire({
                 title:'Antrean Baru!',
                 text:`Ada ${data.count-lastNotifCount} antrean baru masuk.`,
@@ -426,22 +487,12 @@ function fetchNotifications(){
                 timer:5000,
                 timerProgressBar:true
             });
-
-            lastReminderTime=Date.now();
         }
 
-        // reminder tiap 3 menit
-        if(
-            data.count>0 &&
-            data.has_pending===true
-        ){
-
-            const now=Date.now();
-
-            if(now-lastReminderTime>=180000){
-
+        if(data.count > 0 && data.has_pending === true){
+            const now = Date.now();
+            if(now - lastReminderTime >= 180000){ 
                 playNotifSound();
-
                 Swal.fire({
                     title:'Reminder Antrean',
                     text:'Masih ada antrean yang belum diproses.',
@@ -452,9 +503,10 @@ function fetchNotifications(){
                     timer:5000,
                     timerProgressBar:true
                 });
-
-                lastReminderTime=now;
+                lastReminderTime = now;
             }
+        } else {
+            lastReminderTime = Date.now();
         }
 
         lastNotifCount=data.count;
@@ -466,49 +518,195 @@ function fetchNotifications(){
 }
 
 document.addEventListener('DOMContentLoaded',function(){
-
     fetchNotifications();
-
     setInterval(fetchNotifications,60000);
 });
 </script>
 @endif
+
 <script>
+// ==================== LOGIK AUTO-LOGOUT 5 MENIT IDLE (MODAL KUSTOM MURNI) ====================
+const maxIdleTimeMilidetik = 5 * 60 * 1000; 
+let hitungMundurBar; // Variabel global untuk menyimpan interval progress bar
 
-    function toggleSidebar() {
+function perbaruiAktivitasTerakhir() {
+    localStorage.setItem('lastActivityTime', Date.now().toString());
+}
 
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
+let koordinatXTerakhir = -1;
+let koordinatYTerakhir = -1;
 
-        sidebar.classList.toggle('-translate-x-full');
-        overlay.classList.toggle('hidden');
-
+function deteksiGerakanMouseAsli(event) {
+    if (event.screenX === koordinatXTerakhir && event.screenY === koordinatYTerakhir) {
+        return; 
     }
+    koordinatXTerakhir = event.screenX;
+    koordinatYTerakhir = event.screenY;
+    perbaruiAktivitasTerakhir();
+}
 
-    function confirmLogout() {
+const eventsUmum = ['keypress', 'mousedown', 'touchstart', 'scroll'];
+eventsUmum.forEach(function(event) {
+    document.addEventListener(event, perbaruiAktivitasTerakhir, false);
+});
+document.addEventListener('mousemove', deteksiGerakanMouseAsli, false);
 
-        Swal.fire({
-            title: 'Keluar dari sistem?',
-            text: 'Sesi login akan diakhiri.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#6366f1',
-            cancelButtonColor: '#e2e8f0',
-            confirmButtonText: 'Ya, Logout',
-            cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'rounded-[2rem]'
+if (!localStorage.getItem('lastActivityTime')) {
+    perbaruiAktivitasTerakhir();
+}
+
+let infoModalSedangTerbuka = false;
+
+// Jalankan fungsi pengecekan konstan setiap 5 detik
+let cekLogoutInterval = setInterval(jalankanPengecekanIdle, 5000);
+
+function jalankanPengecekanIdle() {
+    if (infoModalSedangTerbuka) return;
+
+    const waktuSekarang = Date.now();
+    const waktuAktivitasTerakhir = parseInt(localStorage.getItem('lastActivityTime') || waktuSekarang.toString(), 10);
+    const selisihWaktu = waktuSekarang - waktuAktivitasTerakhir;
+
+    if (selisihWaktu >= maxIdleTimeMilidetik) {
+        infoModalSedangTerbuka = true;
+
+        // Tampilkan modal kustom idle
+        const modalIdle = document.getElementById('idle-logout-modal');
+        const progressBar = document.getElementById('idle-progress');
+        progressBar.style.width = '100%'; // Setel ulang ke penuh sebelum menyusut
+        modalIdle.classList.remove('hidden');
+
+        // Jalankan animasi penyusutan progress bar (10 Detik)
+        let sisaWaktuPersen = 100;
+        hitungMundurBar = setInterval(() => {
+            sisaWaktuPersen -= 10;
+            progressBar.style.width = sisaWaktuPersen + '%';
+            if (sisaWaktuPersen <= 0) {
+                clearInterval(hitungMundurBar);
+                eksekusiLogout();
             }
-        }).then((result) => {
+        }, 1000);
+    }
+}
 
-            if(result.isConfirmed){
-                document.getElementById('logout-form').submit();
-            }
+// Fungsi Baru: Ketika admin klik tombol "Lanjutkan Sesi (Batal)"
+function batalkanAutoLogout() {
+    // 1. Sembunyikan modal kembali
+    document.getElementById('idle-logout-modal').classList.add('hidden');
+    
+    // 2. Matikan sisa hitung mundur 10 detik progress bar
+    clearInterval(hitungMundurBar);
+    
+    // 3. Reset waktu aktivitas di localStorage ke detik ini agar dianggap aktif lagi
+    perbaruiAktivitasTerakhir();
+    
+    // 4. Buka kunci filter agar pengecekan idle 5 menit berjalan normal dari awal lagi
+    infoModalSedangTerbuka = false;
+}
 
+// ==================== LOGIK MODAL KONFIRMASI KELUAR MANUAL ====================
+function confirmLogout() {
+    document.getElementById('confirm-logout-modal').classList.remove('hidden');
+}
+
+function tutupConfirmModal() {
+    document.getElementById('confirm-logout-modal').classList.add('hidden');
+}
+
+function eksekusiLogout() {
+    const logoutForm = document.getElementById('logout-form');
+    if (logoutForm) {
+        logoutForm.submit();
+    } else {
+        console.error('Form logout-form tidak ditemukan!');
+    }
+}
+
+// ==================== LOGIK AUTO-REFRESH (30 DETIK) ====================
+document.addEventListener('DOMContentLoaded', function() {
+    let refreshTimeLeft = 30; 
+    let isPaused = false; 
+    const timerElement = document.getElementById('refresh-timer-text');
+
+    function aturEventInput() {
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(function(element) {
+            if (element.dataset.timerEventSet) return;
+            element.dataset.timerEventSet = "true";
+
+            element.addEventListener('focus', function() {
+                isPaused = true;
+                if (timerElement) {
+                    timerElement.innerText = `Auto-Refresh: Paused`;
+                    timerElement.classList.remove('text-emerald-600', 'dark:text-emerald-400');
+                    timerElement.classList.add('text-amber-500', 'dark:text-amber-400');
+                }
+            });
+
+            element.addEventListener('blur', function() {
+                isPaused = false;
+                if (timerElement) {
+                    timerElement.classList.remove('text-amber-500', 'dark:text-amber-400');
+                    timerElement.classList.add('text-emerald-600', 'dark:text-emerald-400');
+                }
+            });
         });
-
     }
 
+    aturEventInput();
+
+    const observer = new MutationObserver(aturEventInput);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const countdownInterval = setInterval(function() {
+        if (isPaused || infoModalSedangTerbuka) return;
+
+        refreshTimeLeft--;
+        if (timerElement) {
+            timerElement.innerText = `Auto-Refresh: ${refreshTimeLeft}s`;
+        }
+
+        if (refreshTimeLeft <= 0) {
+            clearInterval(countdownInterval);
+            window.location.reload();
+        }
+    }, 1000);
+});
+
+// ==================== LOGIK MANAJEMEN DARK MODE ====================
+const themeToggleBtn = document.getElementById('theme-toggle');
+const darkIcon = document.getElementById('theme-toggle-dark-icon');
+const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+function updateIcons() {
+    if (document.documentElement.classList.contains('dark')) {
+        lightIcon.classList.remove('hidden');
+        darkIcon.classList.add('hidden');
+    } else {
+        darkIcon.classList.remove('hidden');
+        lightIcon.classList.add('hidden');
+    }
+}
+
+updateIcons();
+
+themeToggleBtn.addEventListener('click', function() {
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    }
+    updateIcons();
+});
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
 </script>
 
 @stack('scripts')

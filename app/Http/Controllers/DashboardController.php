@@ -615,18 +615,70 @@ public function analytics()
                 $items->count();
         }
     }
+    // =========================================================
+    // PERHITUNGAN TAMBAHAN UNTUK CARD STATISTIK ANALYTICS
+    // =========================================================
+    
+    // 1. Total Kunjungan (berdasarkan filter prodi yang aktif)
+    $totalKunjunganCard = $kunjunganData->count();
+
+    // 2. Efektivitas SLA Card (Menghitung persentase performa ketepatan waktu)
+    $jumlahTepatWaktuCard = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TEPAT WAKTU';
+    })->count();
+
+    $jumlahTerlambatCard = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TERLAMBAT';
+    })->count();
+
+    $jumlahDitolakCard = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
+    })->count();
+
+    // Rumus bobot performa SLA: Tepat Waktu (100%), Terlambat (50%), Ditolak (0%)
+    $nilaiEfektivitasCard = ($jumlahTepatWaktuCard * 1) + ($jumlahTerlambatCard * 0.5) + ($jumlahDitolakCard * 0);
+    
+    $efektivitasPersenCard = $totalKunjunganCard > 0 
+        ? round(($nilaiEfektivitasCard / $totalKunjunganCard) * 100, 1) 
+        : 0;
+    $efektivitasPersenCard = max(0, min(100, $efektivitasPersenCard));
+
+    // 3. Kualitas Rating Survei Card (Skala 1.0 - 5.0)
+    $totalBintangCard = 0;
+    $jumlahRespondenCard = 0;
+
+    foreach ($kunjunganData as $k) {
+        $surv = $db['survey']->firstWhere('kunjungan_id', $k->id);
+        if ($surv) {
+            $detail = $db['detail_survey']->firstWhere('survey_id', $surv->id);
+            if ($detail) {
+                // Akumulasi skor dari pertanyaan p1 sampai p5
+                $totalBintangCard += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
+                $jumlahRespondenCard++;
+            }
+        }
+    }
+
+    $kualitasRatingCard = '-';
+    if ($jumlahRespondenCard > 0) {
+        // Menghitung rata-rata bintang (Total Akumulasi / (Jumlah Responden * 5 Pertanyaan))
+        $rataRataCard = $totalBintangCard / ($jumlahRespondenCard * 5);
+        $kualitasRatingCard = number_format(round($rataRataCard, 1), 1);
+    }
 
     return view('dashboard.analytics', [
 
         'user' => $user,
         'daftar_prodi' => $daftar_prodi,
-
         'is_na' => $is_na,
-
         'judul_dashboard' => 'Analytics KPI',
 
-        'skor_kepuasan' => [
+        // Tambahkan 3 baris variabel baru ini di sini:
+        'total_kunjungan' => $totalKunjunganCard,
+        'efektivitas_persen' => $efektivitasPersenCard,
+        'kualitas_rating' => $kualitasRatingCard,
 
+        'skor_kepuasan' => [
             'sangat_puas' => $sangatPuas,
             'puas' => $puas,
             'kurang_puas' => $kurangPuas,
@@ -1261,49 +1313,196 @@ public function manajemenAntrean(Request $request)
         );
     }
 
-    public function kirimEmailPimpinan(Request $request)
-    {
-        $request->validate([
-            'kunjungan_id' => 'required',
-            'email_pimpinan' => 'required|email'
-        ]);
+public function kirimEmailPimpinan(Request $request)
+{
+    $request->validate([
+        'kunjungan_id' => 'required',
+        'email_pimpinan' => 'required|email'
+    ]);
 
-        $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi']);
-        $kunjungan = $db['kunjungan']->firstWhere('id', $request->kunjungan_id);
+    $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
+    
+    // 1. Ambil data kunjungan berdasarkan ID
+    $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
+        return isset($item->id) && $item->id == $request->kunjungan_id;
+    });
+    
+    if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
+    $kunjungan = (object) $kunjungan;
+
+    // 2. Ambil data pengunjung terkait
+    $pengunjungData = $db['pengunjung']->first(function($item) use ($kunjungan) {
+        return isset($item->id) && $item->id == $kunjungan->pengunjung_id;
+    });
+
+    if ($pengunjungData) {
+        $kunjungan->pengunjung = (object) $pengunjungData;
         
-        if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
-
-        $kunjungan->pengunjung = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id);
-        $kunjungan->prodi = $db['master_prodi_instansi']->firstWhere('id', $kunjungan->prodi_id);
-
-        try {
-            Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
-
-            $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
-            return back()->with('success', 'Email berhasil diteruskan.');
-
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
-        }
+        // FIX SINKRONISASI: Ambil dari kolom 'asal_instansi' sesuai data sheet pengunjung Anda
+        $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
+    } else {
+        $kunjungan->pengunjung = (object) ['nama_lengkap' => 'Umum', 'instansi' => 'Umum / Mandiri'];
     }
+
+    // 3. Ambil data dari master_keperluan berdasarkan kolom 'keterangan'
+    $masterKeperluan = $db['master_keperluan']->first(function($item) use ($kunjungan) {
+        return isset($item->id) && $item->id == ($kunjungan->keperluan_id ?? null);
+    });
+
+    // Mengambil nama layanan dari kolom 'keterangan' milik master_keperluan
+    $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
+
+    // Mengambil detail tambahan dari kolom 'keperluan' milik sheet kunjungan ("1 bulan", "SP 4", dll)
+    $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
+
+    // 4. Ambil data prodi terkait
+    $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
+        return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
+    });
+    $kunjungan->nama_prodi = $prodiData->nama_prodi ?? $prodiData->prodi ?? null;
+
+    try {
+        Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
+
+        $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
+        return back()->with('success', 'Email berhasil diteruskan.');
+
+    } catch (\Exception $e) {
+        return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+    }
+}
 
     // =========================================================================
     // CONTROL PANEL SETTINGS
     // =========================================================================
-
-    public function controlPanel()
+public function controlPanel()
     {
         $user = $this->getSessionUser();
         if (!$user || $user->role_id != 1) return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
 
-        $db = $this->readMultipleSheets(['master_user', 'master_keperluan']);
+        // Membaca seluruh sheet master dari Google Sheets
+        $db = $this->readMultipleSheets(['master_user', 'master_keperluan', 'master_role', 'master_prodi_instansi']);
+
+        // Membuat peta referensi (Key-Value) untuk Role dan Prodi berbasis ID agar mapping cepat
+        $rolesMap = collect($db['master_role'])->keyBy('id')->toArray();
+        $prodiMap = collect($db['master_prodi_instansi'])->keyBy('id')->toArray();
+
+        // Gabungkan teks nama_role dan nama_prodi ke dalam data user
+        $mappedUsers = collect($db['master_user'])->map(function ($u) use ($rolesMap, $prodiMap) {
+            $roleId = data_get($u, 'role_id');
+            $prodiId = data_get($u, 'prodi_id');
+
+            // 1. Suntikkan teks Role
+            $u->nama_role = isset($rolesMap[$roleId]) ? data_get($rolesMap[$roleId], 'nama_role') : 'Tanpa Role';
+            
+            // 2. Suntikkan teks Prodi (Cerdas: Cek apakah prodi_id berupa ID Angka atau Teks Lama)
+            if (isset($prodiMap[$prodiId])) {
+                // Jika berupa ID angka yang cocok dengan master_prodi
+                $u->nama_prodi = data_get($prodiMap[$prodiId], 'nama');
+            } else {
+                // Jika berupa teks nama langsung (untuk data lama Anda seperti 'Teknik Informatika') atau kosong
+                $u->nama_prodi = $prodiId ?: null;
+            }
+            
+            return $u;
+        })->toArray();
 
         return view('dashboard.control_panel', [
             'user' => $user,
             'judul_dashboard' => 'Sistem Control Panel',
-            'data_users' => $db['master_user'],
-            'data_keperluan' => $db['master_keperluan']
+            'data_users' => $mappedUsers,
+            'data_keperluan' => $db['master_keperluan'],
+            'rolesRaw' => $db['master_role'],
+            'prodiRaw' => $db['master_prodi_instansi'] // Dikirim untuk modal dropdown
         ]);
+    }
+
+    // =========================================================================
+    // CRUD MANAGEMENT USER (MENYIMPAN ID ANGKA KE SPREADSHEET)
+    // =========================================================================
+
+    public function storeUser(Request $request)
+    {
+        $user = $this->getSessionUser();
+        if (!$user || $user->role_id != 1) return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
+
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email',
+            'password' => 'required|min:6',
+            'role_id'  => 'required',
+            'prodi_id' => 'nullable' // Menerima ID angka prodi
+        ]);
+
+        $usersRaw = $this->readSheet('master_user');
+        $usersCollection = collect($usersRaw);
+
+        if ($usersCollection->contains('email', $request->email)) {
+            return back()->withErrors(['email' => 'Email ini sudah terdaftar di Spreadsheet.'])->withInput();
+        }
+
+        $lastId = $usersCollection->max('id') ?? 0;
+        $newId = $lastId + 1;
+
+        $payload = [
+            'id'         => $newId,
+            'role_id'    => $request->role_id,
+            'prodi_id'   => $request->prodi_id ?? '', // ID angka tersimpan di sini
+            'name'       => $request->name,
+            'email'      => $request->email,
+            'password'   => $request->password, 
+            'foto'       => '',
+            'created_at' => now()->format('Y-m-d H:i:s'),
+            'updated_at' => now()->format('Y-m-d H:i:s')
+        ];
+
+        $this->createSheet('master_user', $payload);
+
+        return back()->with('success', 'User baru berhasil didaftarkan ke Google Sheets.');
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = $this->getSessionUser();
+        if (!$user || $user->role_id != 1) return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
+
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email',
+            'role_id'  => 'required',
+            'prodi_id' => 'nullable' // Menerima ID angka prodi
+        ]);
+
+        $usersRaw = $this->readSheet('master_user');
+        $usersCollection = collect($usersRaw);
+        
+        $emailTerpakai = $usersCollection->where('email', $request->email)->where('id', '!=', $id)->first();
+        if ($emailTerpakai) {
+            return back()->withErrors(['email' => 'Email ini sudah digunakan oleh user lain.'])->withInput();
+        }
+
+        $existingUser = $usersCollection->where('id', $id)->first();
+
+        if ($existingUser) {
+            $password = $request->filled('password') ? $request->password : (data_get($existingUser, 'password') ?? '');
+
+            $payload = [
+                'role_id'    => $request->role_id,
+                'prodi_id'   => $request->prodi_id ?? '', // Update ID angka ke baris lama
+                'name'       => $request->name,
+                'email'      => $request->email,
+                'password'   => $password,
+                'foto'       => data_get($existingUser, 'foto') ?? '',
+                'created_at' => data_get($existingUser, 'created_at') ?? now()->format('Y-m-d H:i:s'),
+                'updated_at' => now()->format('Y-m-d H:i:s')
+            ];
+
+            $this->updateSheet('master_user', $id, $payload);
+
+            return back()->with('success', 'Data user di Google Sheets berhasil diperbarui.');
+        }
+
+        return back()->with('error', 'User tidak ditemukan di Google Sheets.');
     }
 
     public function destroyKeperluan($id)
@@ -1333,28 +1532,14 @@ public function manajemenAntrean(Request $request)
         return back()->with('success', 'Keperluan baru berhasil ditambahkan.');
     }
 
-    public function storeUser(Request $request)
+    public function destroyUser($id)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-            'role_id' => 'required'
-        ]);
+        $user = $this->getSessionUser();
+        if (!$user || $user->role_id != 1) return redirect()->route('dashboard')->with('error', 'Akses Ditolak');
 
-        $users = $this->readSheet('master_user');
-        if ($users->contains('email', $request->email)) {
-            return back()->withErrors(['email' => 'Email ini sudah terdaftar.'])->withInput();
-        }
+        $this->deleteSheet('master_user', $id);
 
-        $this->createSheet('master_user', [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
-        ]);
-
-        return back()->with('success', 'User baru berhasil didaftarkan.');
+        return back()->with('success', 'User berhasil dihapus dari Google Sheets.');
     }
 
     public function tanggapanPimpinan(Request $request, $id)

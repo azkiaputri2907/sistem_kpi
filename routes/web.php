@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PimpinanKonfirmasiController;
+use App\Http\Controllers\ControlPanelController;
+
 
 
 use App\Http\Middleware\CekSessionLogin;
@@ -112,5 +114,9 @@ Route::middleware([CekSessionLogin::class])->group(function () {
     Route::post('/dashboard/keperluan', [DashboardController::class, 'storeKeperluan'])->name('keperluan.store');
     Route::delete('/dashboard/keperluan/{id}', [DashboardController::class, 'destroyKeperluan'])->name('keperluan.destroy');
     Route::post('/dashboard/users', [DashboardController::class, 'storeUser'])->name('users.store');
-
+    // Pastikan dibungkus di dalam middleware session login Anda jika ada
+    Route::get('/control-panel', [DashboardController::class, 'controlPanel'])->name('control-panel');
+    Route::post('/control-panel/user/store', [DashboardController::class, 'storeUser'])->name('control-panel.user.store');
+Route::put('/dashboard/control-panel/user/update/{id}', [DashboardController::class, 'updateUser'])->name('control-panel.user.update');
+    Route::delete('/control-panel/user/delete/{id}', [DashboardController::class, 'destroyUser'])->name('control-panel.user.destroy');
 });
