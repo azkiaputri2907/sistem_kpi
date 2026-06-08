@@ -769,6 +769,9 @@ public function laporan(Request $request)
     $startDate = $request->input('start_date');
     $endDate = $request->input('end_date');
 
+    $start = null;
+    $end = null;
+    
     // Filter Tanggal Utama (Carbon)
     if ($startDate && $endDate) {
         $start = Carbon::parse($startDate)->startOfDay();
