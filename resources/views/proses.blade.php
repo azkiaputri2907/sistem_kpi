@@ -68,12 +68,25 @@
                     @endif
                 </div>
 
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 uppercase break-words px-2">{{ $kunjungan->status_layanan }}</h1>
-                <p class="text-white/70 text-[11px] font-bold mb-4 sm:mb-6 tracking-wide">Harap simpan nomor antrean ini untuk terus memantau perkembangan, progres, atau status terkini terkait urusan layanan yang sedang diproses.</p>
+                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 uppercase break-words px-2">
+    {{ $kunjungan->status_layanan }}
+</h1>
+<p class="text-white/70 text-[11px] font-bold mb-4 sm:mb-6 tracking-wide">
+    Harap simpan nomor antrean ini untuk terus memantau perkembangan, progres, atau status terkini terkait urusan layanan yang sedang diproses.
+</p>
 
-                <div class="bg-white/10 backdrop-blur-md py-3 sm:py-4 px-2 rounded-2xl sm:rounded-3xl border border-white/20">
-                    <p class="text-4xl sm:text-[3.5rem] font-black tracking-tighter leading-none mb-1 break-all">{{ $kunjungan->nomor_kunjungan }}</p>
-                </div>
+<div class="relative bg-white/10 backdrop-blur-md py-3 sm:py-4 px-2 rounded-2xl sm:rounded-3xl border border-white/20 cursor-pointer transition-all hover:bg-white/15 active:scale-95 group"
+     onclick="salinNomorAntrean('{{ $kunjungan->nomor_kunjungan }}')"
+     title="Klik untuk menyalin nomor antrean">
+    
+    <p class="text-4xl sm:text-[3.5rem] font-black tracking-tighter leading-none mb-1 break-all select-none">
+        {{ $kunjungan->nomor_kunjungan }}
+    </p>
+    
+    <span id="notif-salin" class="absolute left-1/2 -translate-x-1/2 -bottom-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md opacity-0 transition-all duration-300 pointer-events-none transform translate-y-1">
+        ✓ Tersalin
+    </span>
+</div>
 
                 {{-- INFO ESTIMASI SLA --}}
                 @if($kunjungan->status_layanan == 'Diproses' && $kunjungan->estimasi_sla)
@@ -369,5 +382,24 @@
             updateIcons();
         });
     </script>
+    <script>
+function salinNomorAntrean(teks) {
+    navigator.clipboard.writeText(teks).then(() => {
+        const notif = document.getElementById('notif-salin');
+        
+        // Memunculkan notifikasi dengan efek transisi ke atas
+        notif.classList.remove('opacity-0', 'translate-y-1');
+        notif.classList.add('opacity-100', 'translate-y-0');
+        
+        // Menyembunyikan kembali notifikasi setelah 2 detik
+        setTimeout(() => {
+            notif.classList.remove('opacity-100', 'translate-y-0');
+            notif.classList.add('opacity-0', 'translate-y-1');
+        }, 2000);
+    }).catch(err => {
+        console.error('Gagal menyalin nomor antrean: ', err);
+    });
+}
+</script>
 </body>
 </html>
