@@ -385,20 +385,33 @@
     {{-- MODAL EMAIL PIMPINAN --}}
     <div id="modalEmailPimpinan" class="fixed inset-0 z-[100] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-up transition-colors duration-300">
-            <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
-                <h3 class="text-lg font-black text-gray-800 dark:text-white">Teruskan ke Pimpinan</h3>
-                <button type="button" id="btnCloseXEmail" onclick="tutupModalEmail()" class="text-gray-400 dark:text-gray-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-start bg-gray-50/50 dark:bg-gray-800/50 gap-4">
+                {{-- Kumpulan judul dan deskripsi dibungkus agar menumpuk ke bawah dengan rapi --}}
+                <div class="flex-1">
+                    <h3 class="text-lg font-black text-gray-800 dark:text-white">Kirim Email ke Pimpinan</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        <span class="text-amber-500 font-semibold dark:text-amber-400">Penting:</span> Admin wajib mengirimkan email verifikasi ini untuk mengonfirmasi kepada Pimpinan bahwa ada data antrean baru yang memerlukan persetujuan atau tindak lanjut.
+                    </p>
+                </div>
+                
+                {{-- Tombol Tutup Silang di posisi kanan atas --}}
+                <button type="button" id="btnCloseXEmail" onclick="tutupModalEmail()" class="text-gray-400 dark:text-gray-300 hover:text-rose-500 dark:hover:text-rose-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-1 shrink-0">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
+
             <form id="formEmail" action="{{ route('kunjungan.kirim-email') }}" method="POST" class="p-6" onsubmit="handleModalLoading(event, 'formEmail', 'btnSubmitEmail', 'btnBatalEmail', 'btnCloseXEmail')">
                 @csrf
                 <input type="hidden" name="kunjungan_id" id="modal_kunjungan_id">
+                
+                {{-- Box Ringkasan Informasi Kunjungan --}}
                 <div class="mb-5 bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/50">
                     <p class="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-widest mb-1">Informasi Kunjungan</p>
                     <p class="font-bold text-gray-800 dark:text-gray-200 text-sm" id="modal_nama_pengunjung"></p>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 italic" id="modal_keperluan_pengunjung"></p>
                 </div>
+
+                {{-- Input Field Email Tujuan --}}
                 <div class="mb-6">
                     <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-2 uppercase tracking-widest">Email Pimpinan</label>
                     <div class="relative">
@@ -406,6 +419,8 @@
                         <input type="email" name="email_pimpinan" id="email_pimpinan" required placeholder="pimpinan@poliban.ac.id" class="w-full pl-10 pr-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 outline-none">
                     </div>
                 </div>
+
+                {{-- Tombol Aksi --}}
                 <div class="flex justify-end gap-3">
                     <button type="button" id="btnBatalEmail" onclick="tutupModalEmail()" class="px-5 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">Batal</button>
                     <button type="submit" id="btnSubmitEmail" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 rounded-xl shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -432,6 +447,11 @@
             <form id="formForwardPimpinan" action="{{ route('kunjungan.kirim-massal') }}" method="POST" class="p-6">
                 @csrf
                 <input type="hidden" name="ids[]" id="forward_kunjungan_id">
+                
+                {{-- TAMBAHKAN DUA LINE BARU INI --}}
+                <input type="hidden" name="nama_pengunjung" id="forward_nama_hidden">
+                <input type="hidden" name="keperluan_pengunjung" id="forward_keperluan_hidden">
+
                 <div class="mb-6">
                     <div class="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 rounded-2xl p-4">
                         <p class="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400 mb-1">Pengunjung</p>
@@ -628,22 +648,36 @@
         document.getElementById('formUploadSelesai').action = `/dashboard/upload-file/${id}`;
         document.getElementById('modalUploadFile').classList.remove('hidden');
     }
-    document.addEventListener("DOMContentLoaded", function () {
-        const inputFile = document.getElementById('inputFileSurat');
-        const btnSubmitUpload = document.getElementById('btnSubmitUpload');
+document.addEventListener("DOMContentLoaded", function () {
+    const inputFile = document.getElementById('inputFileSurat');
+    const btnSubmitUpload = document.getElementById('btnSubmitUpload');
 
-        if (inputFile && btnSubmitUpload) {
-            inputFile.addEventListener('change', function () {
-                // Jika ada file yang dipilih, hapus class hidden (Tampilkan tombol)
-                if (this.files && this.files.length > 0) {
-                    btnSubmitUpload.classList.remove('hidden');
-                } else {
-                    // Jika tidak ada file yang dipilih, tambahkan class hidden (Sembunyikan tombol)
-                    btnSubmitUpload.classList.add('hidden');
-                }
-            });
+    if (inputFile && btnSubmitUpload) {
+        inputFile.addEventListener('change', function () {
+            // Jika ada file yang dipilih, hapus class hidden (Tampilkan tombol)
+            if (this.files && this.files.length > 0) {
+                btnSubmitUpload.classList.remove('hidden');
+            } else {
+                // Jika tidak ada file yang dipilih, tambahkan class hidden (Sembunyikan tombol)
+                btnSubmitUpload.classList.add('hidden');
+            }
+        });
+    }
+
+    // AMBIL BLOK FLASH SESSION DARI LARAVEL SINKRONISASI OTOMATIS
+    @if(session('trigger_email_modal'))
+        const targetId = "{{ session('email_kunjungan_id') }}";
+        const targetNama = "{{ session('email_nama') }}";
+        
+        // UPDATE: Menggunakan json_encode agar aman dari string rusak, tanda petik ganda, maupun baris baru (Enter)
+        const targetKeperluan = {!! json_encode(session('email_keperluan')) !!};
+
+        // Tembakkan langsung ke modal email bawaan Anda tanpa intervensi user
+        if (typeof bukaModalEmail === 'function' && targetId) {
+            bukaModalEmail(targetId, targetNama, targetKeperluan);
         }
-    });
+    @endif
+});
 
     // Sesuaikan fungsi tutup modal bawaan Anda agar mereset form & menyembunyikan kembali tombol
     function tutupModalUpload() {
@@ -659,9 +693,18 @@
     // ==========================================
     // MODAL FORWARD PIMPINAN
     // ==========================================
-    function bukaModalForward(id, nama) {
+    function bukaModalForward(id, nama, keperluan) {
         document.getElementById('forward_kunjungan_id').value = id;
         document.getElementById('forward_nama_pengunjung').innerText = nama;
+        
+        // ISI VALUE DATA HIDDEN AGAR IKUT TERKIRIM SAAT SUBMIT
+        if(document.getElementById('forward_nama_hidden')) {
+            document.getElementById('forward_nama_hidden').value = nama;
+        }
+        if(document.getElementById('forward_keperluan_hidden')) {
+            document.getElementById('forward_keperluan_hidden').value = keperluan || '';
+        }
+        
         document.getElementById('modalForwardPimpinan').classList.remove('hidden');
     }
 

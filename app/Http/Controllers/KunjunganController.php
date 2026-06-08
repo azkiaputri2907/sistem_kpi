@@ -308,29 +308,41 @@ class KunjunganController extends Controller
         return back()->with('success', 'Terima kasih atas ulasan Anda!');
     }
 
-    public function kirimMassal(Request $request)
-    {
-        $ids = $request->ids;
-        $tujuan = $request->tujuan_pimpinan;
+public function kirimMassal(Request $request)
+{
+    $ids = $request->ids;
+    $tujuan = $request->tujuan_pimpinan;
 
-        if (empty($ids)) {
-            return back()->with('error', 'Tidak ada data yang dipilih.');
-        }
-
-        $statusTujuan = $tujuan == 'kajur' ? 'Menunggu Kajur' : 'Menunggu Kaprodi';
-
-        // Google Spreadsheet tidak mendukung bulk update, kita harus loop satu-satu
-        foreach ($ids as $id) {
-            $this->updateSheet('kunjungan', $id, [
-                'is_forwarded'    => 1,
-                'tujuan_pimpinan' => $tujuan,
-                'status_pimpinan' => $statusTujuan
-            ]);
-        }
-
-        $namaTujuan = $tujuan == 'kajur' ? 'Kajur' : 'Kaprodi';
-        return back()->with('success', count($ids) . " data berhasil diteruskan ke $namaTujuan.");
+    if (empty($ids)) {
+        return back()->with('error', 'Tidak ada data yang dipilih.');
     }
+
+    $statusTujuan = $tujuan == 'kajur' ? 'Menunggu Kajur' : 'Menunggu Kaprodi';
+
+    // Google Spreadsheet tidak mendukung bulk update, kita harus loop satu-satu
+    foreach ($ids as $id) {
+        $this->updateSheet('kunjungan', $id, [
+            'is_forwarded'    => 1,
+            'tujuan_pimpinan' => $tujuan,
+            'status_pimpinan' => $statusTujuan
+        ]);
+    }
+
+    $namaTujuan = $tujuan == 'kajur' ? 'Kajur' : 'Kaprodi';
+    
+    // Ambil ID pertama dari array ids karena alur otomatis ini dipicu dari tombol baris tunggal
+    $kunjunganId = $ids[0] ?? null; 
+
+    // Kembalikan back dengan tambahan data Flash Session untuk memicu modal email di JavaScript
+    return back()->with([
+        'success' => count($ids) . " data berhasil diteruskan ke $namaTujuan.",
+        'trigger_email_modal' => true,
+        'email_kunjungan_id'  => $kunjunganId,
+        'email_nama'          => $request->input('nama_pengunjung', 'Umum'),
+        'email_keperluan'     => $request->input('keperluan_pengunjung', '-')
+    ]);
+}
+
     public function cekPengunjung($identitas)
     {
         $pengunjungList = $this->readSheet('pengunjung');
