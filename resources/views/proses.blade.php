@@ -69,7 +69,7 @@
                 </div>
 
                 <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 uppercase break-words px-2">{{ $kunjungan->status_layanan }}</h1>
-                <p class="text-white/70 text-[11px] font-medium mb-4 sm:mb-6 tracking-wide">Nomor Antrean Anda</p>
+                <p class="text-white/70 text-[11px] font-bold mb-4 sm:mb-6 tracking-wide">Harap simpan nomor antrean ini untuk terus memantau perkembangan, progres, atau status terkini terkait urusan layanan yang sedang diproses.</p>
 
                 <div class="bg-white/10 backdrop-blur-md py-3 sm:py-4 px-2 rounded-2xl sm:rounded-3xl border border-white/20">
                     <p class="text-4xl sm:text-[3.5rem] font-black tracking-tighter leading-none mb-1 break-all">{{ $kunjungan->nomor_kunjungan }}</p>
@@ -277,11 +277,11 @@
                         <span class="font-black uppercase tracking-widest text-[11px] sm:text-xs">Layanan Sedang Diproses</span>
                     </div>
                 </div>
-                {{-- PERBAIKAN: Menambahkan tombol kembali ke beranda saat status sedang diproses --}}
+                {{-- PERBAIKAN: Menambahkan tombol kembali ke beranda saat status sedang diproses
                 <a href="{{ url('/') }}" class="w-full flex items-center justify-center py-4 bg-[#0b3a82] dark:bg-slate-800 text-white font-extrabold rounded-2xl sm:rounded-3xl shadow-xl hover:bg-[#072a63] dark:hover:bg-slate-700 transition-all gap-3 text-sm">
                     <i class="fa-solid fa-house"></i>
                     <span>Kembali ke Beranda</span>
-                </a>
+                </a> --}}
 
             @elseif($kunjungan->status_layanan == 'Ditolak')
                 <div class="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-2xl sm:rounded-3xl p-5 text-center">
