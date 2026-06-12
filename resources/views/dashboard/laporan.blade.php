@@ -124,16 +124,13 @@
         </div>
     </div>
 
-{{-- GRAFIK KINERJA LAYANAN --}}
-    <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm transition-colors duration-300">
-        <div class="mb-6">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Perbandingan Kinerja Layanan</h3>
-            <p class="text-slate-500 dark:text-slate-400 text-sm">Jumlah layanan didistribusikan per hari, dibagi berdasarkan program studi utama.</p>
-        </div>
-        <div class="relative h-64 sm:h-72 w-full">
-            <canvas id="kinerjaChart"></canvas>
-        </div>
+{{-- Bar Chart Bawah --}}
+<div class="bg-white dark:bg-slate-800 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-50 dark:border-slate-700/50 shadow-sm transition-colors mb-6">
+    <h3 class="text-xl font-black text-gray-800 dark:text-white tracking-tight mb-6 md:mb-10">Distribusi Kunjungan per Keperluan</h3>
+    <div class="h-[300px] md:h-[350px] w-full">
+        <canvas id="keperluanChart"></canvas>
     </div>
+</div>
 
 </div>
 
@@ -393,59 +390,41 @@ function handleSelectProdiLoading(selectElement) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const ctx = document.getElementById('kinerjaChart').getContext('2d');
-
-        // Memuat data array label hari dan daftar dataset prodi langsung dari Controller
-        const chartLabels = {!! json_encode($labels) !!};
-        const chartDatasets = {!! json_encode($chartDatasets) !!};
-
-        // Deteksi mode gelap untuk penyesuaian warna teks grid grafik
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const textColor = isDarkMode ? '#94a3b8' : '#64748b';
-        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
-
-        new Chart(ctx, {
-            type: 'bar', // Menggunakan tipe Bar Chart Grouped/Side-by-Side
+        // ==========================================
+        // CHART DISTRIBUSI KEPERLUAN (BAR)
+        // ==========================================
+        const ctxKep = document.getElementById('keperluanChart').getContext('2d');
+        new Chart(ctxKep, {
+            type: 'bar',
             data: {
-                labels: chartLabels,
-                datasets: chartDatasets
+                labels: {!! json_encode($distribusi_label) !!},
+                datasets: [{
+                    data: {!! json_encode($distribusi_data) !!},
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 12,
+                    maxBarThickness: 45,
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom', // Posisi legend di bawah sesuai dengan mockup gambar Anda
-                        labels: {
-                            color: textColor,
-                            font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
-                            boxWidth: 10,
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            padding: 20
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        grid: { 
+                            color: document.documentElement.classList.contains('dark') ? '#334155' : '#f1f5f9', 
+                            drawBorder: false 
+                        },
+                        ticks: { 
+                            color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#64748b', 
+                            font: { size: 10, weight: '600' } 
                         }
                     },
-                    tooltip: {
-                        padding: 12,
-                        backgroundColor: isDarkMode ? '#1e293b' : '#0f172a',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        cornerRadius: 8
-                    }
-                },
-                scales: {
                     x: {
-                        stacked: false, // Diubah menjadi false agar bar tampil berdampingan per prodi
                         grid: { display: false },
-                        ticks: { color: textColor, font: { size: 11 } }
-                    },
-                    y: {
-                        stacked: false, // Diubah menjadi false
-                        grid: { color: gridColor },
                         ticks: { 
-                            color: textColor, 
-                            font: { size: 11 },
-                            stepSize: 1
+                            color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#cbd5e1', 
+                            font: { size: 10, weight: '700' } 
                         }
                     }
                 }

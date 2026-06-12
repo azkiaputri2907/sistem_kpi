@@ -145,7 +145,6 @@
 
         {{-- Legenda Skor Kepuasan --}}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mt-6 md:mt-8 w-full">
-            {{-- Sangat Puas --}}
             <div class="flex flex-col items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-700/30 sm:bg-transparent sm:dark:bg-transparent">
                 <div class="flex items-center gap-1.5 mb-1">
                     <div class="w-2 h-2 rounded-full bg-indigo-600"></div>
@@ -154,7 +153,6 @@
                 <div class="font-black text-gray-700 dark:text-gray-200">{{ $skor_kepuasan['sangat_puas'] }}</div>
             </div>
 
-            {{-- Puas --}}
             <div class="flex flex-col items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-700/30 sm:bg-transparent sm:dark:bg-transparent sm:border-l sm:border-gray-100 sm:dark:border-slate-700">
                 <div class="flex items-center gap-1.5 mb-1">
                     <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
@@ -163,7 +161,6 @@
                 <div class="font-black text-gray-700 dark:text-gray-200">{{ $skor_kepuasan['puas'] }}</div>
             </div>
 
-            {{-- Kurang Puas --}}
             <div class="flex flex-col items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-700/30 sm:bg-transparent sm:dark:bg-transparent sm:border-l sm:border-gray-100 sm:dark:border-slate-700">
                 <div class="flex items-center gap-1.5 mb-1">
                     <div class="w-2 h-2 rounded-full bg-amber-400"></div>
@@ -172,7 +169,6 @@
                 <div class="font-black text-gray-700 dark:text-gray-200">{{ $skor_kepuasan['kurang_puas'] }}</div>
             </div>
 
-            {{-- Tidak Puas --}}
             <div class="flex flex-col items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-700/30 sm:bg-transparent sm:dark:bg-transparent sm:border-l sm:border-gray-100 sm:dark:border-slate-700">
                 <div class="flex items-center gap-1.5 mb-1">
                     <div class="w-2 h-2 rounded-full bg-rose-500"></div>
@@ -184,11 +180,19 @@
     </div>
 </div>
 
-{{-- Bar Chart Bawah --}}
-<div class="bg-white dark:bg-slate-800 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-50 dark:border-slate-700/50 shadow-sm transition-colors mb-6">
-    <h3 class="text-xl font-black text-gray-800 dark:text-white tracking-tight mb-6 md:mb-10">Distribusi Kunjungan per Keperluan</h3>
-    <div class="h-[300px] md:h-[350px] w-full">
-        <canvas id="keperluanChart"></canvas>
+{{-- GRAFIK KINERJA LAYANAN --}}
+<div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm transition-colors duration-300">
+    <div class="mb-6">
+        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Analisis Kinerja Layanan Mingguan</h3>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">
+            Menampilkan data performa pelayanan dari tanggal 
+            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse($startDate ?? now())->startOfWeek(1)->format('d M Y') }}</span> 
+            s.d 
+            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse($startDate ?? now())->endOfWeek(5)->format('d M Y') }}</span>.
+        </p>
+    </div>
+    <div class="relative h-64 sm:h-72 w-full">
+        <canvas id="kinerjaChart"></canvas>
     </div>
 </div>
 
@@ -305,38 +309,6 @@ document.addEventListener("DOMContentLoaded", function() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } }
-        }
-    });
-
-    // ==========================================
-    // 2. CHART DISTRIBUSI (BAR)
-    // ==========================================
-    const ctxKep = document.getElementById('keperluanChart').getContext('2d');
-    new Chart(ctxKep, {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($distribusi_label) !!},
-            datasets: [{
-                data: {!! json_encode($distribusi_data) !!},
-                backgroundColor: '#3b82f6',
-                borderRadius: 12,
-                maxBarThickness: 45,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    grid: { color: gridColor, drawBorder: false },
-                    ticks: { color: textColorSecondary, font: { size: 10, weight: '600' } }
-                },
-                x: {
-                    grid: { display: false },
-                    ticks: { color: textColorPrimary, font: { size: 10, weight: '700' } }
-                }
-            }
         }
     });
 
@@ -515,5 +487,122 @@ function downloadLaporan(type) {
         isModalOpen = false; // Auto refresh aktif kembali normal
     }, 15000);
 }
+</script>
+{{-- SCRIPT RENDERING CHART --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('kinerjaChart').getContext('2d');
+
+        const chartLabels = {!! json_encode($labels) !!}; 
+        let chartDatasets = {!! json_encode($chartDatasets) !!};
+
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#94a3b8' : '#64748b';
+        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
+
+        // PEWARNAAN DINAMIS SESUAI PREDIKAT TABEL 3.5 ACUAN RIIL
+        chartDatasets = chartDatasets.map(function(dataset) {
+            const dynamicColors = dataset.data.map(function(nilai) {
+                if (nilai >= 90) {
+                    return '#3b82f6'; // bg-blue-500 (Sangat Baik)
+                } else if (nilai >= 76) {
+                    return '#10b981'; // bg-emerald-500 (Baik)
+                } else if (nilai >= 60) {
+                    return '#f59e0b'; // bg-amber-500 (Cukup)
+                } else if (nilai > 0) {
+                    return '#ef4444'; // bg-red-500 (Kurang)
+                } else {
+                    return '#6b7280'; // bg-gray-500 (N/A / Tidak Ada Layanan)
+                }
+            });
+
+            const dynamicBorders = dataset.data.map(function(nilai) {
+                if (nilai >= 90) {
+                    return '#2563eb';
+                } else if (nilai >= 76) {
+                    return '#059669';
+                } else if (nilai >= 60) {
+                    return '#d97706';
+                } else if (nilai > 0) {
+                    return '#dc2626';
+                } else {
+                    return '#4b5563';
+                }
+            });
+
+            dataset.backgroundColor = dynamicColors;
+            dataset.borderColor = dynamicBorders;
+            dataset.borderWidth = 1;
+            dataset.borderRadius = 6; 
+
+            return dataset;
+        });
+
+        new Chart(ctx, {
+            type: 'bar', 
+            data: {
+                labels: chartLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom', 
+                        labels: {
+                            color: textColor,
+                            font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
+                            boxWidth: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        backgroundColor: isDarkMode ? '#1e293b' : '#0f172a',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.raw !== null) {
+                                    label += context.raw + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false, 
+                        grid: { display: false },
+                        ticks: { color: textColor, font: { size: 11 } }
+                    },
+                    y: {
+                        stacked: false,
+                        grid: { color: gridColor },
+                        min: 0,
+                        max: 100, // Batasi sumbu Y maksimal 100%
+                        ticks: { 
+                            color: textColor, 
+                            font: { size: 11 },
+                            // Menghilangkan fungsi stepSize lama untuk mencegah penumpukan teks angka
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
 </script>
 @endpush

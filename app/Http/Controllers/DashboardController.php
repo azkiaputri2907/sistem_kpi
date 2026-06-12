@@ -452,8 +452,10 @@ public function analytics()
         return redirect('/login');
     }
 
+    // 1. Ditambahkan sheet 'pengunjung' karena diperlukan oleh kalkulasi Grafik Kinerja
     $db = $this->readMultipleSheets([
         'kunjungan',
+        'pengunjung', 
         'survey',
         'detail_survey',
         'master_keperluan',
@@ -474,155 +476,98 @@ public function analytics()
 
     // FILTER PRODI
     if (request()->filled('prodi_id')) {
-
         $kunjunganData = $kunjunganData
             ->where('prodi_id', request('prodi_id'))
             ->values();
     }
 
-    // =========================
-    // SKOR KEPUASAN
-    // =========================
+    // ==========================================
+    // SKOR KEPUASAN (Fungsi Asli Dipertahankan)
+    // ==========================================
     $sangatPuas = 0;
     $puas = 0;
     $kurangPuas = 0;
     $tidakPuas = 0;
-
     $totalCount = 0;
 
     foreach ($kunjunganData as $k) {
-
-        $surv = $db['survey']
-            ->firstWhere('kunjungan_id', $k->id);
+        $surv = $db['survey']->firstWhere('kunjungan_id', $k->id);
 
         if ($surv) {
-
-            $detail = $db['detail_survey']
-                ->firstWhere('survey_id', $surv->id);
+            $detail = $db['detail_survey']->firstWhere('survey_id', $surv->id);
 
             if ($detail) {
-
-                $skorY =
-                    (
-                        $detail->p1 +
-                        $detail->p2 +
-                        $detail->p3 +
-                        $detail->p4 +
-                        $detail->p5
-                    ) * 4;
+                $skorY = ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5) * 4;
 
                 if ($skorY >= 81) {
-
                     $sangatPuas++;
-
                 } elseif ($skorY >= 61) {
-
                     $puas++;
-
                 } elseif ($skorY >= 41) {
-
                     $kurangPuas++;
-
                 } else {
-
                     $tidakPuas++;
                 }
-
                 $totalCount++;
             }
         }
     }
 
     $totalPositif = $sangatPuas + $puas;
-
-    $persentasePuas = $totalCount > 0
-        ? round(($totalPositif / $totalCount) * 100)
-        : 0;
-
+    $persentasePuas = $totalCount > 0 ? round(($totalPositif / $totalCount) * 100) : 0;
     $is_na = ($totalCount == 0);
 
-    // =========================
-    // GRAFIK SLA
-    // =========================
-    $tujuhHariLalu = Carbon::today()
-        ->subDays(6)
-        ->startOfDay();
+    // ==========================================
+    // GRAFIK SLA (Fungsi Asli Dipertahankan)
+    // ==========================================
+    $tujuhHariLalu = Carbon::today()->subDays(6)->startOfDay();
 
-    $kunjunganSla = $kunjunganData
-        ->filter(function ($k) use ($tujuhHariLalu) {
-
-            return !empty($k->status_sla)
-                && Carbon::parse($k->created_at)
-                    ->gte($tujuhHariLalu);
-        });
+    $kunjunganSla = $kunjunganData->filter(function ($k) use ($tujuhHariLalu) {
+        return !empty($k->status_sla) && Carbon::parse($k->created_at)->gte($tujuhHariLalu);
+    });
 
     $label_sla = [];
     $data_tepat_waktu = [];
     $data_terlambat = [];
 
     for ($i = 0; $i < 7; $i++) {
-
-        $dateObj = Carbon::today()
-            ->subDays(6 - $i);
-
+        $dateObj = Carbon::today()->subDays(6 - $i);
         $dateStr = $dateObj->format('Y-m-d');
-
         $label_sla[] = $dateObj->format('d M');
 
-        $data_tepat_waktu[] = $kunjunganSla
-            ->filter(function ($k) use ($dateStr) {
+        $data_tepat_waktu[] = $kunjunganSla->filter(function ($k) use ($dateStr) {
+            return Carbon::parse($k->created_at)->format('Y-m-d') == $dateStr
+                && strtoupper($k->status_sla) == 'TEPAT WAKTU';
+        })->count();
 
-                return Carbon::parse($k->created_at)
-                    ->format('Y-m-d') == $dateStr
-                    &&
-                    strtoupper($k->status_sla)
-                    == 'TEPAT WAKTU';
-            })
-            ->count();
-
-        $data_terlambat[] = $kunjunganSla
-            ->filter(function ($k) use ($dateStr) {
-
-                return Carbon::parse($k->created_at)
-                    ->format('Y-m-d') == $dateStr
-                    &&
-                    strtoupper($k->status_sla)
-                    == 'TERLAMBAT';
-            })
-            ->count();
+        $data_terlambat[] = $kunjunganSla->filter(function ($k) use ($dateStr) {
+            return Carbon::parse($k->created_at)->format('Y-m-d') == $dateStr
+                && strtoupper($k->status_sla) == 'TERLAMBAT';
+        })->count();
     }
 
-    // =========================
-    // DISTRIBUSI KEPERLUAN
-    // =========================
+    // ==========================================
+    // DISTRIBUSI KEPERLUAN (Fungsi Asli Dipertahankan)
+    // ==========================================
     $distribusiLabel = [];
     $distribusiData = [];
 
-    $groupedKeperluan = $kunjunganData
-        ->groupBy('keperluan_id');
+    $groupedKeperluan = $kunjunganData->groupBy('keperluan_id');
 
     foreach ($groupedKeperluan as $kep_id => $items) {
-
-        $master = $db['master_keperluan']
-            ->firstWhere('id', $kep_id);
+        $master = $db['master_keperluan']->firstWhere('id', $kep_id);
 
         if ($master) {
-
-            $distribusiLabel[] =
-                $master->keterangan;
-
-            $distribusiData[] =
-                $items->count();
+            $distribusiLabel[] = $master->keterangan;
+            $distribusiData[] = $items->count();
         }
     }
-    // =========================================================
-    // PERHITUNGAN TAMBAHAN UNTUK CARD STATISTIK ANALYTICS
-    // =========================================================
 
-    // 1. Total Kunjungan (berdasarkan filter prodi yang aktif)
+    // ==========================================
+    // CARD STATISTIK ANALYTICS (Fungsi Asli Dipertahankan)
+    // ==========================================
     $totalKunjunganCard = $kunjunganData->count();
 
-    // 2. Efektivitas SLA Card (Menghitung persentase performa ketepatan waktu)
     $jumlahTepatWaktuCard = $kunjunganData->filter(function($item) {
         return strtoupper(trim($item->status_sla ?? '')) == 'TEPAT WAKTU';
     })->count();
@@ -635,7 +580,6 @@ public function analytics()
         return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
     })->count();
 
-    // Rumus bobot performa SLA: Tepat Waktu (100%), Terlambat (50%), Ditolak (0%)
     $nilaiEfektivitasCard = ($jumlahTepatWaktuCard * 1) + ($jumlahTerlambatCard * 0.5) + ($jumlahDitolakCard * 0);
 
     $efektivitasPersenCard = $totalKunjunganCard > 0
@@ -643,7 +587,6 @@ public function analytics()
         : 0;
     $efektivitasPersenCard = max(0, min(100, $efektivitasPersenCard));
 
-    // 3. Kualitas Rating Survei Card (Skala 1.0 - 5.0)
     $totalBintangCard = 0;
     $jumlahRespondenCard = 0;
 
@@ -652,7 +595,6 @@ public function analytics()
         if ($surv) {
             $detail = $db['detail_survey']->firstWhere('survey_id', $surv->id);
             if ($detail) {
-                // Akumulasi skor dari pertanyaan p1 sampai p5
                 $totalBintangCard += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
                 $jumlahRespondenCard++;
             }
@@ -661,11 +603,116 @@ public function analytics()
 
     $kualitasRatingCard = '-';
     if ($jumlahRespondenCard > 0) {
-        // Menghitung rata-rata bintang (Total Akumulasi / (Jumlah Responden * 5 Pertanyaan))
         $rataRataCard = $totalBintangCard / ($jumlahRespondenCard * 5);
         $kualitasRatingCard = number_format(round($rataRataCard, 1), 1);
     }
 
+    // =========================================================================
+    // KODE BARU: LOGIKA KODE KHUSUS GRAFIK KINERJA (PEKANAN / BAR KPI)
+    // =========================================================================
+    
+    // Tentukan tanggal referensi (jika user filter start_date pakai itu, jika tidak pakai hari ini)
+    $startDateParam = request('start_date');
+    $referenceDate = $startDateParam ? Carbon::parse($startDateParam) : Carbon::now();
+    
+    // Cari hari Senin dan Jumat di minggu tempat tanggal referensi berada
+    $startOfWeek = $referenceDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+    $endOfWeek = $referenceDate->copy()->endOfWeek(Carbon::FRIDAY)->endOfDay();
+
+    // Buat Label tanggal dinamis untuk Sumbu X Grafik Kinerja
+    $labels = [
+        'Senin (' . $startOfWeek->format('d/m') . ')',
+        'Selasa (' . $startOfWeek->copy()->addDays(1)->format('d/m') . ')',
+        'Rabu (' . $startOfWeek->copy()->addDays(2)->format('d/m') . ')',
+        'Kamis (' . $startOfWeek->copy()->addDays(3)->format('d/m') . ')',
+        'Jumat (' . $startOfWeek->copy()->addDays(4)->format('d/m') . ')',
+    ];
+
+    $filteredProdiId = request('prodi_id');
+    $prodisForChart = $filteredProdiId 
+        ? $daftar_prodi->where('id', $filteredProdiId) 
+        : $daftar_prodi;
+
+    $chartDatasets = [];
+
+    // Filter data kunjungan HANYA di rentang Senin s.d Jumat minggu tersebut
+    $grafikQuery = $kunjunganData->filter(function($k) use ($startOfWeek, $endOfWeek) {
+        if (empty($k->created_at)) return false;
+        $date = Carbon::parse($k->created_at);
+        return $date->gte($startOfWeek) && $date->lte($endOfWeek);
+    });
+
+    foreach ($prodisForChart as $prodi) {
+        $prodiName = $prodi->nama ?? $prodi->nama_prodi ?? '-';
+        
+        $hariKpiSum = [0, 0, 0, 0, 0];
+        $hariDataCount = [0, 0, 0, 0, 0];
+        $prodiHariData = [0, 0, 0, 0, 0]; 
+
+        $kunjunganProdi = $grafikQuery->where('prodi_id', $prodi->id);
+
+        foreach ($kunjunganProdi as $data) {
+            $createdDate = Carbon::parse($data->created_at ?? now());
+            $dayOfWeek = $createdDate->dayOfWeekIso;
+
+            if ($dayOfWeek > 5) {
+                $dayOfWeek = 5;
+            }
+            $hariIndex = $dayOfWeek - 1; 
+
+            // --- PERHITUNGAN ASPEK KPI ---
+            // 1. Kuantitas
+            $skorKuantitas = isset($data->skor_pelayanan) ? floatval($data->skor_pelayanan) : 0; 
+            if ($skorKuantitas == 0) $skorKuantitas = 4.5; 
+            $nilaiKuantitasSkala100 = $skorKuantitas <= 5 ? $skorKuantitas * 20 : $skorKuantitas;
+            
+            // 2. Kualitas (Survey)
+            $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
+            $skorKualitas = 0;
+            if ($nama_pengunjung) {
+                $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
+                    return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id) 
+                           || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
+                });
+                $skorKualitas = $survey ? floatval($survey->skor_total) : 0;
+            }
+            if ($skorKualitas == 0) $skorKualitas = 4.5; 
+            $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
+
+            // 3. SLA (Efektivitas)
+            $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
+            if ($statusSlaRaw === 'TEPAT WAKTU' || $statusSlaRaw === '1') {
+                $skorEfektivitas = 100;
+            } else {
+                $skorEfektivitas = 70; 
+            }
+
+            $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+
+            $hariKpiSum[$hariIndex] += $nilaiKpiGabunganRow;
+            $hariDataCount[$hariIndex]++;
+        }
+
+        // Hitung rata-rata per hari kerja di minggu tersebut
+        for ($i = 0; $i < 5; $i++) {
+            $prodiHariData[$i] = $hariDataCount[$i] > 0 
+                ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) 
+                : 0;
+        }
+
+        $chartDatasets[] = [
+            'label'           => $prodiName,
+            'data'            => $prodiHariData,
+            'backgroundColor' => '#6b7280', 
+            'borderRadius'    => 6,
+            'borderSkipped'   => false,
+            'barThickness'    => 14
+        ];
+    }
+
+    // ==========================================
+    // RETURN KE VIEW DENGAN DATA UTAN & BARU
+    // ==========================================
     return view('dashboard.analytics', [
 
         'user' => $user,
@@ -673,7 +720,6 @@ public function analytics()
         'is_na' => $is_na,
         'judul_dashboard' => 'Analytics KPI',
 
-        // Tambahkan 3 baris variabel baru ini di sini:
         'total_kunjungan' => $totalKunjunganCard,
         'efektivitas_persen' => $efektivitasPersenCard,
         'kualitas_rating' => $kualitasRatingCard,
@@ -686,12 +732,17 @@ public function analytics()
             'persen' => $persentasePuas
         ],
 
+        // Keperluan (Tetap Utuh)
         'distribusi_label' => $distribusiLabel,
         'distribusi_data' => $distribusiData,
 
         'label_sla' => $label_sla,
         'data_tepat_waktu' => $data_tepat_waktu,
-        'data_terlambat' => $data_terlambat
+        'data_terlambat' => $data_terlambat,
+
+        // Tambahan Variabel untuk Injeksi Grafik Kinerja Baru di analytics.blade.php
+        'labels' => $labels,
+        'chartDatasets' => $chartDatasets
     ]);
 }
 
@@ -741,12 +792,12 @@ public function laporan(Request $request)
     $user = $this->getSessionUser();
     if (!$user) return redirect('/login');
 
-    // 1. Memuat seluruh sheet data yang dibutuhkan untuk 5 jenis laporan
+    // 1. Memuat seluruh sheet data yang dibutuhkan untuk laporan dan grafik
     $db = $this->readMultipleSheets([
         'kunjungan',
         'pengunjung',
         'master_prodi_instansi',
-        'master_keperluan',
+        'master_keperluan', // Tetap dipertahankan untuk grafik distribusi keperluan
         'survey'
     ]);
 
@@ -756,7 +807,7 @@ public function laporan(Request $request)
     $daftar_prodi = $db['master_prodi_instansi']
         ->where('jenis', 'Prodi')
         ->values();
-        
+       
     $query = $this->applyAccessFilter($db['kunjungan'], $user);
 
     // FILTER PRODI
@@ -771,7 +822,7 @@ public function laporan(Request $request)
 
     $start = null;
     $end = null;
-    
+   
     // Filter Tanggal Utama (Carbon)
     if ($startDate && $endDate) {
         $start = Carbon::parse($startDate)->startOfDay();
@@ -809,7 +860,7 @@ public function laporan(Request $request)
     $rataRataSla = $menit.' menit '.$detik.' detik';
 
     // ==========================================
-    // PROSES GENERASI 5 LAPORAN DATA (CORETAN PROJEK)
+    // PROSES GENERASI 5 LAPORAN DATA
     // ==========================================
 
     // 1. LAPORAN PENGUNJUNG
@@ -824,7 +875,7 @@ public function laporan(Request $request)
     $laporanPengunjung = $pengunjungFiltered->map(function($item) {
         return [
             'nama'          => $item->nama_lengkap ?? '-',
-            'identitas_no'  => $item->identitas_no ?? '-', 
+            'identitas_no'  => $item->identitas_no ?? '-',
             'no_telepon'    => $item->no_telepon ?? '-',
             'asal_instansi' => $item->asal_instansi ?? '-',
             'tanggal_masuk' => isset($item->created_at) ? date('Y-m-d', strtotime($item->created_at)) : '-',
@@ -845,7 +896,7 @@ public function laporan(Request $request)
             'prodi'            => $nama_prodi,
             'status_layanan'   => $item->status_layanan ?? '-',
             'keperluan_utama'  => $keperluan_utama,      
-            'keperluan_detail' => $item->keperluan ?? '-', 
+            'keperluan_detail' => $item->keperluan ?? '-',
         ];
     })->values();
 
@@ -859,7 +910,7 @@ public function laporan(Request $request)
 
         if (!empty($skor_pelayanan) && $nama_pengunjung) {
             $survey = $db['survey']->first(function($srv) use ($item, $nama_pengunjung) {
-                return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $item->id) 
+                return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $item->id)
                        || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
             });
             $skor_total_survey = $survey->skor_total ?? '-';
@@ -891,7 +942,7 @@ public function laporan(Request $request)
             'nama'            => $pengunjung->nama_lengkap ?? '-',
             'asal_instansi'   => $pengunjung->asal_instansi ?? '-',
             'no_telepon'      => $pengunjung->no_telepon ?? '-',
-            'alasan_penolakan'=> $alasan_tolak, 
+            'alasan_penolakan'=> $alasan_tolak,
         ];
     })->values();
 
@@ -906,7 +957,7 @@ public function laporan(Request $request)
         });
     }
 
-    Carbon::setLocale('id'); 
+    Carbon::setLocale('id');
     $laporanUlasan = $surveyFiltered->map(function($item, $index) {
         $tanggal_raw = $item->created_at ?? $item->tanggal ?? null;
         $hari = '-';
@@ -914,7 +965,7 @@ public function laporan(Request $request)
 
         if ($tanggal_raw) {
             $carbonDate = Carbon::parse($tanggal_raw);
-            $hari = $carbonDate->translatedFormat('l'); 
+            $hari = $carbonDate->translatedFormat('l');
             $tanggal = $carbonDate->format('Y-m-d');
         }
 
@@ -929,116 +980,152 @@ public function laporan(Request $request)
             'no'               => $index + 1,
             'hari'             => $hari,
             'tanggal'          => $tanggal,
-            'nilai_kepuasan'   => $item->skor_total ?? '-', 
+            'nilai_kepuasan'   => $item->skor_total ?? '-',
             'ulasan'           => $ulasan,
         ];
     })->values();
 
-// =========================================================================
-    // PERBAIKAN LOGIC GRAFIK PERBANDINGAN PER PRODI (SOLUSI FIX)
-    // =========================================================================
-    $labels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-    
-    // Mapping hari dari Carbon format bahasa Inggris / Angka ke label chart Anda
-    $hariMap = [
-        'Monday'    => 'Sen', 'Tuesday'  => 'Sel', 'Wednesday'=> 'Rab',
-        'Thursday'  => 'Kam', 'Friday'   => 'Jum', 'Saturday' => 'Sab',
-        'Sunday'    => 'Min',
-        'Senin'     => 'Sen', 'Selasa'   => 'Sel', 'Rabu'     => 'Rab',
-        'Kamis'     => 'Kam', 'Jumat'    => 'Jum', 'Sabtu'    => 'Sab',
-        'Minggu'    => 'Min'
+    // ==========================================
+    // LOGIKA GRAFIK KINERJA PEKANAN (Bawaan Laporan)
+    // ==========================================
+    $referenceDate = $startDate ? Carbon::parse($startDate) : Carbon::now();
+   
+    $startOfWeek = $referenceDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
+    $endOfWeek = $referenceDate->copy()->endOfWeek(Carbon::FRIDAY)->endOfDay();
+
+    $labels = [
+        'Senin (' . $startOfWeek->format('d/m') . ')',
+        'Selasa (' . $startOfWeek->copy()->addDays(1)->format('d/m') . ')',
+        'Rabu (' . $startOfWeek->copy()->addDays(2)->format('d/m') . ')',
+        'Kamis (' . $startOfWeek->copy()->addDays(3)->format('d/m') . ')',
+        'Jumat (' . $startOfWeek->copy()->addDays(4)->format('d/m') . ')',
     ];
 
-    // Ambil data filter prodi yang sedang aktif
     $filteredProdiId = request('prodi_id');
-    $prodisForChart = $filteredProdiId 
-        ? $daftar_prodi->where('id', $filteredProdiId) 
+    $prodisForChart = $filteredProdiId
+        ? $daftar_prodi->where('id', $filteredProdiId)
         : $daftar_prodi;
 
-    // Palet warna premium untuk chart
-    $colors = [
-        '#3b82f6', // Biru
-        '#a855f7', // Ungu
-        '#f59e0b', // Orange
-        '#10b981', // Emerald
-        '#ec4899', // Pink
-    ];
-
     $chartDatasets = [];
-    $colorIndex = 0;
 
-    // FIX: Gunakan basis $query utama (bukan $kunjunganSelesai yang terlalu ketat)
-    $grafikQuery = clone $query; 
+    $grafikQuery = clone $query;
+    $grafikQuery = $grafikQuery->filter(function($k) use ($startOfWeek, $endOfWeek) {
+        if (empty($k->created_at)) return false;
+        $date = Carbon::parse($k->created_at);
+        return $date->gte($startOfWeek) && $date->lte($endOfWeek);
+    });
 
-    // Jika user TIDAK memilih filter tanggal, jangan dikunci pakai startOfWeek() 
-    // agar data historis tetap muncul di grafik chart, atau sesuaikan range-nya.
-    if ($startDate && $endDate) {
-        $start = Carbon::parse($startDate)->startOfDay();
-        $end = Carbon::parse($endDate)->endOfDay();
-        $grafikQuery = $grafikQuery->filter(function($k) use ($start, $end) {
-            if (empty($k->created_at)) return false;
-            $date = Carbon::parse($k->created_at);
-            return $date->gte($start) && $date->lte($end);
-        });
-    }
-
-    // Olah data per prodi ke bentuk dataset Chart.js
     foreach ($prodisForChart as $prodi) {
         $prodiName = $prodi->nama ?? $prodi->nama_prodi ?? '-';
-        $prodiData = ['Sen' => 0, 'Sel' => 0, 'Rab' => 0, 'Kam' => 0, 'Jum' => 0, 'Sab' => 0, 'Min' => 0];
+       
+        $hariKpiSum = [0, 0, 0, 0, 0];
+        $hariDataCount = [0, 0, 0, 0, 0];
+        $prodiHariData = [0, 0, 0, 0, 0];
 
-        // Hitung data kunjungan milik prodi ini
         $kunjunganProdi = $grafikQuery->where('prodi_id', $prodi->id);
 
         foreach ($kunjunganProdi as $data) {
-            // Ambil fallback dari kolom hari_kunjungan jika waktu_selesai_layanan kosong
-            if (!empty($data->hari_kunjungan)) {
-                $hariTeksRaw = ucwords(strtolower(trim($data->hari_kunjungan))); // Contoh: "Friday" atau "Jumat"
+            $createdDate = Carbon::parse($data->created_at ?? now());
+            $dayOfWeek = $createdDate->dayOfWeekIso;
+
+            if ($dayOfWeek > 5) {
+                $dayOfWeek = 5;
+            }
+            $hariIndex = $dayOfWeek - 1;
+
+            // 1. Kuantitas
+            $skorKuantitas = isset($data->skor_pelayanan) ? floatval($data->skor_pelayanan) : 0;
+            if ($skorKuantitas == 0) $skorKuantitas = 4.5;
+            $nilaiKuantitasSkala100 = $skorKuantitas <= 5 ? $skorKuantitas * 20 : $skorKuantitas;
+           
+            // 2. Kualitas
+            $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
+            $skorKualitas = 0;
+            if ($nama_pengunjung) {
+                $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
+                    return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
+                           || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
+                });
+                $skorKualitas = $survey ? floatval($survey->skor_total) : 0;
+            }
+            if ($skorKualitas == 0) $skorKualitas = 4.5;
+            $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
+
+            // 3. SLA
+            $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
+            if ($statusSlaRaw === 'TEPAT WAKTU' || $statusSlaRaw === '1') {
+                $skorEfektivitas = 100;
             } else {
-                $hariTeksRaw = Carbon::parse($data->created_at ?? now())->format('l'); // Contoh: "Friday"
+                $skorEfektivitas = 70;
             }
 
-            // Masukkan ke dalam map grafik jika cocok
-            if (isset($hariMap[$hariTeksRaw])) {
-                $hariTeks = $hariMap[$hariTeksRaw];
-                $prodiData[$hariTeks]++;
-            }
+            $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+
+            $hariKpiSum[$hariIndex] += $nilaiKpiGabunganRow;
+            $hariDataCount[$hariIndex]++;
+        }
+
+        for ($i = 0; $i < 5; $i++) {
+            $prodiHariData[$i] = $hariDataCount[$i] > 0
+                ? round($hariKpiSum[$i] / $hariDataCount[$i], 1)
+                : 0;
         }
 
         $chartDatasets[] = [
             'label'           => $prodiName,
-            'data'            => array_values($prodiData),
-            'backgroundColor' => $colors[$colorIndex % count($colors)],
+            'data'            => $prodiHariData,
+            'backgroundColor' => '#6b7280',
             'borderRadius'    => 6,
             'borderSkipped'   => false,
             'barThickness'    => 14
         ];
-
-        $colorIndex++;
     }
 
-    // Kirimkan variabel baru ke View
-return view('dashboard.laporan', [
-    'user'              => $user,
-    'daftar_prodi'      => $daftar_prodi,
-    'judul_dashboard'   => 'Laporan & Ekspor',
-    'totalSelesai'      => $totalSelesai,
-    'tingkatPenolakan'  => $tingkatPenolakan,
-    'rataRataSla'       => $rataRataSla,
-    'startDate'         => $startDate,
-    'endDate'           => $endDate,
-    
-    // Pastikan dua baris ini ada dan tidak typo:
-    'labels'            => $labels,
-    'chartDatasets'     => $chartDatasets,
-    
-    'laporanPengunjung' => $laporanPengunjung,
-    'laporanKunjungan'  => $laporanKunjungan,
-    'laporanKinerja'    => $laporanKinerja,
-    'laporanPenolakan'  => $laporanPenolakan,
-    'laporanUlasan'     => $laporanUlasan
-]);
+    // =========================================================================
+    // KODE BARU: LOGIKA KODE KHUSUS GRAFIK DISTRIBUSI KEPERLUAN (DARI ANALYTICS)
+    // =========================================================================
+    $distribusiLabel = [];
+    $distribusiData = [];
+
+    // Mengelompokkan data berdasarkan query kunjungan yang aktif (mendukung filter tanggal & prodi)
+    $groupedKeperluan = $query->groupBy('keperluan_id');
+
+    foreach ($groupedKeperluan as $kep_id => $items) {
+        $master = $db['master_keperluan']->firstWhere('id', $kep_id);
+
+        if ($master) {
+            $distribusiLabel[] = $master->keterangan;
+            $distribusiData[]  = $items->count();
+        }
+    }
+
+    return view('dashboard.laporan', [
+        'user'              => $user,
+        'daftar_prodi'      => $daftar_prodi,
+        'judul_dashboard'   => 'Laporan & Ekspor',
+        'totalSelesai'      => $totalSelesai,
+        'tingkatPenolakan'  => $tingkatPenolakan,
+        'rataRataSla'       => $rataRataSla,
+        'startDate'         => $startDate,
+        'endDate'           => $endDate,
+        
+        // Data Grafik Kinerja Pekanan (Tetap Utuh)
+        'labels'            => $labels,
+        'chartDatasets'     => $chartDatasets,
+        
+        // Tambahan Variabel Baru untuk Injeksi Grafik Keperluan di laporan.blade.php
+        'distribusi_label'  => $distribusiLabel,
+        'distribusi_data'   => $distribusiData,
+
+        // Data 5 jenis tabel laporan (Tetap Utuh)
+        'laporanPengunjung' => $laporanPengunjung,
+        'laporanKunjungan'  => $laporanKunjungan,
+        'laporanKinerja'    => $laporanKinerja,
+        'laporanPenolakan'  => $laporanPenolakan,
+        'laporanUlasan'     => $laporanUlasan
+    ]);
 }
+
 private function exportLaporan($action, Request $request)
 {
     $user = $this->getSessionUser();
