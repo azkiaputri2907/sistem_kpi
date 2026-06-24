@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buku Tamu Digital & Antrean</title>
     <script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@700;800;900&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-title {
+        font-family: 'Outfit', sans-serif;
+    }
+</style>
 
     <script>
         tailwind.config = {
@@ -97,10 +107,10 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Sistem Online Beroperasi
                 </div>
 
-<h1 class="text-4xl lg:text-6xl font-extrabold leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
+<h1 class="font-title text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
     SIPANDU-KPI <br class="hidden lg:inline">
-    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#002B5B] to-blue-600 dark:from-blue-400 dark:to-purple-400">
-        JURUSAN TEKNIK ELEKTRO
+    <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-sky-500 dark:from-blue-400 dark:via-blue-300 dark:to-teal-400 block mt-2 font-extrabold text-2xl md:text-3xl lg:text-4xl xl:text-5xl uppercase tracking-normal">
+        Jurusan Teknik Elektro
     </span>
 </h1>
 
