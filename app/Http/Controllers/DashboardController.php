@@ -1654,7 +1654,7 @@ public function kirimEmailPimpinan(Request $request)
     $prodiData = $db['master_prodi_instansi']->firstWhere('id', $kunjungan->prodi_id);
     $namaProdi = $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
 
-    $urlGas = 'URL_WEB_APP_GOOGLE_APPS_SCRIPT_KAMU';
+    $urlGas = 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec';
 
     try {
         // Tembak GAS menggunakan JSON biasa via port HTTP 443 (Gak bakal diblokir Vercel)
