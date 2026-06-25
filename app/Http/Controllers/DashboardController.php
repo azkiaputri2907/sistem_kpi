@@ -1518,135 +1518,55 @@ public function manajemenAntrean(Request $request)
     }
 public function uploadFile(Request $request, $id)
 {
+    // Ambil data kunjungan dari sheet lokal/bawaan kamu
     $kunjungan = $this->readSheet('kunjungan')->firstWhere('id', $id);
         
     if (!$kunjungan) {
         return back()->with('error', 'Data tidak ditemukan');
     }
 
+    // Validasi file max 4MB demi kenyamanan serverless Vercel
     $request->validate([
         'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:4096'
     ]);
-
-    $fileLink = $kunjungan->file_surat ?? '';
 
     if ($request->hasFile('file_surat')) {
         $file = $request->file('file_surat');
         $ekstensi = $file->getClientOriginalExtension();
         $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
 
+        // Ubah file mentah menjadi teks string Base64 aman
+        $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
+
+        // Tembak URL Web App Google Apps Script kamu yang baru saja dideploy
+        $urlGas = 'MASUKKAN_URL_WEB_APP_GAS_YANG_BARU_DI_SINI';
+
         try {
-            // Read credentials.json manually tanpa library Google
-            $jsonPath = storage_path('app/google/credentials.json');
-            if (!file_exists($jsonPath)) {
-                return back()->with('error', 'File credentials.json tidak ditemukan di storage/app/google/');
-            }
-            
-            $creds = json_decode(file_get_contents($jsonPath), true);
-            $clientEmail = $creds['client_email'] ?? '';
-            $privateKey = $creds['private_key'] ?? '';
-
-            // Bikin JWT Token untuk Akses Google API secara mandiri
-            $header = json_encode(['encode' => 'utf-8', 'alg' => 'RS256', 'typ' => 'JWT']);
-            $now = time();
-            $payload = json_encode([
-                'iss' => $clientEmail,
-                'scope' => 'https://www.googleapis.com/auth/drive.file',
-                'aud' => 'https://oauth2.googleapis.com/token',
-                'exp' => $now + 3600,
-                'iat' => $now
+            // Kita kirim request POST dengan action=upload_file sesuai route GAS kita di atas
+            $response = Http::post($urlGas . '?action=upload_file', [
+                'id' => $id,
+                'nama_file' => $namaFile,
+                'tipe_mime' => $file->getMimeType(),
+                'file_base64' => $fileBase64
             ]);
 
-            $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-            $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
-            
-            $signature = '';
-            openssl_sign($base64UrlHeader . "." . $base64UrlPayload, $signature, $privateKey, OPENSSL_ALGO_SHA256);
-            $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-            $jwt = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+            $hasil = $response->json();
 
-            // Minta Access Token ke Google via cURL
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion' => $jwt
-            ]));
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $tokenResult = json_decode(curl_exec($ch), true);
-            curl_close($ch);
-
-            $accessToken = $tokenResult['access_token'] ?? null;
-
-            if (!$accessToken) {
-                return back()->with('error', 'Gagal otentikasi ke Google API. Periksa credentials.json');
-            }
-
-            // Proses Upload File Menggunakan Multipart cURL ke Google Drive
-            $boundary = uniqid();
-            $delimiter = '-------------' . $boundary;
-            
-            $metadata = json_encode(['name' => $namaFile]);
-            $dataContent = file_get_contents($file->getRealPath());
-
-            $postData = "--" . $delimiter . "\r\n";
-            $postData .= "Content-Type: application/json; charset=UTF-8\r\n\r\n";
-            $postData .= $metadata . "\r\n";
-            $postData .= "--" . $delimiter . "\r\n";
-            $postData .= "Content-Type: " . $file->getMimeType() . "\r\n\r\n";
-            $postData .= $dataContent . "\r\n";
-            $postData .= "--" . $delimiter . "--\r\n";
-
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Authorization: Bearer ' . $accessToken,
-                'Content-Type: multipart/related; boundary=' . $delimiter,
-                'Content-Length: ' . strlen($postData)
-            ]);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            $uploadResult = json_decode(curl_exec($ch), true);
-            curl_close($ch);
-
-            if (isset($uploadResult['id'])) {
-                $fileId = $uploadResult['id'];
-                
-                // Set Permission agar file bisa dibaca siapa saja yang punya link (Public Reader)
-                $ch = curl_init();
-                curl_setopt($ch, CURLOPT_URL, "https://www.googleapis.com/drive/v3/files/{$fileId}/permissions");
-                curl_setopt($ch, CURLOPT_POST, true);
-                curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                    'Authorization: Bearer ' . $accessToken,
-                    'Content-Type: application/json'
-                ]);
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['role' => 'reader', 'type' => 'anyone']));
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_exec($ch);
-                curl_close($ch);
-
-                // Alternatif link unduh langsung/embed
-                $fileLink = "https://drive.google.com/uc?export=download&id=" . $fileId;
+            if (isset($hasil['status']) && $hasil['status'] === 'success') {
+                return back()->with(
+                    'success_upload_remind',
+                    'Berkas pendukung berhasil diundgah secara permanen ke Google Drive prodi!'
+                );
             } else {
-                return back()->with('error', 'Google Drive menolak file upload.');
+                return back()->with('error', 'Gagal upload: ' . ($hasil['message'] ?? 'Respons tidak diketahui'));
             }
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Sistem Gagal: ' . $e->getMessage());
+            return back()->with('error', 'Koneksi ke Google Script putus: ' . $e->getMessage());
         }
     }
 
-    // Simpan link download Google Drive langsung ke Google Sheets
-    $this->updateSheet('kunjungan', $kunjungan->id, [
-        'file_surat' => $fileLink
-    ]);
-
-    return back()->with(
-        'success_upload_remind',
-        'Berkas pendukung berhasil diunggah secara permanen ke Google Drive!'
-    );
+    return back();
 }
 
     public function selesai($id)
