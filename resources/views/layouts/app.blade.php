@@ -360,9 +360,9 @@
                     </button>
 
 {{-- NOTIF --}}
-{{-- NOTIF --}}
-@if($userSession->role_id == 2) {{-- Diubah agar hanya Admin (Role 2) saja yang bisa melihat --}}
-<div class="relative inline-block text-left">
+@if($userSession->role_id == 2)
+{{-- REVISI: Tambahkan z-[100] pada pembungkus utama --}}
+<div class="relative inline-block text-left z-[100]">
     <button type="button" onclick="toggleNotifDropdown()" id="btnNotifTrigger"
         class="relative w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
         <i class="fa-regular fa-bell text-lg"></i>
@@ -370,8 +370,9 @@
         <span id="notif-count" class="absolute -top-1 -right-1 text-[9px] bg-rose-600 text-white px-1.5 py-0.5 rounded-full font-bold hidden">0</span>
     </button>
 
+    {{-- REVISI: Ubah z-[99] menjadi z-[101] --}}
     <div id="notifDropdown"
-        class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 z-[99] overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-top-right">
+        class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 z-[101] overflow-hidden transform scale-95 opacity-0 transition-all duration-200 origin-top-right">
 
         <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
             <span class="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">Pemberitahuan Tamu</span>
@@ -380,7 +381,6 @@
 
         <div class="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800" id="notifContainer"></div>
 
-        {{-- Tombol Link Footer Menyesuaikan Role (Hanya Admin) --}}
         <a id="notifFooterLink" href="{{ route('dashboard.antrean') }}" class="hidden block text-center py-3 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-blue-600 dark:text-blue-400 border-t border-slate-100 dark:border-slate-800 transition-colors">
             Lihat Semua Antrean
         </a>
@@ -494,27 +494,26 @@ function fetchNotifications(){
         const countBadge=document.getElementById('notif-count');
         const notifDot=document.getElementById('notif-dot');
         const notifContainer=document.getElementById('notifContainer');
-        const notifFooterLink=document.getElementById('notifFooterLink'); // Tangkap elemen tombol bawah
+        const notifFooterLink=document.getElementById('notifFooterLink');
 
-        // --- AMBIL ROLE USER UNTUK MEMBEDAKAN NOTIFIKASI ---
         const userRoleId = "{{ session('user')['role_id'] ?? 2 }}";
+        // Tambahan: deteksi apakah dokumen saat ini menggunakan class dark mode atau tidak
+        const isDarkMode = document.documentElement.classList.contains('dark');
 
         if(data.count>0){
             countBadge.innerText=data.count;
             countBadge.classList.remove('hidden');
             notifDot.classList.remove('hidden');
 
-            // Tampilkan tombol bawah karena ada data masuk
             if(notifFooterLink) {
                 notifFooterLink.classList.remove('hidden');
             }
 
-            // --- PERBEDAAN TEKS DROPDOWN (ADMIN VS PIMPINAN) ---
             if(notifContainer) {
                 if(userRoleId == 2) {
-                    // Teks asli Anda untuk Admin Prodi (Role 2)
+                    // MODIFIKASI: Menambahkan latar belakang & warna teks adaptif dark mode
                     notifContainer.innerHTML = `
-                        <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
+                        <div class="p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
                             <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                                 <i class="fa-solid fa-user-clock text-sm"></i>
                             </div>
@@ -525,9 +524,9 @@ function fetchNotifications(){
                         </div>
                     `;
                 } else {
-                    // Teks khusus Pimpinan (Role 3 & 4) -> Hanya jika diteruskan admin
+                    // MODIFIKASI: Menambahkan latar belakang & warna teks adaptif dark mode
                     notifContainer.innerHTML = `
-                        <div class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
+                        <div class="p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
                             <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                                 <i class="fa-solid fa-file-signature text-sm"></i>
                             </div>
@@ -544,32 +543,31 @@ function fetchNotifications(){
             countBadge.classList.add('hidden');
             notifDot.classList.add('hidden');
 
-            // Sembunyikan tombol bawah jika kosong
             if(notifFooterLink) {
                 notifFooterLink.classList.add('hidden');
             }
 
-            // Suntikkan tampilan notifikasi kosong bersih
             if(notifContainer) {
+                // MODIFIKASI: Menambahkan warna teks adaptif dark mode pada pesan kosong bersih
                 notifContainer.innerHTML = `
-                    <div class="p-6 text-center text-slate-400 dark:text-slate-500">
+                    <div class="p-6 text-center bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500">
                         <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mx-auto mb-3">
-                            <i class="fa-regular fa-bell-slash text-base text-slate-400"></i>
+                            <i class="fa-regular fa-bell-slash text-base text-slate-400 dark:text-slate-500"></i>
                         </div>
-                        <p class="text-xs font-bold">Tidak ada pemberitahuan</p>
-                        <p class="text-[10px] mt-0.5">Semua kunjungan tamu telah ditangani.</p>
+                        <p class="text-xs font-bold text-slate-700 dark:text-slate-400">Tidak ada pemberitahuan</p>
+                        <p class="text-[10px] mt-0.5 text-slate-400 dark:text-slate-500">Semua kunjungan tamu telah ditangani.</p>
                     </div>
                 `;
             }
         }
 
-        // --- PERBEDAAN TEKS POP-UP TOAST SWEETALERT (ADMIN VS PIMPINAN) ---
         const alertTitle = (userRoleId == 2) ? 'Antrean Baru!' : 'Disposisi Baru!';
         const alertText  = (userRoleId == 2) ? `Ada ${data.count-lastNotifCount} antrean baru masuk.` : `Ada ${data.count-lastNotifCount} kunjungan tamu yang diteruskan ke Anda.`;
         const remindText = (userRoleId == 2) ? 'Masih ada antrean yang belum diproses.' : 'Masih ada disposisi tamu yang menunggu persetujuan Anda.';
 
         if(!isFirstLoad && data.count > lastNotifCount){
             playNotifSound();
+            // MODIFIKASI: Mengonfigurasi warna background, teks, dan border SweetAlert Toast agar sinkron dengan Dark Mode
             Swal.fire({
                 title: alertTitle,
                 text: alertText,
@@ -578,7 +576,12 @@ function fetchNotifications(){
                 position: 'top-end',
                 showConfirmButton: false,
                 timer: 5000,
-                timerProgressBar: true
+                timerProgressBar: true,
+                background: isDarkMode ? '#0f172a' : '#ffffff',
+                color: isDarkMode ? '#f1f5f9' : '#1e293b',
+                customClass: {
+                    popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl'
+                }
             });
         }
 
@@ -586,6 +589,7 @@ function fetchNotifications(){
             const now = Date.now();
             if(now - lastReminderTime >= 180000){
                 playNotifSound();
+                // MODIFIKASI: Mengonfigurasi warna background, teks, dan border SweetAlert Toast agar sinkron dengan Dark Mode
                 Swal.fire({
                     title: (userRoleId == 2) ? 'Reminder Antrean' : 'Reminder Disposisi',
                     text: remindText,
@@ -594,7 +598,12 @@ function fetchNotifications(){
                     position: 'top-end',
                     showConfirmButton: false,
                     timer: 5000,
-                    timerProgressBar: true
+                    timerProgressBar: true,
+                    background: isDarkMode ? '#0f172a' : '#ffffff',
+                    color: isDarkMode ? '#f1f5f9' : '#1e293b',
+                    customClass: {
+                        popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl'
+                    }
                 });
                 lastReminderTime = now;
             }

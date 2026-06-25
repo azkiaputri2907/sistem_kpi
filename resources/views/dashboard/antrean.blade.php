@@ -692,7 +692,7 @@
         isModalOpen = false;
     }
 
-    // REVISI TAMBAHAN: FUNGSI MEMICU POP-UP LOADING SAAT SUBMIT TOLAK
+    // REVISIi TAMBAHAN: FUNGSI MEMICU POP-UP LOADING SAAT SUBMIT TOLAK
     function handleTolakLoading(event) {
         const btnSubmit = document.getElementById('btnSubmitTolak');
         const btnBatal = document.getElementById('btnBatalTolak');
