@@ -9,6 +9,9 @@ use App\Http\Controllers\ControlPanelController;
 
 
 use App\Http\Middleware\CekSessionLogin;
+Route::get('/tes', function () {
+    return 'TES BERHASIL';
+});
 
 Route::get('/api/antrean-diproses', 'App\Http\Controllers\KunjunganController@getAntreanDiproses')->name('api.antrean.diproses');
 /*
