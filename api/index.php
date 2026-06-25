@@ -1,4 +1,5 @@
 <?php
 
-echo "VERCEL PHP OK";
-exit;
+require __DIR__.'/../vendor/autoload.php';
+
+echo "AUTOLOAD OK";
