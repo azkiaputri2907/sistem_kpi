@@ -11,7 +11,6 @@ use App\Http\Controllers\KunjunganController;
 
 use App\Http\Middleware\CekSessionLogin;
 
-
 Route::get('/', function () {
-    return 'OK';
+    return 'Laravel OK';
 });
