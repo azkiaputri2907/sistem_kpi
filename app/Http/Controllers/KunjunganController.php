@@ -361,33 +361,45 @@ public function kirimMassal(Request $request)
             'status' => 'not_found'
         ]);
     }
-    public function getAntreanDiproses()
-    {
-        try {
-            $kunjunganList = $this->readSheet('kunjungan');
+public function getAntreanDiproses()
+{
+    try {
+        // Pastikan fungsi readSheet di controller ini bekerja dengan benar
+        $kunjunganList = $this->readSheet('kunjungan');
 
-            // Ambil SEMUA data tanpa filter tanggal hari ini
-            $antreanAktif = $kunjunganList->filter(function($item) {
-                $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
-
-                // Ambil semua yang berstatus "Diproses" (tidak peduli tanggal berapa)
-                return strtolower($status) === 'diproses';
-            })->map(function($item) {
-                return [
-                    'nomor' => $item->nomor_kunjungan
-                ];
-            })->values();
-
+        if (!$kunjunganList || $kunjunganList->isEmpty()) {
             return response()->json([
                 'status' => 'success',
-                'data' => $antreanAktif
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
                 'data' => []
-            ], 500);
+            ]);
         }
+
+        // Ambil SEMUA data tanpa filter tanggal hari ini
+        $antreanAktif = $kunjunganList->filter(function($item) {
+            // Ambil status_layanan secara aman dari objek
+            $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
+
+            // Ambil semua yang berstatus "Diproses" (tidak peduli tanggal berapa)
+            return strtolower($status) === 'diproses';
+        })->map(function($item) {
+            return [
+                'nomor' => $item->nomor_kunjungan ?? '',
+                'nomor_kunjungan' => $item->nomor_kunjungan ?? '', // kita sediakan dua versi agar JavaScript tipe apapun bisa membaca
+                'status_layanan' => $item->status_layanan ?? 'Diproses'
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $antreanAktif
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'data' => []
+        ], 500);
     }
+}
 }
