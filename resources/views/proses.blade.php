@@ -144,14 +144,14 @@
                     <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-tight">Dokumen Hasil Layanan</h3>
                     <p class="text-[11px] text-slate-400 dark:text-slate-500 mb-4 px-2 leading-relaxed">Dokumen balasan Anda telah tersedia. Silakan klik tombol di bawah untuk mengunduh.</p>
 
-                    <a href="{{ asset('storage/surat/' . $kunjungan->file_surat) }}"
-                       target="_blank"
-                       class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white text-xs font-bold rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 dark:shadow-none">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Unduh Berkas
-                    </a>
+<a href="{{ $kunjungan->file_surat }}"
+   target="_blank"
+   class="w-full flex items-center justify-center gap-2 py-3 bg-emerald-500 text-white text-xs font-bold rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-200 dark:shadow-none">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+    Unduh Berkas
+</a>
                 </div>
                 @endif
             @endif
