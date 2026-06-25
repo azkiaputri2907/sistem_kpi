@@ -1517,45 +1517,48 @@ public function manajemenAntrean(Request $request)
         );
     }
 public function uploadFile(Request $request, $id)
-{
-    // Ambil data kunjungan dari sheet lokal/bawaan kamu
-    $kunjungan = $this->readSheet('kunjungan')->firstWhere('id', $id);
-        
-    if (!$kunjungan) {
-        return back()->with('error', 'Data tidak ditemukan');
+    {
+        $kunjungan = $this->readSheet('kunjungan')
+            ->firstWhere('id', $id);
+            
+        if (!$kunjungan) {
+            return back()->with('error', 'Data tidak ditemukan');
+        }
+
+        // 1. Validasi jenis file baru dan batas ukuran maksimal 10 MB (10240 KB)
+        $request->validate([
+            'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240'
+        ]);
+
+        $namaFile = $kunjungan->file_surat ?? '';
+
+        if ($request->hasFile('file_surat')) {
+            $file = $request->file('file_surat');
+            
+            // 2. Ambil ekstensi asli dari file yang diupload secara dinamis
+            $ekstensi = $file->getClientOriginalExtension();
+
+            // 3. Gabungkan nama file dengan ekstensi dinamis tersebut
+            $namaFile = 
+                'surat_' .
+                str_replace('-', '_', $kunjungan->nomor_kunjungan) .
+                '_' .
+                time() .
+                '.' . $ekstensi;
+
+            $file->storeAs('surat', $namaFile, 'public');
+        }
+
+        $this->updateSheet('kunjungan', $kunjungan->id, [
+            // TIDAK UBAH STATUS
+            'file_surat' => $namaFile
+        ]);
+
+        return back()->with(
+            'success_upload_remind',
+            'Berkas pendukung berhasil diunggah! Jangan lupa untuk segera menekan tombol Selesai pada kartu antrean jika pelayanan fisik telah berakhir agar pencatatan SLA KPI akurat.'
+        );
     }
-
-    // Validasi file max 4MB demi kenyamanan serverless Vercel
-    $request->validate([
-        'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:4096'
-    ]);
-
-if ($request->hasFile('file_surat')) {
-    $file = $request->file('file_surat');
-    $ekstensi = $file->getClientOriginalExtension();
-    $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
-
-    $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
-    $urlGas = 'MASUKKAN_URL_WEB_APP_GAS_KAMU';
-
-    // 1. Tembak GAS
-    $response = Http::post($urlGas . '?action=upload_file', [
-        'id' => $id,
-        'nama_file' => $namaFile,
-        'tipe_mime' => $file->getMimeType(),
-        'file_base64' => $fileBase64
-    ]);
-
-    // 2. TAMBAHKAN DUMP DEBUG DI SINI UNTUK MELIHAT RESPON ASLI DARI GAS!
-    dd([
-        'Status_Response_Http' => $response->status(),
-        'Isi_Respon_Dari_GAS' => $response->json(),
-        'Raw_Body_GAS' => $response->body()
-    ]);
-    }
-
-    return back();
-}
 
     public function selesai($id)
     {
