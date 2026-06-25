@@ -1517,48 +1517,71 @@ public function manajemenAntrean(Request $request)
         );
     }
 public function uploadFile(Request $request, $id)
-    {
-        $kunjungan = $this->readSheet('kunjungan')
-            ->firstWhere('id', $id);
-            
-        if (!$kunjungan) {
-            return back()->with('error', 'Data tidak ditemukan');
-        }
-
-        // 1. Validasi jenis file baru dan batas ukuran maksimal 10 MB (10240 KB)
-        $request->validate([
-            'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240'
-        ]);
-
-        $namaFile = $kunjungan->file_surat ?? '';
-
-        if ($request->hasFile('file_surat')) {
-            $file = $request->file('file_surat');
-            
-            // 2. Ambil ekstensi asli dari file yang diupload secara dinamis
-            $ekstensi = $file->getClientOriginalExtension();
-
-            // 3. Gabungkan nama file dengan ekstensi dinamis tersebut
-            $namaFile = 
-                'surat_' .
-                str_replace('-', '_', $kunjungan->nomor_kunjungan) .
-                '_' .
-                time() .
-                '.' . $ekstensi;
-
-            $file->storeAs('surat', $namaFile, 'public');
-        }
-
-        $this->updateSheet('kunjungan', $kunjungan->id, [
-            // TIDAK UBAH STATUS
-            'file_surat' => $namaFile
-        ]);
-
-        return back()->with(
-            'success_upload_remind',
-            'Berkas pendukung berhasil diunggah! Jangan lupa untuk segera menekan tombol Selesai pada kartu antrean jika pelayanan fisik telah berakhir agar pencatatan SLA KPI akurat.'
-        );
+{
+    // 1. Ambil data kunjungan dari sheet berdasarkan ID
+    $kunjungan = $this->readSheet('kunjungan')->firstWhere('id', $id);
+        
+    if (!$kunjungan) {
+        return back()->with('error', 'Data tidak ditemukan');
     }
+
+    // 2. Validasi file, maksimal 4MB menyesuaikan batas Vercel
+    $request->validate([
+        'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:4096'
+    ]);
+
+    if ($request->hasFile('file_surat')) {
+        $file = $request->file('file_surat');
+        $ekstensi = $file->getClientOriginalExtension();
+        $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
+
+        // Ubah file menjadi string teks Base64
+        $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
+
+        // =====================================================================
+        // ⚠️ MASUKKAN URL GOOGLE APPS SCRIPT (GAS) KAMU YANG ASLI DI SINI
+        // =====================================================================
+        $urlGas = 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec';
+
+        try {
+            // Tembak GAS menggunakan format Multipart POST bawaan Laravel yang stabil
+            $response = Http::asMultipart()->post($urlGas, [
+                'action'      => 'upload_file', // Parameter action kita kirim di body
+                'id'          => $id,
+                'nama_file'   => $namaFile,
+                'tipe_mime'   => $file->getMimeType(),
+                'file_base64' => $fileBase64
+            ]);
+
+            // Ambil hasil respons JSON dari Google Apps Script
+            $hasil = $response->json();
+
+            // Jika GAS sukses memproses dan mengembalikan link Drive
+            if (isset($hasil['status']) && $hasil['status'] === 'success') {
+                
+                // KUNCI UTAMA: Kita simpan LINK GOOGLE DRIVE tersebut ke Google Sheets
+                $this->updateSheet('kunjungan', $kunjungan->id, [
+                    'file_surat' => $hasil['link'] // Isinya pasti berawalan https://drive.google.com...
+                ]);
+
+                return back()->with(
+                    'success_upload_remind',
+                    'Berkas pendukung berhasil diunggah secara permanen ke Google Drive prodi!'
+                );
+            } else {
+                // Jika Google Script mengirimkan pesan error
+                $pesanError = $hasil['message'] ?? 'Respons Google Script tidak valid';
+                return back()->with('error', 'Gagal dari Google Script: ' . $pesanError);
+            }
+
+        } catch (\Exception $e) {
+            // Jika koneksi internet dari Vercel ke Google terputus
+            return back()->with('error', 'Gagal menghubungi server Google: ' . $e->getMessage());
+        }
+    }
+
+    return back()->with('error', 'Tidak ada file yang diunggah.');
+}
 
     public function selesai($id)
     {
