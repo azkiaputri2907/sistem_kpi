@@ -587,7 +587,7 @@ function startRotation() {
     }
 
     function fetchAntreanRealtime() {
-        fetch("/api/antrean-diproses")
+        fetch('/antrean-diproses')
             .then(response => {
                 if (!response.ok) throw new Error('API Bermasalah');
                 return response.json();
