@@ -57,17 +57,7 @@
                     </div>
                 </div>
             </form>
-
-            {{-- CHIPS UTILITY (RESPONSIVE HIDDEN) --}}
-            <div class="hidden lg:flex bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm transition-colors duration-300">
-                <button class="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 border-r border-gray-100 dark:border-slate-700">
-                    Bulan Ini
-                </button>
-                <button class="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">
-                    Semua Rating
-                </button>
-            </div>
-
+            
             {{-- TOMBOL TRIGGER MODAL EKSPOR PREMIUM --}}
             <button type="button" onclick="openExportModal('ulasan')"
                 class="inline-flex justify-center items-center  bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
