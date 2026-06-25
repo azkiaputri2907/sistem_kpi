@@ -1695,7 +1695,7 @@ public function kirimEmailPimpinan(Request $request)
                 'instansi' => $kunjungan->pengunjung->instansi,
                 'keperluan' => $kunjungan->nama_keperluan_utama,
                 'detail' => $kunjungan->keperluan_detail,
-                'prodi' => $namaProdi
+                'nama_prodi' => $namaProdi
             ]);
 
             $hasil = $response->json();

@@ -69,12 +69,12 @@
                             {{ $kunjungan->pengunjung->instansi }}
                         </p>
 
-                        {{-- @if(!empty($kunjungan->nama_prodi))
+                        @if(!empty($kunjungan->nama_prodi))
                         <p style="font-size: 10px; color: #64748b; font-weight: 800; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.05em;">Program Studi Terkait:</p>
                         <p style="font-size: 13px; color: #1e3a8a; font-weight: 700; margin: 0;">
                             {{ $kunjungan->nama_prodi }}
                         </p>
-                        @endif --}}
+                        @endif
                     </div>
 
                     <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-top: 12px;">
