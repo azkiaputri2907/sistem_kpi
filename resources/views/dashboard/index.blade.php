@@ -256,7 +256,7 @@
             @endif
         </div>
 
-        {{-- FITUR TAMBAHAN SETELAH SELESAI (KIRIM EMAIL & TERUSKAN) --}}
+        {{-- FITUR TAMBAHAN SETELAH SELESAI (KIRIM EMAIL & TERUSKAN)
         <div class="flex items-center gap-2">
             @if($isSelesai)
                 <form action="{{ route('kunjungan.kirim-email', ['id' => $k->id]) }}" method="POST" class="inline-block">
@@ -273,7 +273,7 @@
                     </button>
                 </form>
             @endif
-        </div>
+        </div> --}}
     @else
         {{-- TAMPILAN READ-ONLY UNTUK SUPER ADMIN / LAINNYA (DENGAN TAMPILAN TAILWIND) --}}
         <div class="flex items-center justify-center w-full py-1">
