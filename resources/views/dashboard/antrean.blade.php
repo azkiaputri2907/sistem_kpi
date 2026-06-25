@@ -231,7 +231,7 @@
                                 </div>
                             @endif
                         </td>
-                        <td class="px-6 md:px-8 py-4 md:py-6 text-center">
+<td class="px-6 md:px-8 py-4 md:py-6 text-center">
                             @php
                                 $color = match($k->status_layanan) {
                                     'Selesai' => 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400',
@@ -278,52 +278,56 @@
                             <p class="text-[9px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">{{ $k->hari_kunjungan }}</p>
                         </td>
                         <td class="px-6 md:px-8 py-4 md:py-6 text-center">
-                            @php $layananBelumDimulai = $k->status_layanan == 'Antre'; @endphp
                             <div class="flex justify-center gap-1.5 md:gap-2 items-center">
+                                {{-- TOMBOL LIHAT: Selalu muncul untuk semua kondisi status layanan --}}
                                 <a href="{{ url('/status/'.$k->nomor_kunjungan) }}?view=admin" target="_blank" class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-300 rounded-lg md:rounded-xl hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-white transition-all shadow-sm">
                                     <i class="fa-solid fa-eye text-[10px] md:text-xs"></i>
                                 </a>
 
-                               @if($user->role_id == 2)
-    {{-- TOMBOL EMAIL: Hanya muncul jika status BUKAN Selesai DAN BUKAN Ditolak --}}
-    @if($k->status_layanan != 'Selesai' && $k->status_layanan != 'Ditolak' && !$k->is_email_sent)
-        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalEmail('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}', '{{ addslashes($k->keperluan) }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Kirim Email ke Pimpinan' }}">
-            <i class="fa-solid fa-envelope text-xs"></i>
-        </button>
-    @endif
-
-    {{-- TOMBOL TERUSKAN: Hanya muncul jika status BUKAN Selesai DAN BUKAN Ditolak --}}
-    @if($k->status_layanan != 'Selesai' && $k->status_layanan != 'Ditolak' && !$k->is_forwarded)
-        <button type="button" {{ $layananBelumDimulai ? 'disabled' : '' }} onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all {{ $layananBelumDimulai ? 'bg-gray-100 dark:bg-slate-700 text-gray-300 dark:text-slate-500 cursor-not-allowed' : 'bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white' }}" title="{{ $layananBelumDimulai ? 'Mulai layanan terlebih dahulu' : 'Teruskan ke Pimpinan' }}">
-            <i class="fa-solid fa-share-nodes text-xs"></i>
-        </button>
-    @endif
-
-                                    @if($k->is_forwarded && !$k->is_email_sent)
-                                        <button type="button" 
-                                                onclick="peringatanEmailWajib('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '-') }}')" 
-                                                class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" 
-                                                title="Wajib Email Konfirmasi">
-                                            <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                                        </button>
-                                    @endif
-
-                                    @if($k->is_email_sent)
-                                        <button type="button" disabled class="w-9 h-9 flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-500 rounded-xl cursor-not-allowed shadow-sm" title="Email Sudah Terkirim">
-                                            <i class="fa-solid fa-envelope-circle-check text-xs"></i>
-                                        </button>
-                                    @endif
-
+                                @if($user->role_id == 2)
+                                    {{-- KONDISI 1: STATUS ANTRE (BELUM MULAI) --}}
+                                    {{-- Hanya memunculkan tombol Mulai Proses dan Tolak saja --}}
                                     @if($k->status_layanan == 'Antre')
-                                        {{-- LOGIKA BARU: TOMBOL MULAI PROSES --}}
+                                        {{-- TOMBOL MULAI PROSES --}}
                                         <button type="button" onclick="bukaModalProsesSLA('{{ $k->nomor_kunjungan }}')" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 rounded-xl hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white transition-all shadow-sm" title="Mulai Proses">
                                             <i class="fa-solid fa-play text-xs"></i>
                                         </button>
-                                        {{-- LOGIKA BARU: TOMBOL TOLAK SEBELUM LAYANAN DIMULAI --}}
+                                        
+                                        {{-- TOMBOL TOLAK ANTREAN --}}
                                         <button type="button" onclick="bukaModalTolak('{{ $k->id }}')" class="w-9 h-9 flex items-center justify-center bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-600 dark:hover:bg-rose-500 hover:text-white transition-all shadow-sm" title="Tolak Antrean">
                                             <i class="fa-solid fa-xmark text-xs"></i>
                                         </button>
+
+                                    {{-- KONDISI 2: STATUS DIPROSES --}}
+                                    {{-- Memunculkan seluruh tombol operasional kelola dokumen --}}
                                     @elseif(strtolower($k->status_layanan) == 'diproses')
+                                        {{-- TOMBOL EMAIL --}}
+                                        @if(!$k->is_email_sent)
+                                            <button type="button" onclick="bukaModalEmail('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}', '{{ addslashes($k->keperluan) }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white" title="Kirim Email ke Pimpinan">
+                                                <i class="fa-solid fa-envelope text-xs"></i>
+                                            </button>
+                                        @endif
+
+                                        {{-- TOMBOL TERUSKAN --}}
+                                        @if(!$k->is_forwarded)
+                                            <button type="button" onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white" title="Teruskan ke Pimpinan">
+                                                <i class="fa-solid fa-share-nodes text-xs"></i>
+                                            </button>
+                                        @endif
+
+                                        @if($k->is_forwarded && !$k->is_email_sent)
+                                            <button type="button" onclick="peringatanEmailWajib('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '-') }}')" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Wajib Email Konfirmasi">
+                                                <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                                            </button>
+                                        @endif
+
+                                        @if($k->is_email_sent)
+                                            <button type="button" disabled class="w-9 h-9 flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-500 rounded-xl cursor-not-allowed shadow-sm" title="Email Sudah Terkirim">
+                                                <i class="fa-solid fa-envelope-circle-check text-xs"></i>
+                                            </button>
+                                        @endif
+
+                                        {{-- TOMBOL SELESAI LAYANAN --}}
                                         <form id="formSelesaiLayanan-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="m-0">
                                             @csrf
                                             <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}')" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 rounded-xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white transition-all shadow-sm" title="Selesai">
@@ -331,12 +335,16 @@
                                             </button>
                                         </form>
 
+                                        {{-- TOMBOL UPLOAD FILE --}}
                                         @if(empty($k->file_surat))
                                             <button type="button" onclick="bukaModalUpload('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Upload File">
                                                 <i class="fa-solid fa-paperclip text-xs"></i>
                                             </button>
                                         @endif
                                     @endif
+                                    
+                                    {{-- KONDISI 3: STATUS DITOLAK / SELESAI --}}
+                                    {{-- Sengaja dikosongkan agar jika statusnya "Ditolak", maka baris tombol operasional tidak akan dirender, menyisakan tombol "Lihat" saja di paling atas --}}
                                 @endif
                             </div>
                         </td>
@@ -507,12 +515,16 @@
                 <div class="mb-5 bg-amber-50 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-100 dark:border-amber-900/50">
                     <p class="font-bold text-gray-800 dark:text-gray-200 text-sm" id="upload_nama_pengunjung"></p>
                     <p class="text-xs text-amber-700 dark:text-amber-300 mt-2 leading-relaxed">
-                        Upload dokumen pendukung layanan dalam format PDF. Status layanan tetap diproses sampai admin menekan tombol selesai.
+                        {{-- REVISI: Mengubah keterangan deskripsi format berkas dan batas kapasitas --}}
+                        Upload dokumen pendukung layanan dalam format <span class="font-bold">PDF, Word (DOC/DOCX), atau Gambar (PNG/JPG/JPEG)</span> dengan ukuran maksimal <span class="font-bold text-amber-600 dark:text-amber-400">10 MB</span>. Status layanan tetap diproses sampai admin menekan tombol selesai.
                     </p>
                 </div>
 
                 <div class="mb-6">
-                    <input type="file" name="file_surat" id="inputFileSurat" accept=".pdf" required class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-100 dark:file:bg-amber-900/50 file:text-amber-700 dark:file:text-amber-400">
+                    {{-- REVISI: Mengubah atribut accept agar meloloskan pdf, doc, docx, png, jpg, jpeg --}}
+                    <input type="file" name="file_surat" id="inputFileSurat" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" required class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-amber-100 dark:file:bg-amber-900/50 file:text-amber-700 dark:file:text-amber-400">
+                    {{-- Wadah pesan error jika file melebihi kapasitas 10 MB sebelum disubmit --}}
+                    <p id="errorSizeFile" class="hidden mt-2 text-xs text-rose-500 font-bold"></p>
                 </div>
 
                 <div class="flex justify-end gap-3">
@@ -530,14 +542,17 @@
             <h2 class="text-xl font-black text-slate-900 dark:text-white">Tolak Antrean</h2>
             <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Wajib isi alasan penolakan</p>
         </div>
-       <form id="formTolak" method="POST" action="">
+        
+        {{-- REVISI: Menambahkan attribute onsubmit untuk memicu fungsi loading --}}
+        <form id="formTolak" method="POST" action="" onsubmit="handleTolakLoading(event)">
             @csrf
             <textarea name="alasan_tolak" required
                 class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-100 dark:focus:ring-rose-950 outline-none"
                 placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
+            
             <div class="flex gap-3 mt-5">
-                <button type="button" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase">Batal</button>
-                <button type="submit" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none">Kirim Penolakan</button>
+                <button type="button" id="btnBatalTolak" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase disabled:opacity-50 disabled:cursor-not-allowed">Batal</button>
+                <button type="submit" id="btnSubmitTolak" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed">Kirim Penolakan</button>
             </div>
         </form>
     </div>
@@ -641,13 +656,25 @@
         isModalOpen = false;
     }
 
-    // ==========================================
+// ==========================================
     // LOGIKA BARU: JAVASCRIPT MODAL TOLAK
     // ==========================================
     function bukaModalTolak(id) {
         isModalOpen = true;
         const modal = document.getElementById('modalTolak');
         const form = document.getElementById('formTolak');
+        
+        // Pastikan element tombol di-reset saat modal dibuka kembali
+        const btnSubmit = document.getElementById('btnSubmitTolak');
+        const btnBatal = document.getElementById('btnBatalTolak');
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = 'Kirim Penolakan';
+        }
+        if (btnBatal) {
+            btnBatal.disabled = false;
+        }
+
         form.action = `/dashboard/tolak/${id}`;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -655,9 +682,34 @@
 
     function tutupModalTolak() {
         const modal = document.getElementById('modalTolak');
+        const form = document.getElementById('formTolak');
+        
+        // Reset isi text area saat modal ditutup
+        if (form) form.reset();
+
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         isModalOpen = false;
+    }
+
+    // REVISI TAMBAHAN: FUNGSI MEMICU POP-UP LOADING SAAT SUBMIT TOLAK
+    function handleTolakLoading(event) {
+        const btnSubmit = document.getElementById('btnSubmitTolak');
+        const btnBatal = document.getElementById('btnBatalTolak');
+        
+        // 1. Ubah visual tombol di dalam modal menjadi loading & disabled (anti double-click)
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-circle-notch animate-spin mr-2"></i> Mengirim...';
+        }
+        if (btnBatal) {
+            btnBatal.disabled = true;
+        }
+
+        // 2. Pemicu utama: Memanggil fungsi pop-up screen loading global bawaan sistem Anda
+        if (typeof showGlobalLoading === 'function') {
+            showGlobalLoading("Memproses penolakan antrean dan memperbarui status...");
+        }
     }
 
     // ==========================================
@@ -676,7 +728,7 @@
         isModalOpen = false;
     }
 
-    // ==========================================
+// ==========================================
     // MODAL UPLOAD FILE
     // ==========================================
     function bukaModalUpload(id, nama) {
@@ -686,37 +738,74 @@
         document.getElementById('modalUploadFile').classList.remove('hidden');
     }
 
-document.addEventListener("DOMContentLoaded", function () {
-    const inputFile = document.getElementById('inputFileSurat');
-    const btnSubmitUpload = document.getElementById('btnSubmitUpload');
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputFile = document.getElementById('inputFileSurat');
+        const btnSubmitUpload = document.getElementById('btnSubmitUpload');
+        const errorSizeFile = document.getElementById('errorSizeFile');
 
-    if (inputFile && btnSubmitUpload) {
-        inputFile.addEventListener('change', function () {
-            if (this.files && this.files.length > 0) {
-                btnSubmitUpload.classList.remove('hidden');
-            } else {
-                btnSubmitUpload.classList.add('hidden');
+        if (inputFile && btnSubmitUpload) {
+            inputFile.addEventListener('change', function () {
+                if (this.files && this.files.length > 0) {
+                    const fileSize = this.files[0].size; // Ukuran dalam Bytes
+                    const maxSize = 10 * 1024 * 1024; // 10 MB dalam Bytes
+
+                    // REVISI: Validasi tambahan client-side jika melebihi 10 MB tombol disembunyikan dan muncul warning
+                    if (fileSize > maxSize) {
+                        errorSizeFile.innerText = "⚠️ Ukuran berkas melebihi batas maksimal 10 MB!";
+                        errorSizeFile.classList.remove('hidden');
+                        this.value = ""; // Reset input file jika tidak valid
+                        btnSubmitUpload.classList.add('hidden');
+                    } else {
+                        errorSizeFile.classList.add('hidden');
+                        btnSubmitUpload.classList.remove('hidden');
+                    }
+                } else {
+                    btnSubmitUpload.classList.add('hidden');
+                    errorSizeFile.classList.add('hidden');
+                }
+            });
+        }
+
+        @if(session('success_upload_remind'))
+        const isDarkMode = document.documentElement.classList.contains('dark');
+
+        Swal.fire({
+            title: 'Berkas Berhasil Diunggah!',
+            text: "{{ session('success_upload_remind') }}",
+            icon: 'success',
+            showCancelButton: false,
+            confirmButtonText: 'Oke',
+            background: isDarkMode ? '#1e293b' : '#ffffff',
+            color: isDarkMode ? '#f8fafc' : '#1f2937',
+            confirmButtonColor: '#f59e0b', {{-- Menggunakan warna amber/kuning khas tema sistem kamu --}}
+            customClass: {
+                popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-6',
+                title: 'font-black text-xl tracking-tight text-emerald-600 dark:text-emerald-400',
+                htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-3 leading-relaxed font-medium',
+                confirmButton: 'rounded-xl font-bold text-sm px-6 py-3 w-full sm:w-auto',
             }
         });
-    }
+        @endif
+        
+        @if(session('trigger_email_modal'))
+            const targetId = "{{ session('email_kunjungan_id') }}";
+            const targetNama = "{{ session('email_nama') }}";
+            const targetKeperluan = {!! json_encode(session('email_keperluan')) !!};
 
-    @if(session('trigger_email_modal'))
-        const targetId = "{{ session('email_kunjungan_id') }}";
-        const targetNama = "{{ session('email_nama') }}";
-        const targetKeperluan = {!! json_encode(session('email_keperluan')) !!};
-
-        if (typeof bukaModalEmail === 'function' && targetId) {
-            bukaModalEmail(targetId, targetNama, targetKeperluan);
-        }
-    @endif
-});
+            if (typeof bukaModalEmail === 'function' && targetId) {
+                bukaModalEmail(targetId, targetNama, targetKeperluan);
+            }
+        @endif
+    });
 
     function tutupModalUpload() {
         const form = document.getElementById('formUploadSelesai');
         const btnSubmitUpload = document.getElementById('btnSubmitUpload');
+        const errorSizeFile = document.getElementById('errorSizeFile');
 
         if (form) form.reset();
         if (btnSubmitUpload) btnSubmitUpload.classList.add('hidden');
+        if (errorSizeFile) errorSizeFile.classList.add('hidden');
 
         document.getElementById('modalUploadFile').classList.add('hidden');
         isModalOpen = false;

@@ -1516,34 +1516,47 @@ public function manajemenAntrean(Request $request)
             'Antrean berhasil ditolak.'
         );
     }
-    public function uploadFile(Request $request,$id)
+public function uploadFile(Request $request, $id)
     {
-        $kunjungan=$this->readSheet('kunjungan')
-            ->firstWhere('id',$id);
-        if(!$kunjungan){
-            return back()->with('error','Data tidak ditemukan');
+        $kunjungan = $this->readSheet('kunjungan')
+            ->firstWhere('id', $id);
+            
+        if (!$kunjungan) {
+            return back()->with('error', 'Data tidak ditemukan');
         }
+
+        // 1. Validasi jenis file baru dan batas ukuran maksimal 10 MB (10240 KB)
         $request->validate([
-            'file_surat'=>'required|mimes:pdf|max:2048'
+            'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240'
         ]);
-        $namaFile=$kunjungan->file_surat ?? '';
-        if($request->hasFile('file_surat')){
-            $file=$request->file('file_surat');
-            $namaFile=
-                'surat_'.
-                str_replace('-','_',$kunjungan->nomor_kunjungan).
-                '_'.
-                time().
-                '.pdf';
-            $file->storeAs('surat',$namaFile,'public');
+
+        $namaFile = $kunjungan->file_surat ?? '';
+
+        if ($request->hasFile('file_surat')) {
+            $file = $request->file('file_surat');
+            
+            // 2. Ambil ekstensi asli dari file yang diupload secara dinamis
+            $ekstensi = $file->getClientOriginalExtension();
+
+            // 3. Gabungkan nama file dengan ekstensi dinamis tersebut
+            $namaFile = 
+                'surat_' .
+                str_replace('-', '_', $kunjungan->nomor_kunjungan) .
+                '_' .
+                time() .
+                '.' . $ekstensi;
+
+            $file->storeAs('surat', $namaFile, 'public');
         }
-        $this->updateSheet('kunjungan',$kunjungan->id,[
+
+        $this->updateSheet('kunjungan', $kunjungan->id, [
             // TIDAK UBAH STATUS
-            'file_surat'=>$namaFile
+            'file_surat' => $namaFile
         ]);
+
         return back()->with(
-            'success',
-            'File berhasil diupload'
+            'success_upload_remind',
+            'Berkas pendukung berhasil diunggah! Jangan lupa untuk segera menekan tombol Selesai pada kartu antrean jika pelayanan fisik telah berakhir agar pencatatan SLA KPI akurat.'
         );
     }
 
