@@ -1670,7 +1670,7 @@ public function kirimEmailPimpinan(Request $request)
         $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
         $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
 
-// 4. Ambil data prodi terkaittttt
+// 4. Ambil data prodi terkait
         $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
             return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
         });
@@ -1678,10 +1678,11 @@ public function kirimEmailPimpinan(Request $request)
         $namaProdi = '-';
         if ($prodiData) {
             $prodiData = (object) $prodiData;
-            $namaProdi = $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
+            // DIUBAH DI SINI: tambahkan $prodiData->nama di urutan paling depan
+            $namaProdi = $prodiData->nama ?? $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
         }
 
-        // !!! TAMBAHKAN BARIS INI BIAR BLADE KAMU BISA MEMBACA PRODI !!!
+        // BIAR BLADE LOKAL BISA MEMBACA PRODI
         $kunjungan->nama_prodi = $namaProdi;
 
         // 5. PROSES TEMBAK KE GOOGLE SCRIPT (Menerobos Firewall SMTP Vercel)
