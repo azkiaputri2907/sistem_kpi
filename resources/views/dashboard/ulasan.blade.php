@@ -28,47 +28,46 @@
             </p>
         </div>
 
-{{-- WADAH UTAMA: Menggunakan items-center di semua ukuran layar agar garis tengah sejajar sempurna --}}
 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
 
-    {{-- FILTER PRODI --}}
-    <form action="{{ route('dashboard.ulasan') }}" method="GET" class="w-full sm:w-auto m-0 flex items-center">
-        <div class="relative w-full sm:w-auto">
-            <select name="prodi_id"
-                onchange="this.form.submit()"
-                {{ !$isSuper ? 'disabled' : '' }}
-                {{-- PERBAIKAN: Padding vertikal diubah dari py-3.5 menjadi py-3 agar tingginya pas dengan tombol --}}
-                class="w-full sm:w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950/50 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500' : '' }}">
+            {{-- FILTER PRODI --}}
+            <form action="{{ route('dashboard.ulasan') }}" method="GET" class="w-full sm:w-auto m-0 flex items-center">
+                <div class="relative w-full sm:w-auto">
+                    <select name="prodi_id"
+                        onchange="this.form.submit()"
+                        {{ !$isSuper ? 'disabled' : '' }}
+                        {{-- PERBAIKAN: py-3 agar sama tinggi dengan tombol laporan ulasan --}}
+                        class="w-full sm:w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950/50 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500' : '' }}">
 
-                @if($isSuper)
-                    <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
-                    @foreach($daftar_prodi as $p)
-                        <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
-                            🎓 {{ $p->nama }}
-                        </option>
-                    @endforeach
-                @else
-                    <option value="{{ $user->prodi_id }}" selected class="dark:bg-slate-800">
-                        🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
-                    </option>
-                @endif
-            </select>
+                        @if($isSuper)
+                            <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
+                            @foreach($daftar_prodi as $p)
+                                <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
+                                    🎓 {{ $p->nama }}
+                                </option>
+                            @endforeach
+                        @else
+                            <option value="{{ $user->prodi_id }}" selected class="dark:bg-slate-800">
+                                🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
+                            </option>
+                        @endif
+                    </select>
 
-            <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
-                <i class="fa-solid fa-chevron-down"></i>
-            </div>
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+            </form>
+            
+            {{-- TOMBOL TRIGGER MODAL EKSPOR PREMIUM --}}
+            <button type="button" onclick="openExportModal('ulasan')"
+                class="inline-flex justify-center items-center w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
+                <i class="fa-solid fa-file-export mr-2"></i>
+                Laporan Ulasan
+            </button>
+
         </div>
-    </form>
-    
-    {{-- TOMBOL TRIGGER MODAL EKSPOR PREMIUM --}}
-    {{-- PERBAIKAN: Ditambahkan w-full sm:w-auto agar responsifnya sama rata dengan select filter --}}
-    <button type="button" onclick="openExportModal('ulasan')"
-        class="inline-flex justify-center items-center w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
-        <i class="fa-solid fa-file-export mr-2"></i>
-        Laporan Ulasan
-    </button>
-
-</div>
+    </div>
 
     {{-- GRID ULASAN KARTU --}}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
