@@ -13,7 +13,7 @@ use App\Http\Middleware\CekSessionLogin;
 
 Route::get('/api/antrean-diproses', [KunjunganController::class, 'getAntreanDiproses'])->name('api.antrean.diproses');
 /*
-notif data masuk dari pengunjung ke admin
+notif data masuk dari pengunjung ke adminnn
 */
 Route::get('/dashboard/check-notifications', [App\Http\Controllers\DashboardController::class, 'checkNotifications'])
     ->name('dashboard.check-notif');
