@@ -1635,52 +1635,79 @@ public function uploadFile(Request $request, $id)
     }
 
 public function kirimEmailPimpinan(Request $request)
-{
-    $request->validate([
-        'kunjungan_id' => 'required',
-        'email_pimpinan' => 'required|email'
-    ]);
-
-    $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
-
-    // ... (Kodingan pencarian data kunjungan, pengunjung, keperluan tetap sama seperti milikmu) ...
-    $kunjungan = $db['kunjungan']->firstWhere('id', $request->kunjungan_id);
-    // (pastikan semua data penunjang seperti $kunjungan->nama_prodi, dll sudah terisi ke bawah)
-    
-    // Ambil variable data penunjang untuk payload
-    $namaPengunjung = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id)->nama_lengkap ?? 'Umum';
-    $instansi = $db['pengunjung']->firstWhere('id', $kunjungan->pengunjung_id)->asal_instansi ?? 'Umum / Mandiri';
-    $masterKeperluan = $db['master_keperluan']->firstWhere('id', $kunjungan->keperluan_id)->keterangan ?? 'Kunjungan Umum';
-    $prodiData = $db['master_prodi_instansi']->firstWhere('id', $kunjungan->prodi_id);
-    $namaProdi = $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
-
-    $urlGas = 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec';
-
-    try {
-        // Tembak GAS menggunakan JSON biasa via port HTTP 443 (Gak bakal diblokir Vercel)
-        $response = Http::post($urlGas . '?action=kirim_email_pimpinan', [
-            'email_pimpinan' => $request->email_pimpinan,
-            'nomor_kunjungan' => $kunjungan->nomor_kunjungan,
-            'nama_pengunjung' => $namaPengunjung,
-            'instansi' => $instansi,
-            'keperluan' => $masterKeperluan,
-            'detail' => $kunjungan->keperluan ?? '-',
-            'prodi' => $namaProdi
+    {
+        $request->validate([
+            'kunjungan_id' => 'required',
+            'email_pimpinan' => 'required|email'
         ]);
 
-        $hasil = $response->json();
+        $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
 
-        if (isset($hasil['status']) && $hasil['status'] === 'success') {
-            $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
-            return back()->with('success', 'Email berhasil diteruskan ke pimpinan lewat Google Server!');
+        // 1. Ambil data kunjungan berdasarkan ID (Gaya asli kamu yang aman)
+        $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
+            return isset($item->id) && $item->id == $request->kunjungan_id;
+        });
+
+        if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
+        $kunjungan = (object) $kunjungan;
+
+        // 2. Ambil data pengunjung terkait
+        $pengunjungData = $db['pengunjung']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == $kunjungan->pengunjung_id;
+        });
+
+        if ($pengunjungData) {
+            $kunjungan->pengunjung = (object) $pengunjungData;
+            $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
         } else {
-            return back()->with('error', 'Gagal dikirim via GAS: ' . ($hasil['message'] ?? 'Error tidak diketahui'));
+            $kunjungan->pengunjung = (object) ['nama_lengkap' => 'Umum', 'instansi' => 'Umum / Mandiri'];
         }
 
-    } catch (\Exception $e) {
-        return back()->with('error', 'Gagal menghubungi server Google untuk email: ' . $e->getMessage());
+        // 3. Ambil data keperluan
+        $masterKeperluan = $db['master_keperluan']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == ($kunjungan->keperluan_id ?? null);
+        });
+        $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
+        $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
+
+        // 4. Ambil data prodi terkait (Diperbaiki agar tidak memicu error Property does not exist)
+        $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
+        });
+        
+        $namaProdi = '-';
+        if ($prodiData) {
+            $prodiData = (object) $prodiData;
+            $namaProdi = $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
+        }
+
+        // 5. PROSES TEMBAK KE GOOGLE SCRIPT (Menerobos Firewall SMTP Vercel)
+        try {
+            $urlGas = $this->getApiUrl(); // Otomatis mengambil dari env GOOGLE_SCRIPT_URL kamu
+
+            $response = Http::post($urlGas . '?action=kirim_email_pimpinan', [
+                'email_pimpinan' => $request->email_pimpinan,
+                'nomor_kunjungan' => $kunjungan->nomor_kunjungan,
+                'nama_pengunjung' => $kunjungan->pengunjung->nama_lengkap,
+                'instansi' => $kunjungan->pengunjung->instansi,
+                'keperluan' => $kunjungan->nama_keperluan_utama,
+                'detail' => $kunjungan->keperluan_detail,
+                'prodi' => $namaProdi
+            ]);
+
+            $hasil = $response->json();
+
+            if (isset($hasil['status']) && $hasil['status'] === 'success') {
+                $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
+                return back()->with('success', 'Email berhasil diteruskan ke pimpinan via Google Server!');
+            } else {
+                return back()->with('error', 'Gagal dikirim via GAS: ' . ($hasil['message'] ?? 'Error tidak diketahui'));
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghubungi server Google untuk email: ' . $e->getMessage());
+        }
     }
-}
 
     // =========================================================================
     // CONTROL PANEL SETTINGS
