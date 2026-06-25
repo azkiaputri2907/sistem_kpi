@@ -553,7 +553,7 @@ function startRotation() {
 
         animationInterval = setInterval(() => {
             // 1. Efek Roda Berputar ke Atas/Belakang (Menghilang)
-            container.style.transition = "all 350s ease-in-out"; // Durasi rotasi keluar cepat
+            container.style.transition = "all 350ms ease-in-out"; // Durasi rotasi keluar cepat
             container.style.transform = "rotateX(90deg)";
             container.style.opacity = "0";
 
