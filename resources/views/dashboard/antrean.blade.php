@@ -179,7 +179,7 @@
             <table class="w-full text-left border-collapse min-w-[1000px]">
                 <thead>
                     <tr class="bg-gray-50/50 dark:bg-slate-900/40">
-                        <th class="px-6 md:px-8 py-5 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">ID</th>
+                        <th class="px-6 md:px-8 py-5 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Nomor Antrean</th>
                         <th class="px-6 md:px-8 py-5 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest">Nama Pengunjung</th>
                         <th class="px-6 md:px-8 py-5 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Status Layanan</th>
                         <th class="px-6 md:px-8 py-5 text-[10px] font-black text-gray-400 dark:text-slate-500 uppercase tracking-widest text-center">Estimasi SLA</th>
