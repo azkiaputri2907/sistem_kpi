@@ -254,114 +254,61 @@ class DashboardController extends Controller
 
     })->values();
 
+// =========================================================
+    // KPI KUANTITAS (DENGAN TARGET 10 PENGUNJUNG BULANAN)
     // =========================================================
-    // KPI KUANTITAS
-    // =========================================================
-    $totalKunjungan =
-        $kunjunganData->count();
-
-    $totalDilayani =
-        $kunjunganData
-        ->where('status_layanan', 'Selesai')
-        ->count();
-
-    $targetTamu = 10;
-
-    $skorKuantitas =
-        $targetTamu > 0
-        ? round(($totalDilayani / $targetTamu) * 100, 1)
-        : 0;
-
-    $skorKuantitas =
-        max(0, min(100, $skorKuantitas));
+    $totalKunjungan = $kunjunganData->count();
+    $totalDilayani = $kunjunganData->where('status_layanan', 'Selesai')->count();
+    
+    // Target ditetapkan 10 pengunjung sebulan
+    $targetTamu = 10; 
+    
+    // Rumus: (Total Selesai / Target 10) * 100%
+    $skorKuantitas = $targetTamu > 0 ? round(($totalDilayani / $targetTamu) * 100, 1) : 0;
+    $skorKuantitas = max(0, min(100, $skorKuantitas)); // Batasi maksimal nilai 100%
 
     // =========================================================
-    // KPI EFEKTIVITAS (SLA)
+    // KPI EFEKTIVITAS (SLA) - TETAP JAGA FUNGSI ASLI 100%
     // =========================================================
-    $jumlahTepatWaktu =
-        $kunjunganData->filter(function($item) {
+    $jumlahTepatWaktu = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TEPAT WAKTU';
+    })->count();
 
-            return strtoupper(
-                trim($item->status_sla ?? '')
-            ) == 'TEPAT WAKTU';
+    $jumlahTerlambat = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TERLAMBAT';
+    })->count();
 
-        })->count();
+    $jumlahDitolak = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
+    })->count();
 
-    $jumlahTerlambat =
-        $kunjunganData->filter(function($item) {
-
-            return strtoupper(
-                trim($item->status_sla ?? '')
-            ) == 'TERLAMBAT';
-
-        })->count();
-
-    $jumlahDitolak =
-        $kunjunganData->filter(function($item) {
-
-            return strtoupper(
-                trim($item->status_layanan ?? '')
-            ) == 'DITOLAK';
-
-        })->count();
-
-    $nilaiEfektivitas =
-        ($jumlahTepatWaktu * 1) +
-        ($jumlahTerlambat * 0.5) +
-        ($jumlahDitolak * 0);
-
-    $efektivitas =
-        $totalKunjungan > 0
-        ? round(
-            ($nilaiEfektivitas / $totalKunjungan) * 100,
-            1
-        )
-        : 0;
-
-    $efektivitas =
-        max(0, min(100, $efektivitas));
+    $nilaiEfektivitas = ($jumlahTepatWaktu * 1) + ($jumlahTerlambat * 0.5) + ($jumlahDitolak * 0);
+    
+    // Efektivitas pembaginya tetap total kunjungan bulan ini agar adil
+    $efektivitas = $totalKunjungan > 0 ? round(($nilaiEfektivitas / $totalKunjungan) * 100, 1) : 0;
+    $efektivitas = max(0, min(100, $efektivitas));
 
     // =========================================================
     // PERSENTASE PENOLAKAN
     // =========================================================
-    $persentasePenolakan =
-        $totalKunjungan > 0
-        ? round(
-            ($jumlahDitolak / $totalKunjungan) * 100,
-            1
-        )
-        : 0;
+    $persentasePenolakan = $totalKunjungan > 0 ? round(($jumlahDitolak / $totalKunjungan) * 100, 1) : 0;
 
+// =========================================================
+    // KPI KUALITAS SURVEY (FIX MURNI SESUAI GAMBAR RUMUS LAPORAN TA)
     // =========================================================
-    // KPI KUALITAS SURVEY
-    // =========================================================
-    $totalBintang = 0;
+    $totalSkorSurvey = 0;
     $jumlahResponden = 0;
 
     foreach ($kunjunganData as $k) {
+        // Cari data survey yang terhubung dengan kunjungan ini
+        $surv = $db['survey']->filter(function($s) use ($k) {
+            return $s->kunjungan_id == $k->id;
+        })->first();
 
-        $surv =
-            $db['survey']
-            ->firstWhere('kunjungan_id', $k->id);
-
-        if ($surv) {
-
-            $detail =
-                $db['detail_survey']
-                ->firstWhere('survey_id', $surv->id);
-
-            if ($detail) {
-
-                $totalBintang += (
-                    $detail->p1 +
-                    $detail->p2 +
-                    $detail->p3 +
-                    $detail->p4 +
-                    $detail->p5
-                );
-
-                $jumlahResponden++;
-            }
+        // Pastikan datanya ada dan kolom skor_total tidak kosong
+        if ($surv && isset($surv->skor_total)) {
+            $totalSkorSurvey += (int)$surv->skor_total;
+            $jumlahResponden++;
         }
     }
 
@@ -369,16 +316,15 @@ class DashboardController extends Controller
     $skorKualitas = 0;
 
     if ($jumlahResponden > 0) {
+        // 1. Nilai KPI Kualitas Kinerja (Rata-rata Skor Total dari Google Sheets)
+        // Contoh: (100 + 100) / 2 = 100
+        $skorKualitas = round($totalSkorSurvey / $jumlahResponden, 1);
+        $skorKualitas = max(0, min(100, $skorKualitas)); // Proteksi maksimal batas nilai 100
 
-        $rataRata =
-            $totalBintang /
-            ($jumlahResponden * 5);
-
-        $kualitasRating =
-            number_format(round($rataRata, 1), 1);
-
-        $skorKualitas =
-            round(($rataRata / 5) * 100, 1);
+        // 2. Rumus dari Gambar TA Anda: Rata-rata Skor Total / 20
+        // Contoh: 100 / 20 = 5.0
+        $ratingAngka = $skorKualitas / 20;
+        $kualitasRating = number_format(round($ratingAngka, 1), 1);
     }
 
     // =========================================================
@@ -421,7 +367,8 @@ class DashboardController extends Controller
         'kpi_total' => $kpiTotal,
 
         // Tambahan
-        'persentase_penolakan' => $persentasePenolakan
+        'persentase_penolakan' => $persentasePenolakan,
+        'target_tamu' => $targetTamu,
     ]);
 }
 public function cekTotal(Request $request)
@@ -564,7 +511,7 @@ public function analytics()
     }
 
     // ==========================================
-    // CARD STATISTIK ANALYTICS (Fungsi Asli Dipertahankan)
+    // CARD STATISTIK ANALYTICS (MENGGUNAKAN RUMUS SKOR TOTAL REVISI)
     // ==========================================
     $totalKunjunganCard = $kunjunganData->count();
 
@@ -587,39 +534,34 @@ public function analytics()
         : 0;
     $efektivitasPersenCard = max(0, min(100, $efektivitasPersenCard));
 
-    $totalBintangCard = 0;
+    $totalSkorSurveyCard = 0;
     $jumlahRespondenCard = 0;
 
     foreach ($kunjunganData as $k) {
         $surv = $db['survey']->firstWhere('kunjungan_id', $k->id);
-        if ($surv) {
-            $detail = $db['detail_survey']->firstWhere('survey_id', $surv->id);
-            if ($detail) {
-                $totalBintangCard += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
-                $jumlahRespondenCard++;
-            }
+        if ($surv && isset($surv->skor_total)) {
+            $totalSkorSurveyCard += (int)$surv->skor_total;
+            $jumlahRespondenCard++;
         }
     }
 
     $kualitasRatingCard = '-';
     if ($jumlahRespondenCard > 0) {
-        $rataRataCard = $totalBintangCard / ($jumlahRespondenCard * 5);
-        $kualitasRatingCard = number_format(round($rataRataCard, 1), 1);
+        // Rumus TA murni: Rata-rata Skor Total / 20 untuk konversi ke skala Bintang 1.0 - 5.0
+        $rataRataSkor = $totalSkorSurveyCard / $jumlahRespondenCard;
+        $kualitasRatingCard = number_format(round($rataRataSkor / 20, 1), 1);
     }
 
     // =========================================================================
-    // KODE BARU: LOGIKA KODE KHUSUS GRAFIK KINERJA (PEKANAN / BAR KPI)
+    // KODE GRAFIK KINERJA PEKANAN (MURNI INDEKS 1-100 & TETAP PENYARINGAN WEEKEND)
     // =========================================================================
 
-    // Tentukan tanggal referensi (jika user filter start_date pakai itu, jika tidak pakai hari ini)
     $startDateParam = request('start_date');
     $referenceDate = $startDateParam ? Carbon::parse($startDateParam) : Carbon::now();
 
-    // Cari hari Senin dan Jumat di minggu tempat tanggal referensi berada
     $startOfWeek = $referenceDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
     $endOfWeek = $referenceDate->copy()->endOfWeek(Carbon::FRIDAY)->endOfDay();
 
-    // Buat Label tanggal dinamis untuk Sumbu X Grafik Kinerja
     $labels = [
         'Senin (' . $startOfWeek->format('d/m') . ')',
         'Selasa (' . $startOfWeek->copy()->addDays(1)->format('d/m') . ')',
@@ -635,12 +577,10 @@ public function analytics()
 
     $chartDatasets = [];
 
-    // PERBAIKAN 1: Filter query diperketat agar HANYA mengambil data yang hari kerjanya Senin s.d Jumat
+    // Filter query: HANYA mengambil data rentang tanggal Senin s.d Jumat (Sabtu/Minggu di-skip)
     $grafikQuery = $kunjunganData->filter(function($k) use ($startOfWeek, $endOfWeek) {
         if (empty($k->created_at)) return false;
         $date = Carbon::parse($k->created_at);
-
-        // Pastikan berada di rentang tanggal dan BUKAN hari Sabtu (6) atau Minggu (7)
         return $date->gte($startOfWeek) && $date->lte($endOfWeek) && $date->dayOfWeekIso <= 5;
     });
 
@@ -657,19 +597,19 @@ public function analytics()
             $createdDate = Carbon::parse($data->created_at ?? now());
             $dayOfWeek = $createdDate->dayOfWeekIso;
 
-            // PERBAIKAN 2: Jika ada data bocor di luar Senin-Jumat (dayOfWeek > 5), langsung LEWATI (skip)
             if ($dayOfWeek > 5) {
-                continue;
+                continue; // Proteksi tambahan agar Sabtu-Minggu dilewati murni
             }
             $hariIndex = $dayOfWeek - 1;
 
-            // --- PERHITUNGAN ASPEK KPI ---
-            // 1. Kuantitas
+            // --- PERHITUNGAN 3 ASPEK KPI INDEKS REAL DATABASE (1 - 100) ---
+            
+            // 1. Aspek Kuantitas
             $skorKuantitas = isset($data->skor_pelayanan) ? floatval($data->skor_pelayanan) : 0;
-            if ($skorKuantitas == 0) $skorKuantitas = 4.5;
+            if ($skorKuantitas == 0) $skorKuantitas = 5.0; // Default jika kosong disamakan dengan kondisi data TI Anda
             $nilaiKuantitasSkala100 = $skorKuantitas <= 5 ? $skorKuantitas * 20 : $skorKuantitas;
 
-            // 2. Kualitas (Survey)
+            // 2. Aspek Kualitas (Membaca langsung kolom 'skor_total' dari Database)
             $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
             $skorKualitas = 0;
             if ($nama_pengunjung) {
@@ -677,12 +617,14 @@ public function analytics()
                     return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
                            || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
                 });
+                
+                // Mengambil nilai murni skor_total (misal: 100) dari spreadsheet
                 $skorKualitas = $survey ? floatval($survey->skor_total) : 0;
             }
-            if ($skorKualitas == 0) $skorKualitas = 4.5;
+            if ($skorKualitas == 0) $skorKualitas = 100; // Default jika kosong sesuai kondisi TI Anda
             $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
 
-            // 3. SLA (Efektivitas)
+            // 3. Aspek SLA (Efektivitas)
             $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
             if ($statusSlaRaw === 'TEPAT WAKTU' || $statusSlaRaw === '1') {
                 $skorEfektivitas = 100;
@@ -690,13 +632,14 @@ public function analytics()
                 $skorEfektivitas = 70;
             }
 
+            // Hitung Bobot Gabungan Indeks KPI (20% Kuantitas, 40% Efektivitas, 40% Kualitas)
             $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
 
             $hariKpiSum[$hariIndex] += $nilaiKpiGabunganRow;
             $hariDataCount[$hariIndex]++;
         }
 
-        // Hitung rata-rata per hari kerja di minggu tersebut
+        // Hitung nilai indeks rata-rata per hari kerja
         for ($i = 0; $i < 5; $i++) {
             $prodiHariData[$i] = $hariDataCount[$i] > 0
                 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1)
@@ -713,11 +656,7 @@ public function analytics()
         ];
     }
     
-    // ==========================================
-    // RETURN KE VIEW DENGAN DATA UTAN & BARU
-    // ==========================================
     return view('dashboard.analytics', [
-
         'user' => $user,
         'daftar_prodi' => $daftar_prodi,
         'is_na' => $is_na,
@@ -735,7 +674,6 @@ public function analytics()
             'persen' => $persentasePuas
         ],
 
-        // Keperluan (Tetap Utuh)
         'distribusi_label' => $distribusiLabel,
         'distribusi_data' => $distribusiData,
 
@@ -743,7 +681,6 @@ public function analytics()
         'data_tepat_waktu' => $data_tepat_waktu,
         'data_terlambat' => $data_terlambat,
 
-        // Tambahan Variabel untuk Injeksi Grafik Kinerja Baru di analytics.blade.php
         'labels' => $labels,
         'chartDatasets' => $chartDatasets
     ]);

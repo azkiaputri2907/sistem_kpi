@@ -72,56 +72,101 @@
 
         </div>
     </div>
+{{-- CARD STATISTIK --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
 
-    {{-- CARD STATISTIK --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-
-        {{-- TOTAL --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    {{-- TOTAL KUNJUNGAN + TARGET TRACKER --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
             <div>
                 <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Total Kunjungan
+                    Kuantitas Layanan
                 </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $total_kunjungan }}
-                </h2>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $total_dilayani ?? $total_kunjungan }}
+                    </h2>
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500">
+                        / {{ $target_tamu ?? 10 }} Selesai
+                    </span>
+                </div>
             </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
                 <i class="fa-solid fa-users"></i>
             </div>
         </div>
+        
+        {{-- Progress Bar Target --}}
+        @php
+            $realisasi = $total_dilayani ?? $total_kunjungan;
+            $target = $target_tamu ?? 10;
+            $persenKuantitas = $target > 0 ? min(100, round(($realisasi / $target) * 100)) : 0;
+        @endphp
+        <div class="mt-2">
+            <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
+                <span class="text-slate-400 dark:text-slate-500">Progres Target Bulan Ini</span>
+                <span class="text-blue-600 dark:text-blue-400">{{ $persenKuantitas }}%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 dark:bg-blue-600 rounded-full transition-all duration-500" style="width: {{ $persenKuantitas }}%"></div>
+            </div>
+        </div>
+    </div>
 
-        {{-- SLA --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    {{-- SLA (EFEKTIVITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
             <div>
                 <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                     Efektivitas (SLA)
                 </p>
                 <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $efektivitas_persen }}%
+                    {{ $efektivitas_persen ?? $efektivitas }}%
                 </h2>
             </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
                 <i class="fa-solid fa-clock"></i>
             </div>
         </div>
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
+            <span>Mengukur ketepatan waktu durasi pelayanan</span>
+        </div>
+    </div>
 
-        {{-- SURVEI --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
+    {{-- SURVEI (KUALITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between mb-4">
             <div>
                 <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
                     Kualitas (Survei)
                 </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $kualitas_rating }}
-                </h2>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $kualitas_rating }}
+                    </h2>
+                    <div class="flex text-amber-400 text-xs gap-0.5 mb-1">
+                        @if(is_numeric($kualitas_rating) && $kualitas_rating > 0)
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="{{ $i <= round($kualitas_rating) ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                            @endfor
+                        @else
+                            <span class="text-slate-400 dark:text-slate-600 font-bold text-xs">Belum ada ulasan</span>
+                        @endif
+                    </div>
+                </div>
             </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
                 <i class="fa-solid fa-star"></i>
             </div>
         </div>
-
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-heart text-rose-500 text-[10px]"></i>
+            <span>Berdasarkan akumulasi indeks kepuasan tamu</span>
+        </div>
     </div>
+
+</div>
 
     {{-- TITLE SECTION ANTREAN --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">

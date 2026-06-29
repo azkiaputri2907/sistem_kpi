@@ -75,7 +75,7 @@
             </div>
 
             <div class="relative z-10 pt-6 md:pt-10">
-                <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Digital Gate System v2.0</p>
+                <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Digital Gate System</p>
             </div>
         </div>
 
