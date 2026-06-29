@@ -339,7 +339,7 @@
                         <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse flex-shrink-0"></span>
 
                         <span id="refresh-timer-text" class="text-[9px] sm:text-[11px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-black">
-                            Auto-Refresh: 60s
+                            Auto-Refresh: 30s
                         </span>
 
                     </div>
@@ -724,9 +724,9 @@ function eksekusiLogout() {
     }
 }
 
-// ==================== LOGIK AUTO-REFRESH (60 DETIK) ====================
+// ==================== LOGIK AUTO-REFRESH (30 DETIK) ====================
 document.addEventListener('DOMContentLoaded', function() {
-    let refreshTimeLeft = 60;
+    let refreshTimeLeft = 30;
     let isPaused = false;
     const timerElement = document.getElementById('refresh-timer-text');
 
