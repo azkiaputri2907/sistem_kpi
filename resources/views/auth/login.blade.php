@@ -68,7 +68,7 @@
 
                 <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight mb-3 md:mb-4">
                     Sistem Informasi Pelayanan Terpadu<br class="hidden md:inline">
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-400 uppercase">SIPANDU-KPI</span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-400 uppercase">SIPANDU-ELEKTRO</span>
                 </h1>
                 
                 <p class="text-slate-300 text-xs md:text-sm leading-relaxed max-w-sm md:max-w-xs uppercase tracking-wide">Kelola antrean, pantau KPI, dan tingkatkan kualitas layanan institusi dalam satu dasbor.</p>

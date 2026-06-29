@@ -108,7 +108,7 @@
                 </div>
 
 <h1 class="font-title text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
-    SIPANDU-KPI <br class="hidden lg:inline">
+    SIPANDU-ELEKTRO <br class="hidden lg:inline">
     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-sky-500 dark:from-blue-400 dark:via-blue-300 dark:to-teal-400 block mt-2 font-extrabold text-2xl md:text-3xl lg:text-4xl xl:text-5xl uppercase tracking-normal">
         Jurusan Teknik Elektro
     </span>
