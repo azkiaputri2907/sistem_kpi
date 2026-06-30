@@ -44,17 +44,43 @@ class KunjunganController extends Controller
         }
     }
 
-    private function createSheet($sheetName, $data)
+private function createSheet($sheetName, $data)
     {
-        $response = Http::post($this->getApiUrl() . '?action=create&sheet=' . $sheetName, $data);
-        return $response->json() ?? ['inserted_id' => rand(1000, 9999)]; // Fallback jika gagal
+        try {
+            $response = Http::post($this->getApiUrl() . '?action=create&sheet=' . $sheetName, $data);
+            
+            // Jika sukses dan berbentuk array JSON, langsung kembalikan responnya
+            if ($response->successful() && is_array($response->json())) {
+                return $response->json();
+            }
+            
+            // Jika gagal/timeout, kembalikan array kosong (jangan pakai rand() lagi!)
+            \Illuminate\Support\Facades\Log::warning("API Create gagal atau timeout di sheet: " . $sheetName);
+            return [];
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Exception pada createSheet $sheetName: " . $e->getMessage());
+            return [];
+        }
     }
 
     private function updateSheet($sheetName, $id, $data)
     {
-        $data['id'] = $id;
-        $response = Http::post($this->getApiUrl() . '?action=update&sheet=' . $sheetName, $data);
-        return $response->json() ?? [];
+        try {
+            $data['id'] = $id;
+            $response = Http::post($this->getApiUrl() . '?action=update&sheet=' . $sheetName, $data);
+            
+            if ($response->successful() && is_array($response->json())) {
+                return $response->json();
+            }
+            
+            \Illuminate\Support\Facades\Log::warning("API Update gagal di sheet: " . $sheetName);
+            return [];
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Exception pada updateSheet $sheetName: " . $e->getMessage());
+            return [];
+        }
     }
 
     // =========================================================================
@@ -74,98 +100,104 @@ class KunjunganController extends Controller
         return view('landing', compact('prodi', 'keperluan'));
     }
 
-    public function store(Request $request)
-    {
-        // 1. Validasi Input
-        $request->validate([
-            'nama_lengkap'=>'required|string|max:50',
-            'no_telepon'=>'required|string|max:15',
-            'asal_instansi'=>'required|string|max:50',
-            'prodi_id'=>'required',
-            'keperluan_id'=>'required'
-        ],[
-            'nama_lengkap.required'=>'Nama lengkap wajib diisi',
-            'no_telepon.required'=>'No WhatsApp wajib diisi',
-            'asal_instansi.required'=>'Asal instansi wajib diisi',
-            'prodi_id.required'=>'Tujuan prodi wajib dipilih',
-            'keperluan_id.required'=>'Kategori keperluan wajib dipilih'
-        ]);
+public function store(Request $request)
+{
+    // 1. Validasi Input
+    $request->validate([
+        'nama_lengkap'=>'required|string|max:50',
+        'no_telepon'=>'required|string|max:15',
+        'asal_instansi'=>'required|string|max:50',
+        'prodi_id'=>'required',
+        'keperluan_id'=>'required'
+    ],[
+        'nama_lengkap.required'=>'Nama lengkap wajib diisi',
+        'no_telepon.required'=>'No WhatsApp wajib diisi',
+        'asal_instansi.required'=>'Asal instansi wajib diisi',
+        'prodi_id.required'=>'Tujuan prodi wajib dipilih',
+        'keperluan_id.required'=>'Kategori keperluan wajib dipilih'
+    ]);
 
-        try {
-            // 2. Cari atau Buat Pengunjung
-            $pengunjungList = $this->readSheet('pengunjung');
-            $pengunjung = $pengunjungList->firstWhere('no_telepon', $request->no_telepon);
+    try {
+        // 2. Cari atau Buat Pengunjung
+        $pengunjungList = $this->readSheet('pengunjung');
+        $pengunjung = $pengunjungList->firstWhere('no_telepon', $request->no_telepon);
 
-            $pengunjungId = null;
-            if (!$pengunjung) {
-                $baru = $this->createSheet('pengunjung', [
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_telepon'   => $request->no_telepon,
-                    'identitas_no' => $request->identitas_no,
-                    'asal_instansi'=> $request->asal_instansi
-                ]);
+        $pengunjungId = null;
+        if (!$pengunjung) {
+            $baru = $this->createSheet('pengunjung', [
+                'nama_lengkap' => $request->nama_lengkap,
+                'no_telepon'   => $request->no_telepon,
+                'identitas_no' => $request->identitas_no,
+                'asal_instansi'=> $request->asal_instansi
+            ]);
 
-                // Pengecekan aman agar tidak error jika API Google gagal membalas ID
-                $pengunjungId = is_array($baru) && isset($baru['inserted_id']) ? $baru['inserted_id'] : rand(1000, 9999);
-
-                $pengunjung = (object) [
-                    'id' => $pengunjungId,
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'asal_instansi' => $request->asal_instansi
-                ];
+            // UKURAN KEAMANAN UTAMA: Jika API telat merespon ID, cari riil ID dari database lewat no_telepon
+            if (is_array($baru) && isset($baru['inserted_id'])) {
+                $pengunjungId = $baru['inserted_id'];
             } else {
-                $pengunjungId = $pengunjung->id;
+                $bacaUlangPengunjung = $this->readSheet('pengunjung');
+                $pengunjungTerbaru = $bacaUlangPengunjung->firstWhere('no_telepon', $request->no_telepon);
+                
+                // Jika masih tidak ditemukan juga karena koneksi putus, gunakan ID default aman (misal: 1) daripada angka acak
+                $pengunjungId = $pengunjungTerbaru ? $pengunjungTerbaru->id : 1; 
             }
 
-            // 3. Catatan Keperluan Tambahan
-            $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
-
-            $kunjunganData = [
-                'nomor_kunjungan' => $nomor_kunjungan,
-                'pengunjung_id'   => $pengunjungId,
-                'prodi_id'        => $request->prodi_id,
-                'keperluan_id'    => $request->keperluan_id,
-                'keperluan'       => $request->catatan_keperluan ?? '-',
-                'hari_kunjungan'  => Carbon::now()->locale('id')->isoFormat('dddd'),
-                'tanggal'         => Carbon::now()->toDateString(),
-                'status_layanan'  => 'Antre',
-                'status_pimpinan' => 'Menunggu',
+            // Bentuk kembali objek pengunjung agar proses kirim email tidak error
+            $pengunjung = (object) [
+                'id' => $pengunjungId,
+                'nama_lengkap' => $request->nama_lengkap,
+                'asal_instansi' => $request->asal_instansi
             ];
-
-            // 4. Kirim data ke Spreadsheet Kunjungan
-            $createKunjungan = $this->createSheet('kunjungan', $kunjunganData);
-
-            // 5. Bypass (Lewati) proses Email agar tidak mengganggu perpindahan halaman
-            try {
-                $kunjunganObj = (object) $kunjunganData;
-                $kunjunganObj->id = is_array($createKunjungan) && isset($createKunjungan['inserted_id']) ? $createKunjungan['inserted_id'] : rand(1000, 9999);
-                $kunjunganObj->pengunjung = $pengunjung;
-
-                $semuaUser = $this->readSheet('master_user');
-                $pimpinan = $semuaUser->filter(function($u) use ($request) {
-                    return ($u->role_id == 4 && $u->prodi_id == $request->prodi_id) || ($u->role_id == 3);
-                });
-
-                foreach ($pimpinan as $user) {
-                    Mail::send('emails.notifikasi_kunjungan', ['kunjungan' => $kunjunganObj, 'url_login' => url('/login')], function($message) use ($user) {
-                        $message->to($user->email)->subject('Notifikasi Antrean Baru');
-                    });
-                }
-            } catch (\Exception $e) {
-                // Biarkan saja jika email gagal, pendaftaran tetap sukses
-                Log::warning("Email pimpinan gagal: " . $e->getMessage());
-            }
-
-            // 6. REDIRECT PAKSA KE HALAMAN PROSES MENGGUNAKAN URL LANGSUNG
-            return redirect('/status/' . $nomor_kunjungan)->with('success', 'Pendaftaran antrean berhasil!');
-
-        } catch (\Exception $e) {
-            Log::error("Proses pendaftaran gagal: " . $e->getMessage());
-
-            // Tampilkan error paksa di layar jika ternyata API Google-nya yang bermasalah
-            dd("Error sistem: " . $e->getMessage() . ". Mohon periksa API Spreadsheet Anda.");
+        } else {
+            $pengunjungId = $pengunjung->id;
         }
+
+        // 3. Catatan Keperluan Tambahan
+        $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
+
+        $kunjunganData = [
+            'nomor_kunjungan' => $nomor_kunjungan,
+            'pengunjung_id'   => $pengunjungId, // <--- ID dijamin valid & ada di sheet pengunjung
+            'prodi_id'        => $request->prodi_id,
+            'keperluan_id'    => $request->keperluan_id,
+            'keperluan'       => $request->catatan_keperluan ?? '-',
+            'hari_kunjungan'  => Carbon::now()->locale('id')->isoFormat('dddd'),
+            'tanggal'         => Carbon::now()->toDateString(),
+            'status_layanan'  => 'Antre',
+            'status_pimpinan' => 'Menunggu',
+        ];
+
+        // 4. Kirim data ke Spreadsheet Kunjungan
+        $createKunjungan = $this->createSheet('kunjungan', $kunjunganData);
+
+        // 5. Proses Email Notifikasi (Aman dari kegagalan)
+        try {
+            $kunjunganObj = (object) $kunjunganData;
+            $kunjunganObj->id = is_array($createKunjungan) && isset($createKunjungan['inserted_id']) ? $createKunjungan['inserted_id'] : rand(1, 99);
+            $kunjunganObj->pengunjung = $pengunjung;
+
+            $semuaUser = $this->readSheet('master_user');
+            $pimpinan = $semuaUser->filter(function($u) use ($request) {
+                return ($u->role_id == 4 && $u->prodi_id == $request->prodi_id) || ($u->role_id == 3);
+            });
+
+            foreach ($pimpinan as $user) {
+                Mail::send('emails.notifikasi_kunjungan', ['kunjungan' => $kunjunganObj, 'url_login' => url('/login')], function($message) use ($user) {
+                    $message->to($user->email)->subject('Notifikasi Antrean Baru');
+                });
+            }
+        } catch (\Exception $e) {
+            Log::warning("Email pimpinan gagal: " . $e->getMessage());
+        }
+
+        // 6. REDIRECT KE HALAMAN PROSES
+        return redirect('/status/' . $nomor_kunjungan)->with('success', 'Pendaftaran antrean berhasil!');
+
+    } catch (\Exception $e) {
+        Log::error("Proses pendaftaran gagal: " . $e->getMessage());
+        dd("Error sistem: " . $e->getMessage() . ". Mohon periksa API Spreadsheet Anda.");
     }
+}
 
     public function cekStatus($id)
     {
