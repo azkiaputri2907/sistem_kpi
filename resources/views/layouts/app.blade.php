@@ -376,7 +376,7 @@ tailwind.config = {
     </div>
     <div class="w-full overflow-hidden relative flex items-center h-4">
         <div class="absolute whitespace-nowrap text-xs font-semibold text-slate-600 dark:text-slate-300 animate-marquee">
-            📢 Demi keamanan data, pastikan Anda <span class="text-amber-600 dark:text-amber-400 font-black">TIDAK mengunduh laporan atau mengekspor data</span> saat hitung mundur Auto-Refresh berada di detik-detik terakhir! Pasang kursor pada input untuk menjeda sementara.
+📢 Demi menjaga keamanan dan konsistensi data, mohon <span class="text-amber-600 dark:text-amber-400 font-black">jangan mengunduh laporan atau mengekspor data</span> saat hitung mundur Auto-Refresh hampir berakhir. Arahkan kursor ke area input untuk menjeda sementara proses Auto-Refresh. Silakan muat ulang (refresh) halaman apabila terjadi kendala atau data tidak tampil dengan semestinya.
         </div>
     </div>
 </div>
