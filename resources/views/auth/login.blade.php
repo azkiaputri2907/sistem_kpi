@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Sistem - Politeknik Negeri Banjarmasin</title>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,12 +41,11 @@
             color: #93c5fd;
             background-color: rgba(59, 130, 246, 0.15);
         }
-    .swal2-backdrop-show {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
-}
-
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-300">
@@ -114,9 +115,16 @@
                 <div>
                     <div class="flex justify-between mb-1 sm:mb-2">
                         <label class="block text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
-                        <a href="#" class="text-[9px] sm:text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest hover:underline">Lupa Password?</a>
                     </div>
-                    <input type="password" name="password" placeholder="••••••••" class="w-full px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-600/10 focus:border-blue-800 transition-all outline-none font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300" required>
+                    
+                    <div class="relative flex items-center">
+                        <input type="password" id="passwordInput" name="password" placeholder="••••••••" 
+                            class="w-full pl-4 pr-12 sm:pl-6 sm:pr-14 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-600/10 focus:border-blue-800 transition-all outline-none font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300" required>
+                        
+                        <button type="button" onclick="togglePassword()" class="absolute right-4 sm:right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors outline-none">
+                            <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div>
@@ -170,6 +178,21 @@
                 modal.classList.remove('hidden');
             }
         });
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('passwordInput');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
     </script>
 </body>
 </html>
