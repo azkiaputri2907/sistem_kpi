@@ -263,50 +263,58 @@ class KunjunganController extends Controller
         ));
     }
 
-    public function storeSurvey(Request $request)
-    {
-        $request->validate([
-            'nomor_kunjungan' => 'required',
-            'jawaban' => 'required|array',
-            'catatan' => 'nullable|string',
-        ]);
+public function storeSurvey(Request $request)
+{
+    $request->validate([
+        'nomor_kunjungan' => 'required',
+        'jawaban' => 'required|array',
+        'catatan' => 'nullable|string',
+    ]);
 
-        $kunjunganList = $this->readSheet('kunjungan');
-        $kunjungan = $kunjunganList->firstWhere('nomor_kunjungan', $request->nomor_kunjungan);
+    $kunjunganList = $this->readSheet('kunjungan');
+    $kunjungan = $kunjunganList->firstWhere('nomor_kunjungan', $request->nomor_kunjungan);
 
-        if (!$kunjungan) {
-            return back()->with('error', 'Data kunjungan tidak ditemukan.');
-        }
-
-        $p1 = $request->jawaban[1] ?? 0;
-        $p2 = $request->jawaban[2] ?? 0;
-        $p3 = $request->jawaban[3] ?? 0;
-        $p4 = $request->jawaban[4] ?? 0;
-        $p5 = $request->jawaban[5] ?? 0;
-
-        $skor_total_y = ($p1 + $p2 + $p3 + $p4 + $p5) * 4;
-
-        // Simpan Survey (Dapatkan ID baru)
-        $simpanSurvey = $this->createSheet('survey', [
-            'kunjungan_id' => $kunjungan->id,
-            'kritik_saran' => $request->catatan,
-            'skor_total'   => $skor_total_y
-        ]);
-
-        $surveyId = $simpanSurvey['inserted_id'] ?? rand(1000, 9999); // Fallback jika API gagal return id
-
-        // Simpan Detail Survey
-        $this->createSheet('detail_survey', [
-            'survey_id' => $surveyId,
-            'p1' => $p1,
-            'p2' => $p2,
-            'p3' => $p3,
-            'p4' => $p4,
-            'p5' => $p5,
-        ]);
-
-        return back()->with('success', 'Terima kasih atas ulasan Anda!');
+    if (!$kunjungan) {
+        return back()->with('error', 'Data kunjungan tidak ditemukan.');
     }
+
+    $p1 = $request->jawaban[1] ?? 0;
+    $p2 = $request->jawaban[2] ?? 0;
+    $p3 = $request->jawaban[3] ?? 0;
+    $p4 = $request->jawaban[4] ?? 0;
+    $p5 = $request->jawaban[5] ?? 0;
+
+    $skor_total_y = ($p1 + $p2 + $p3 + $p4 + $p5) * 4;
+
+    // 1. Simpan ke sheet 'survey'
+    $simpanSurvey = $this->createSheet('survey', [
+        'kunjungan_id' => $kunjungan->id,
+        'kritik_saran' => $request->catatan,
+        'skor_total'   => $skor_total_y
+    ]);
+
+    // 2. Proteksi Penguncian ID: Jika API telat membalas, baca sheet untuk mengambil ID riil terakhir
+    $surveyId = null;
+    if (is_array($simpanSurvey) && isset($simpanSurvey['inserted_id'])) {
+        $surveyId = $simpanSurvey['inserted_id'];
+    } else {
+        $bacaUlangSurvey = $this->readSheet('survey');
+        $surveyTerakhir = $bacaUlangSurvey->where('kunjungan_id', $kunjungan->id)->last();
+        $surveyId = $surveyTerakhir ? $surveyTerakhir->id : rand(1, 99); 
+    }
+
+    // 3. Simpan Detail Survey menggunakan ID yang valid
+    $this->createSheet('detail_survey', [
+        'survey_id' => $surveyId,
+        'p1' => $p1,
+        'p2' => $p2,
+        'p3' => $p3,
+        'p4' => $p4,
+        'p5' => $p5,
+    ]);
+
+    return back()->with('success', 'Terima kasih atas ulasan Anda!');
+}
 
 public function kirimMassal(Request $request)
 {
