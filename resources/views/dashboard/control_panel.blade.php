@@ -133,11 +133,11 @@
                     @foreach($data_keperluan as $k)
                     <div class="flex items-center gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group">
                         <span class="font-bold text-xs sm:text-sm">{{ $k->keterangan }}</span>
-                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline">
+                        <form action="{{ route('keperluan.destroy', $k->id) }}" method="POST" class="delete-keperluan-form inline">
                             @csrf 
                             @method('DELETE')
-                            <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
-                                <i class="fa-solid fa-trash-can"></i>
+                            <button type="button" onclick="konfirmasiHapusKeperluan(this)" class="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105">
+                                <i class="fa-solid fa-xmark text-xs"></i>
                             </button>
                         </form>
                     </div>
@@ -381,5 +381,37 @@
             }
         });
     }
+    function konfirmasiHapusKeperluan(buttonElement) {
+    const isDark = document.documentElement.classList.contains('dark');
+
+    Swal.fire({
+        title: 'Hapus Opsi Keperluan?',
+        text: "Pilihan kategori keperluan ini akan dihapus permanen dari Google Sheets!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444', 
+        cancelButtonColor: isDark ? '#475569' : '#94a3b8', 
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        background: isDark ? '#1e293b' : '#ffffff', 
+        color: isDark ? '#f8fafc' : '#1e293b',
+        iconColor: '#ef4444',
+        customClass: {
+            popup: 'rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xl',
+            title: 'font-black tracking-tight text-xl pt-2',
+            htmlContainer: 'text-sm font-medium opacity-80',
+            confirmButton: 'rounded-xl font-bold px-5 py-2.5 text-sm mx-1',
+            cancelButton: 'rounded-xl font-bold px-5 py-2.5 text-sm text-gray-700 dark:text-gray-200 mx-1'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Memunculkan loading screen sinkronisasi sheets bawaan sistem kamu
+            showLoadingOverlay();
+            
+            // Submit form milik keperluan
+            buttonElement.closest('.delete-keperluan-form').submit();
+        }
+    });
+}
 </script>
 @endsection
