@@ -166,6 +166,21 @@ class DashboardController extends Controller
             ->where('prodi_id', request('prodi_id'))
             ->values();
     }
+    
+    // =========================================================
+    // TAMBAHAN BARU: FILTER HANYA BULAN DAN TAHUN SEKARANG
+    // =========================================================
+    $bulanSekarang = Carbon::now()->format('m'); // Ambil angka bulan (misal: 07)
+    $tahunSekarang = Carbon::now()->format('Y'); // Ambil angka tahun (misal: 2026)
+
+    $kunjunganRaw = $kunjunganRaw->filter(function($item) use ($bulanSekarang, $tahunSekarang) {
+        // Ambil data tanggal dari kolom 'tanggal' di Google Sheets
+        $tanggalKunjungan = Carbon::parse($item->tanggal ?? now());
+        
+        // Hanya loloskan data yang bulan dan tahunnya cocok dengan hari ini
+        return $tanggalKunjungan->format('m') === $bulanSekarang && 
+               $tanggalKunjungan->format('Y') === $tahunSekarang;
+    })->values();
 
     // =========================================================
     // MAPPING RELASI DATA
@@ -399,7 +414,6 @@ public function analytics()
         return redirect('/login');
     }
 
-    // 1. Ditambahkan sheet 'pengunjung' karena diperlukan oleh kalkulasi Grafik Kinerja
     $db = $this->readMultipleSheets([
         'kunjungan',
         'pengunjung',
@@ -427,6 +441,18 @@ public function analytics()
             ->where('prodi_id', request('prodi_id'))
             ->values();
     }
+
+    // =========================================================
+    // TAMBAHAN BARU: FILTER HANYA BULAN DAN TAHUN SEKARANG
+    // =========================================================
+    $bulanSekarang = Carbon::now()->format('m'); 
+    $tahunSekarang = Carbon::now()->format('Y'); 
+
+    $kunjunganData = $kunjunganData->filter(function($item) use ($bulanSekarang, $tahunSekarang) {
+        $tanggalKunjungan = Carbon::parse($item->tanggal ?? now());
+        return $tanggalKunjungan->format('m') === $bulanSekarang && 
+               $tanggalKunjungan->format('Y') === $tahunSekarang;
+    })->values();
 
     // ==========================================
     // SKOR KEPUASAN (Fungsi Asli Dipertahankan)
@@ -547,13 +573,12 @@ public function analytics()
 
     $kualitasRatingCard = '-';
     if ($jumlahRespondenCard > 0) {
-        // Rumus TA murni: Rata-rata Skor Total / 20 untuk konversi ke skala Bintang 1.0 - 5.0
         $rataRataSkor = $totalSkorSurveyCard / $jumlahRespondenCard;
         $kualitasRatingCard = number_format(round($rataRataSkor / 20, 1), 1);
     }
 
-    // =========================================================================
-    // KODE GRAFIK KINERJA PEKANAN (MURNI INDEKS 1-100 & TETAP PENYARINGAN WEEKEND)
+// =========================================================================
+    // KODE GRAFIK KINERJA PEKANAN (SESUAI RUMUS MURNI BAB 3 LAPORAN TA)
     // =========================================================================
 
     $startDateParam = request('start_date');
@@ -577,7 +602,7 @@ public function analytics()
 
     $chartDatasets = [];
 
-    // Filter query: HANYA mengambil data rentang tanggal Senin s.d Jumat (Sabtu/Minggu di-skip)
+    // Filter query: Ambil data rentang Senin s.d Jumat
     $grafikQuery = $kunjunganData->filter(function($k) use ($startOfWeek, $endOfWeek) {
         if (empty($k->created_at)) return false;
         $date = Carbon::parse($k->created_at);
@@ -590,6 +615,7 @@ public function analytics()
         $hariKpiSum = [0, 0, 0, 0, 0];
         $hariDataCount = [0, 0, 0, 0, 0];
         $prodiHariData = [0, 0, 0, 0, 0];
+        $prodiHariColors = ['#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8']; // Default Abu-abu (slate-400) untuk N/A
 
         $kunjunganProdi = $grafikQuery->where('prodi_id', $prodi->id);
 
@@ -597,59 +623,78 @@ public function analytics()
             $createdDate = Carbon::parse($data->created_at ?? now());
             $dayOfWeek = $createdDate->dayOfWeekIso;
 
-            if ($dayOfWeek > 5) {
-                continue; // Proteksi tambahan agar Sabtu-Minggu dilewati murni
-            }
+            if ($dayOfWeek > 5) continue; 
             $hariIndex = $dayOfWeek - 1;
 
-            // --- PERHITUNGAN 3 ASPEK KPI INDEKS REAL DATABASE (1 - 100) ---
-            
-            // 1. Aspek Kuantitas
-            $skorKuantitas = isset($data->skor_pelayanan) ? floatval($data->skor_pelayanan) : 0;
-            if ($skorKuantitas == 0) $skorKuantitas = 5.0; // Default jika kosong disamakan dengan kondisi data TI Anda
-            $nilaiKuantitasSkala100 = $skorKuantitas <= 5 ? $skorKuantitas * 20 : $skorKuantitas;
-
-            // 2. Aspek Kualitas (Membaca langsung kolom 'skor_total' dari Database)
-            $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
-            $skorKualitas = 0;
-            if ($nama_pengunjung) {
-                $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
-                    return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
-                           || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
-                });
-                
-                // Mengambil nilai murni skor_total (misal: 100) dari spreadsheet
-                $skorKualitas = $survey ? floatval($survey->skor_total) : 0;
-            }
-            if ($skorKualitas == 0) $skorKualitas = 100; // Default jika kosong sesuai kondisi TI Anda
-            $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
-
-            // 3. Aspek SLA (Efektivitas)
-            $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
-            if ($statusSlaRaw === 'TEPAT WAKTU' || $statusSlaRaw === '1') {
-                $skorEfektivitas = 100;
+            // Jika status layanan adalah DITOLAK di loket depan (seperti data ID 18), 
+            // maka murni dianggap tidak ada kinerja / Not Applicable (0)
+            if (strtoupper(trim($data->status_layanan ?? '')) === 'DITOLAK' && empty($data->waktu_mulai_layanan)) {
+                $nilaiKpiGabunganRow = 0;
             } else {
-                $skorEfektivitas = 70;
-            }
+                // --- 1. ASPEK KUANTITAS (Bobot 20%) ---
+                // Selesai diproses = 100, Jika masih antre/batal/kosong = 0
+                $nilaiKuantitasSkala100 = (strtoupper(trim($data->status_layanan ?? '')) === 'SELESAI') ? 100 : 0;
 
-            // Hitung Bobot Gabungan Indeks KPI (20% Kuantitas, 40% Efektivitas, 40% Kualitas)
-            $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+                // --- 2. ASPEK KUALITAS (Bobot 40%) ---
+                // Konversi nilai rata-rata bintang ke skala 100 murni sesuai rumus laporan TA
+                $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
+                $skorKualitas = 0;
+                
+                if ($nama_pengunjung) {
+                    $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
+                        return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
+                               || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
+                    });
+                    
+                    if ($survey && isset($survey->skor_total)) {
+                        $skorKualitas = floatval($survey->skor_total);
+                    }
+                }
+                
+                // Jika skorKualitas <= 5 (berupa rating bintang dari user, misal 4.2), konversi ke skala 100 murni
+                $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
+
+                // --- 3. ASPEK EFEKTIVITAS SLA (Bobot 40%) ---
+                $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
+                if ($statusSlaRaw === 'TEPAT WAKTU') {
+                    $skorEfektivitas = 100;
+                } elseif ($statusSlaRaw === 'TERLAMBAT') {
+                    $skorEfektivitas = 50; // Sesuai pembobotan 0.5 di Controller utama kamu
+                } else {
+                    $skorEfektivitas = 0;
+                }
+
+                // Rumus Gabungan Bobot Berdasarkan Tabel 3.4 Laporan TA Kamu
+                $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+            }
 
             $hariKpiSum[$hariIndex] += $nilaiKpiGabunganRow;
             $hariDataCount[$hariIndex]++;
         }
 
-        // Hitung nilai indeks rata-rata per hari kerja
+        // Kalkulasi rata-rata nilai harian & penentuan warna dinamis berdasarkan tabel rentang nilai TA
         for ($i = 0; $i < 5; $i++) {
-            $prodiHariData[$i] = $hariDataCount[$i] > 0
-                ? round($hariKpiSum[$i] / $hariDataCount[$i], 1)
-                : 0;
+            $skorAkhirHari = $hariDataCount[$i] > 0 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) : 0;
+            $prodiHariData[$i] = $skorAkhirHari;
+
+            // Logika Penentuan Warna Sesuai Aturan Visualisasi Tabel 3.3 Laporan TA Kamu
+            if ($skorAkhirHari == 0) {
+                $prodiHariColors[$i] = '#94a3b8'; // N/A (Abu-abu / Slate-400)
+            } elseif ($skorAkhirHari >= 1 && $skorAkhirHari <= 59) {
+                $prodiHariColors[$i] = '#ef4444'; // Kurang (Merah / Red-500)
+            } elseif ($skorAkhirHari >= 60 && $skorAkhirHari <= 75) {
+                $prodiHariColors[$i] = '#f59e0b'; // Cukup (Amber / Amber-500)
+            } elseif ($skorAkhirHari >= 76 && $skorAkhirHari <= 90) {
+                $prodiHariColors[$i] = '#10b981'; // Baik (Emerald / Emerald-500)
+            } elseif ($skorAkhirHari > 90) {
+                $prodiHariColors[$i] = '#3b82f6'; // Sangat Baik (Biru / Blue-500)
+            }
         }
 
         $chartDatasets[] = [
             'label'           => $prodiName,
             'data'            => $prodiHariData,
-            'backgroundColor' => '#6b7280',
+            'backgroundColor' => $prodisForChart->count() === 1 ? $prodiHariColors : $prodiHariColors[0], // Warna dinamis per batang jika single prodi
             'borderRadius'    => 6,
             'borderSkipped'   => false,
             'barThickness'    => 14

@@ -5,16 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - @yield('title')</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // 1. Konfigurasi Tailwind untuk menggunakan class 'dark'
-        tailwind.config = {
-            darkMode: 'class'
+        // 2. Satukan konfigurasi Dark Mode dan Animasi Marquee di sini agar tidak saling menimpa
+tailwind.config = {
+    darkMode: 'class',
+    theme: {
+        extend: {
+            animation: {
+                // Diubah dari 25s ke 45s agar jalannya lebih lambat dan tenang
+                'marquee': 'marquee 45s linear infinite',
+            },
+            keyframes: {
+                marquee: {
+                    '0%': { transform: 'translateX(0)' },
+                    '100%': { transform: 'translateX(-100%)' },
+                }
+            }
         }
+    }
+}
     </script>
 
     <script>
-        // 2. Skrip Cek Otomatis: Menggunakan localStorage.getItem agar sinkron sempurna tanpa berkedip
+        // 3. Skrip Cek Otomatis Dark Mode tetap di sini
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -110,6 +124,22 @@
             -webkit-backdrop-filter: blur(8px) !important;
             background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
         }
+        /* =========================================================================
+   ANIMASI RUNNING TEXT (MARQUEE) UNTUK NAVBAR
+   ========================================================================= */
+@keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+    animation: marquee 25s linear infinite;
+}
+
+/* Jeda animasi saat kursor diarahkan (di-hover) ke area pengumuman */
+.group-hover\:pause:group-hover {
+    animation-play-state: paused;
+}
     </style>
 </head>
 
@@ -322,29 +352,36 @@
 
             <div class="h-full flex items-center justify-between">
 
-                {{-- LEFT --}}
-                <div class="flex items-center gap-4">
+{{-- LEFT --}}
+<div class="flex items-center gap-4 flex-1">
 
-                    {{-- MOBILE BUTTON --}}
-                    <button
-                        onclick="toggleSidebar()"
-                        class="lg:hidden w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm">
+    {{-- MOBILE BUTTON --}}
+    <button onclick="toggleSidebar()" class="lg:hidden w-11 h-11 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-sm">
+        <i class="fa-solid fa-bars"></i>
+    </button>
 
-                        <i class="fa-solid fa-bars"></i>
+    {{-- TIMER AUTO REFRESH --}}
+    <div class="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 shrink-0">
+        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse flex-shrink-0"></span>
+        <span id="refresh-timer-text" class="text-[9px] sm:text-[11px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-black">
+            Auto-Refresh: 30s
+        </span>
+    </div>
 
-                    </button>
+    {{-- RUNNING TEXT BROADCAST PEMBERITAHUAN (DILEBARKAN) --}}
+<div class="hidden md:flex items-center flex-1 max-w-3xl mx-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded-full py-1.5 px-4 overflow-hidden shadow-inner group relative">
+    <div class="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs shrink-0 bg-amber-50 dark:bg-slate-900 pr-2 z-10">
+        <i class="fa-solid fa-bullhorn animate-bounce"></i>
+        <span>PENGUMUMAN:</span>
+    </div>
+    <div class="w-full overflow-hidden relative flex items-center h-4">
+        <div class="absolute whitespace-nowrap text-xs font-semibold text-slate-600 dark:text-slate-300 animate-marquee">
+            📢 Demi keamanan data, pastikan Anda <span class="text-amber-600 dark:text-amber-400 font-black">TIDAK mengunduh laporan atau mengekspor data</span> saat hitung mundur Auto-Refresh berada di detik-detik terakhir! Pasang kursor pada input untuk menjeda sementara.
+        </div>
+    </div>
+</div>
 
-                    <div class="flex items-center gap-3 px-3 sm:px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
-
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse flex-shrink-0"></span>
-
-                        <span id="refresh-timer-text" class="text-[9px] sm:text-[11px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-black">
-                            Auto-Refresh: 30s
-                        </span>
-
-                    </div>
-
-                </div>
+</div>
 
                 {{-- RIGHT --}}
                 <div class="flex items-center gap-2 sm:gap-4">
@@ -724,7 +761,9 @@ function eksekusiLogout() {
     }
 }
 
-// ==================== LOGIK AUTO-REFRESH (30 DETIK) ====================
+// ==================== GLOBAL CONTROLLER AUTO-REFRESH ====================
+let isLoadingActive = false; // Flag global untuk mendeteksi sistem sedang sibuk/loading
+
 document.addEventListener('DOMContentLoaded', function() {
     let refreshTimeLeft = 30;
     let isPaused = false;
@@ -738,7 +777,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             element.addEventListener('focus', function() {
                 isPaused = true;
-                if (timerElement) {
+                // Hanya ubah teks jika sistem sedang TIDAK dalam kondisi loading data utama
+                if (timerElement && !isLoadingActive) {
                     timerElement.innerText = `Auto-Refresh: Paused`;
                     timerElement.classList.remove('text-emerald-600', 'dark:text-emerald-400');
                     timerElement.classList.add('text-amber-500', 'dark:text-amber-400');
@@ -747,7 +787,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             element.addEventListener('blur', function() {
                 isPaused = false;
-                if (timerElement) {
+                if (timerElement && !isLoadingActive) {
                     timerElement.classList.remove('text-amber-500', 'dark:text-amber-400');
                     timerElement.classList.add('text-emerald-600', 'dark:text-emerald-400');
                 }
@@ -761,7 +801,10 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(document.body, { childList: true, subtree: true });
 
     const countdownInterval = setInterval(function() {
-        if (isPaused || infoModalSedangTerbuka) return;
+        // TAMBAHAN KRUSIAL: Jika sedang loading data, atau input fokus, atau modal terbuka, STOP COUNTDOWN
+        if (isPaused || isLoadingActive || (typeof infoModalSedangTerbuka !== 'undefined' && infoModalSedangTerbuka)) {
+            return;
+        }
 
         refreshTimeLeft--;
         if (timerElement) {
