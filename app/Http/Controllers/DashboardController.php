@@ -273,13 +273,25 @@ class DashboardController extends Controller
     // KPI KUANTITAS (DENGAN TARGET 10 PENGUNJUNG BULANAN)
     // =========================================================
     $totalKunjungan = $kunjunganData->count();
-    $totalDilayani = $kunjunganData->where('status_layanan', 'Selesai')->count();
+
+    $jumlahSelesai = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'SELESAI';
+    })->count();
+
+    $jumlahDitolakKuantitas = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
+    })->count();
+
+    // Data yang dihitung sebagai kinerja pelayanan yang diproses (Selesai + Ditolak)
+    $totalDilayani = $jumlahSelesai + $jumlahDitolakKuantitas;
     
     // Target ditetapkan 10 pengunjung sebulan
     $targetTamu = 10; 
     
-    // Rumus: (Total Selesai / Target 10) * 100%
-    $skorKuantitas = $targetTamu > 0 ? round(($totalDilayani / $targetTamu) * 100, 1) : 0;
+    // Rumus: (Total Dilayani / Target 10) * 100%
+    $skorKuantitas = $targetTamu > 0 
+        ? round(($totalDilayani / $targetTamu) * 100, 1) 
+        : 0;
     $skorKuantitas = max(0, min(100, $skorKuantitas)); // Batasi maksimal nilai 100%
 
     // =========================================================
