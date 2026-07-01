@@ -677,11 +677,12 @@ public function analytics()
             $hariDataCount[$hariIndex]++;
         }
 
-        // 1. HITUNG RATA-RATA PEKANAN UNTUK MENENTUKAN WARNA UTAMA PRODI
+// 1. HITUNG RATA-RATA PEKANAN UNTUK MENENTUKAN WARNA UTAMA PRODI
         $totalSkorPekan = array_sum($hariKpiSum);
         $totalDataPekan = array_sum($hariDataCount);
         $skorAkhirPekan = $totalDataPekan > 0 ? round($totalSkorPekan / $totalDataPekan, 1) : 0;
 
+        // Tentukan warna tunggal prodi berdasarkan hasil performa seminggu
         $warnaProdiTunggal = '#94a3b8'; // Default N/A (Abu-abu)
         if ($skorAkhirPekan >= 1 && $skorAkhirPekan <= 59) {
             $warnaProdiTunggal = '#ef4444'; // Kurang (Merah)
@@ -693,16 +694,16 @@ public function analytics()
             $warnaProdiTunggal = '#3b82f6'; // Sangat Baik (Biru)
         }
 
-        // 2. DISTRIBUSIKAN NILAI RATA-RATA PER HARI KEMBALI
+        // 2. DISTRIBUSIKAN NILAI RATA-RATA PER HARI
         for ($i = 0; $i < 5; $i++) {
             $prodiHariData[$i] = $hariDataCount[$i] > 0 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) : 0;
         }
 
-        // 3. SET SETIAP PRODI DENGAN SATU WARNA KONSISTEN (BAR & BULAT SAMA)
+        // 3. SET SETIAP PRODI DENGAN SATU WARNA KONSISTEN (BAR & BULAT DISAMAKAN)
         $chartDatasets[] = [
             'label'           => $prodiName,
             'data'            => $prodiHariData,
-            'backgroundColor' => $warnaProdiTunggal, // Menggunakan warna tunggal hasil rata-rata pekanan prodi
+            'backgroundColor' => $warnaProdiTunggal, // <-- WAJIB MENGGUNAKAN VARIABEL INI (Jangan array $prodiHariColors)
             'borderRadius'    => 6,
             'borderSkipped'   => false,
             'barThickness'    => 14
