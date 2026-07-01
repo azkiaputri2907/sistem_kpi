@@ -590,7 +590,7 @@ public function analytics()
     }
 
 // =========================================================================
-    // KODE GRAFIK KINERJA PEKANAN (SESUAI RUMUS MURNI BAB 3 LAPORAN TA)
+    // KODE GRAFIK KINERJA PEKANAN (WARNA BAR & LEGENDA SAMA PERSIS)
     // =========================================================================
 
     $startDateParam = request('start_date');
@@ -627,7 +627,6 @@ public function analytics()
         $hariKpiSum = [0, 0, 0, 0, 0];
         $hariDataCount = [0, 0, 0, 0, 0];
         $prodiHariData = [0, 0, 0, 0, 0];
-        $prodiHariColors = ['#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8']; // Default Abu-abu (slate-400) untuk N/A
 
         $kunjunganProdi = $grafikQuery->where('prodi_id', $prodi->id);
 
@@ -638,17 +637,13 @@ public function analytics()
             if ($dayOfWeek > 5) continue; 
             $hariIndex = $dayOfWeek - 1;
 
-            // Jika status layanan adalah DITOLAK di loket depan (seperti data ID 18), 
-            // maka murni dianggap tidak ada kinerja / Not Applicable (0)
             if (strtoupper(trim($data->status_layanan ?? '')) === 'DITOLAK' && empty($data->waktu_mulai_layanan)) {
                 $nilaiKpiGabunganRow = 0;
             } else {
-                // --- 1. ASPEK KUANTITAS (Bobot 20%) ---
-                // Selesai diproses = 100, Jika masih antre/batal/kosong = 0
+                // --- 1. ASPEK KUANTITAS (20%) ---
                 $nilaiKuantitasSkala100 = (strtoupper(trim($data->status_layanan ?? '')) === 'SELESAI') ? 100 : 0;
 
-                // --- 2. ASPEK KUALITAS (Bobot 40%) ---
-                // Konversi nilai rata-rata bintang ke skala 100 murni sesuai rumus laporan TA
+                // --- 2. ASPEK KUALITAS (40%) ---
                 $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
                 $skorKualitas = 0;
                 
@@ -663,20 +658,18 @@ public function analytics()
                     }
                 }
                 
-                // Jika skorKualitas <= 5 (berupa rating bintang dari user, misal 4.2), konversi ke skala 100 murni
                 $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
 
-                // --- 3. ASPEK EFEKTIVITAS SLA (Bobot 40%) ---
+                // --- 3. ASPEK EFEKTIVITAS SLA (40%) ---
                 $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
                 if ($statusSlaRaw === 'TEPAT WAKTU') {
                     $skorEfektivitas = 100;
                 } elseif ($statusSlaRaw === 'TERLAMBAT') {
-                    $skorEfektivitas = 50; // Sesuai pembobotan 0.5 di Controller utama kamu
+                    $skorEfektivitas = 50; 
                 } else {
                     $skorEfektivitas = 0;
                 }
 
-                // Rumus Gabungan Bobot Berdasarkan Tabel 3.4 Laporan TA Kamu
                 $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
             }
 
@@ -684,29 +677,32 @@ public function analytics()
             $hariDataCount[$hariIndex]++;
         }
 
-        // Kalkulasi rata-rata nilai harian & penentuan warna dinamis berdasarkan tabel rentang nilai TA
-        for ($i = 0; $i < 5; $i++) {
-            $skorAkhirHari = $hariDataCount[$i] > 0 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) : 0;
-            $prodiHariData[$i] = $skorAkhirHari;
+        // 1. HITUNG RATA-RATA PEKANAN UNTUK MENENTUKAN WARNA UTAMA PRODI
+        $totalSkorPekan = array_sum($hariKpiSum);
+        $totalDataPekan = array_sum($hariDataCount);
+        $skorAkhirPekan = $totalDataPekan > 0 ? round($totalSkorPekan / $totalDataPekan, 1) : 0;
 
-            // Logika Penentuan Warna Sesuai Aturan Visualisasi Tabel 3.3 Laporan TA Kamu
-            if ($skorAkhirHari == 0) {
-                $prodiHariColors[$i] = '#94a3b8'; // N/A (Abu-abu / Slate-400)
-            } elseif ($skorAkhirHari >= 1 && $skorAkhirHari <= 59) {
-                $prodiHariColors[$i] = '#ef4444'; // Kurang (Merah / Red-500)
-            } elseif ($skorAkhirHari >= 60 && $skorAkhirHari <= 75) {
-                $prodiHariColors[$i] = '#f59e0b'; // Cukup (Amber / Amber-500)
-            } elseif ($skorAkhirHari >= 76 && $skorAkhirHari <= 90) {
-                $prodiHariColors[$i] = '#10b981'; // Baik (Emerald / Emerald-500)
-            } elseif ($skorAkhirHari > 90) {
-                $prodiHariColors[$i] = '#3b82f6'; // Sangat Baik (Biru / Blue-500)
-            }
+        $warnaProdiTunggal = '#94a3b8'; // Default N/A (Abu-abu)
+        if ($skorAkhirPekan >= 1 && $skorAkhirPekan <= 59) {
+            $warnaProdiTunggal = '#ef4444'; // Kurang (Merah)
+        } elseif ($skorAkhirPekan >= 60 && $skorAkhirPekan <= 75) {
+            $warnaProdiTunggal = '#f59e0b'; // Cukup (Amber)
+        } elseif ($skorAkhirPekan >= 76 && $skorAkhirPekan <= 90) {
+            $warnaProdiTunggal = '#10b981'; // Baik (Emerald)
+        } elseif ($skorAkhirPekan > 90) {
+            $warnaProdiTunggal = '#3b82f6'; // Sangat Baik (Biru)
         }
 
+        // 2. DISTRIBUSIKAN NILAI RATA-RATA PER HARI KEMBALI
+        for ($i = 0; $i < 5; $i++) {
+            $prodiHariData[$i] = $hariDataCount[$i] > 0 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) : 0;
+        }
+
+        // 3. SET SETIAP PRODI DENGAN SATU WARNA KONSISTEN (BAR & BULAT SAMA)
         $chartDatasets[] = [
             'label'           => $prodiName,
             'data'            => $prodiHariData,
-            'backgroundColor' => $prodisForChart->count() === 1 ? $prodiHariColors : $prodiHariColors[0], // Warna dinamis per batang jika single prodi
+            'backgroundColor' => $warnaProdiTunggal, // Menggunakan warna tunggal hasil rata-rata pekanan prodi
             'borderRadius'    => 6,
             'borderSkipped'   => false,
             'barThickness'    => 14
