@@ -509,7 +509,7 @@ function downloadLaporan(type) {
                 else if (nilai >= 76) return '#10b981';
                 else if (nilai >= 60) return '#f59e0b';
                 else if (nilai > 0) return '#ef4444';
-                else return '#6b7280';
+                else return '#6b7280'; // Abu-abu default
             });
 
             const dynamicBorders = dataset.data.map(function(nilai) {
@@ -546,7 +546,28 @@ function downloadLaporan(type) {
                             boxWidth: 10,
                             usePointStyle: true,
                             pointStyle: 'circle',
-                            padding: 20
+                            padding: 20,
+                            
+                            // =============================================================
+                            // TAMBAHAN SOLUSI: Menyelaraskan Warna Bulatan Legenda Aktif
+                            // =============================================================
+                            generateLabels: function(chart) {
+                                const defaults = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                defaults.forEach(function(label, index) {
+                                    const dataset = chart.data.datasets[index];
+                                    if (Array.isArray(dataset.backgroundColor)) {
+                                        // Cari warna di dalam array yang BUKAN abu-abu default (#6b7280)
+                                        const warnaAktif = dataset.backgroundColor.find(function(color) {
+                                            return color !== '#6b7280';
+                                        });
+                                        // Jika ada hari yang aktif datanya (seperti hari Rabu), gunakan warna itu. 
+                                        // Jika kosong semua, biarkan default abu-abu.
+                                        label.fillStyle = warnaAktif ? warnaAktif : '#6b7280';
+                                        label.strokeStyle = warnaAktif ? warnaAktif : '#4b5563';
+                                    }
+                                });
+                                return defaults;
+                            }
                         }
                     },
                     tooltip: {
@@ -559,7 +580,6 @@ function downloadLaporan(type) {
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) label += ': ';
-                                // REVISI: Tanda '%' dihapus agar murni angka indeks
                                 if (context.raw !== null) label += context.raw; 
                                 return label;
                             }
@@ -580,7 +600,6 @@ function downloadLaporan(type) {
                         ticks: {
                             color: textColor,
                             font: { size: 11 },
-                            // REVISI: Callback diubah agar mengembalikan nilai angka murni saja
                             callback: function(value) { return value; }
                         }
                     }
