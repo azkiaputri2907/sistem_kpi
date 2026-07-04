@@ -12,7 +12,7 @@ class AuthController extends Controller
     // =========================================================================
     // HELPER SPREADSHEET (Wajib ada untuk baca data)
     // =========================================================================
-    
+
     private function getApiUrl()
     {
         return env('GOOGLE_SCRIPT_URL');
@@ -24,7 +24,7 @@ class AuthController extends Controller
             'action' => 'read',
             'sheet'  => $sheetName
         ]);
-        
+
         $data = $response->json('data') ?? [];
         return collect(json_decode(json_encode($data), FALSE));
     }
@@ -67,7 +67,7 @@ class AuthController extends Controller
 
         // Jika user ditemukan
         if ($user) {
-            
+
             $inputPassword = $request->password;
             $dbPassword = trim($user->password ?? '');
 
@@ -87,7 +87,7 @@ class AuthController extends Controller
 
             // Jika Password Benar
             if ($isPasswordValid) {
-                
+
                 $selectedRole = $request->role_id;
                 $isAuthorized = false;
                 $userRoleId = trim($user->role_id ?? '');
@@ -108,8 +108,8 @@ class AuthController extends Controller
                 // 5. Login Sukses (Simpan ke Session Manual)
                 if ($isAuthorized) {
                     // Jangan simpan password ke dalam session demi keamanan
-                    unset($user->password); 
-                    
+                    unset($user->password);
+
                     Session::put('is_logged_in', true);
                     Session::put('user', $user);
 

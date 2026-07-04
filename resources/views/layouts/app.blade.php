@@ -439,7 +439,7 @@ tailwind.config = {
                                 @elseif($userSession->role_id == 2)
                                     Admin Prodi
                                 @else
-                                    Ketua Program Studi
+                                    Koordinator Program Studi
                                 @endif
                             </p>
                         </div>
