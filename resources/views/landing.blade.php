@@ -152,6 +152,20 @@
         <span class="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Live</span>
     </div>
 </div>
+
+<div class="mt-3 w-full max-w-md">
+    <a href="https://drive.google.com/file/d/1m9xD3KrJhd1LiysspQ8dJqPcbGYp4xv3/view?usp=sharing"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="w-full h-12 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-white dark:border-slate-800 shadow-sm flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 group">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-blue-500 dark:text-blue-400 group-hover:animate-bounce">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+
+        <span>Unduh Buku Panduan Sistem (Manual Book)</span>
+    </a>
+</div>
             </div>
 
             <div class="order-2 lg:order-2 bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
@@ -356,10 +370,6 @@
             <div class="text-center md:text-left">
                 <p class="font-bold text-slate-800 dark:text-slate-200 mb-1">Sistem Informasi Pelayanan Publik & Monitoring KPI</p>
                 <p>&copy; 2026 Jurusan Teknik Elektro - Politeknik Negeri Banjarmasin</p>
-            </div>
-            <div class="flex gap-6 items-center">
-                <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privasi & Keamanan</a>
-                <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Panduan Layanan</a>
             </div>
         </div>
     </footer>
@@ -624,3 +634,4 @@ function startRotation() {
     </script>
 </body>
 </html>
+pa
