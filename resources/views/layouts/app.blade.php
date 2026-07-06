@@ -154,13 +154,13 @@ tailwind.config = {
 
     {{-- MOBILE OVERLAY --}}
     <div id="sidebarOverlay"
-        onclick="toggleSidebar()"
-        class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden">
+        onclick="closeSidebar()"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300 opacity-0">
     </div>
 
-    {{-- SIDEBAR --}}
+{{-- SIDEBAR --}}
     <aside id="sidebar"
-        class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-screen w-[290px] bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
+        class="fixed lg:static inset-y-0 left-0 z-50 lg:z-0 w-[290px] bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0">
 
         {{-- LOGO --}}
         <div class="h-24 px-6 flex items-center border-b border-slate-100 dark:border-slate-700">
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <script>
 // ==================== LOGIK AUTO-LOGOUT 5 MENIT IDLE (MODAL KUSTOM MURNI) ====================
 const maxIdleTimeMilidetik = 5 * 60 * 1000;
-let hitungMundurBar; // Variabel global untuk menyimpan interval progress bar
+let hitungMundurBar; 
 
 function perbaruiAktivitasTerakhir() {
     localStorage.setItem('lastActivityTime', Date.now().toString());
@@ -658,7 +658,6 @@ if (!localStorage.getItem('lastActivityTime')) {
 
 let infoModalSedangTerbuka = false;
 
-// Jalankan fungsi pengecekan konstan setiap 5 detik
 let cekLogoutInterval = setInterval(jalankanPengecekanIdle, 5000);
 
 function jalankanPengecekanIdle() {
@@ -671,13 +670,11 @@ function jalankanPengecekanIdle() {
     if (selisihWaktu >= maxIdleTimeMilidetik) {
         infoModalSedangTerbuka = true;
 
-        // Tampilkan modal kustom idle
         const modalIdle = document.getElementById('idle-logout-modal');
         const progressBar = document.getElementById('idle-progress');
-        progressBar.style.width = '100%'; // Setel ulang ke penuh sebelum menyusut
+        progressBar.style.width = '100%'; 
         modalIdle.classList.remove('hidden');
 
-        // Jalankan animasi penyusutan progress bar (10 Detik)
         let sisaWaktuPersen = 100;
         hitungMundurBar = setInterval(() => {
             sisaWaktuPersen -= 10;
@@ -690,18 +687,10 @@ function jalankanPengecekanIdle() {
     }
 }
 
-// Fungsi Baru: Ketika admin klik tombol "Lanjutkan Sesi (Batal)"
 function batalkanAutoLogout() {
-    // 1. Sembunyikan modal kembali
     document.getElementById('idle-logout-modal').classList.add('hidden');
-
-    // 2. Matikan sisa hitung mundur 10 detik progress bar
     clearInterval(hitungMundurBar);
-
-    // 3. Reset waktu aktivitas di localStorage ke detik ini agar dianggap aktif lagi
     perbaruiAktivitasTerakhir();
-
-    // 4. Buka kunci filter agar pengecekan idle 5 menit berjalan normal dari awal lagi
     infoModalSedangTerbuka = false;
 }
 
@@ -724,7 +713,7 @@ function eksekusiLogout() {
 }
 
 // ==================== GLOBAL CONTROLLER AUTO-REFRESH ====================
-let isLoadingActive = false; // Flag global untuk mendeteksi sistem sedang sibuk/loading
+let isLoadingActive = false; 
 
 document.addEventListener('DOMContentLoaded', function() {
     let refreshTimeLeft = 30;
@@ -739,7 +728,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             element.addEventListener('focus', function() {
                 isPaused = true;
-                // Hanya ubah teks jika sistem sedang TIDAK dalam kondisi loading data utama
                 if (timerElement && !isLoadingActive) {
                     timerElement.innerText = `Auto-Refresh: Paused`;
                     timerElement.classList.remove('text-emerald-600', 'dark:text-emerald-400');
@@ -763,7 +751,6 @@ document.addEventListener('DOMContentLoaded', function() {
     observer.observe(document.body, { childList: true, subtree: true });
 
     const countdownInterval = setInterval(function() {
-        // TAMBAHAN KRUSIAL: Jika sedang loading data, atau input fokus, atau modal terbuka, STOP COUNTDOWN
         if (isPaused || isLoadingActive || (typeof infoModalSedangTerbuka !== 'undefined' && infoModalSedangTerbuka)) {
             return;
         }
@@ -808,21 +795,55 @@ themeToggleBtn.addEventListener('click', function() {
     updateIcons();
 });
 
+// ==================== LOGIK SIDEBAR RESPONSIVE ====================
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
 function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('sidebarOverlay');
-    sidebar.classList.toggle('-translate-x-full');
-    overlay.classList.toggle('hidden');
+    const isClosed = sidebar.classList.contains('-translate-x-full');
+    
+    if (isClosed) {
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+        }, 10);
+    } else {
+        closeSidebar();
+    }
 }
 
+function closeSidebar() {
+    if (window.innerWidth < 1024) {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0');
+        
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+        }, 300);
+    }
+}
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth >= 1024) { 
+        sidebar.classList.remove('-translate-x-full');
+        overlay.classList.add('hidden');
+        overlay.classList.remove('opacity-100');
+        overlay.classList.add('opacity-0');
+    } else {
+        sidebar.classList.add('-translate-x-full');
+    }
+});
+
+// ==================== NOTIF DROPDOWN ====================
 function toggleNotifDropdown() {
     const dropdown = document.getElementById('notifDropdown');
     if (!dropdown) return;
 
     if (dropdown.classList.contains('hidden')) {
         dropdown.classList.remove('hidden');
-
-        // TAMBAHKAN INI: Menahan auto-refresh agar tidak mengganggu saat melihat notif
         isModalOpen = true;
 
         setTimeout(() => {
@@ -834,8 +855,6 @@ function toggleNotifDropdown() {
         dropdown.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
             dropdown.classList.add('hidden');
-
-            // TAMBAHKAN INI: Jalankan kembali auto-refresh saat dropdown ditutup
             isModalOpen = false;
         }, 200);
     }

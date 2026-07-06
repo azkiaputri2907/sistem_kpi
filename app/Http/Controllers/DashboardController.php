@@ -1783,7 +1783,6 @@ public function controlPanel()
             'name'       => $request->name,
             'email'      => $request->email,
             'password'   => $request->password,
-            'foto'       => '',
             'created_at' => now()->format('Y-m-d H:i:s'),
             'updated_at' => now()->format('Y-m-d H:i:s')
         ];
@@ -1824,7 +1823,6 @@ public function controlPanel()
                 'name'       => $request->name,
                 'email'      => $request->email,
                 'password'   => $password,
-                'foto'       => data_get($existingUser, 'foto') ?? '',
                 'created_at' => data_get($existingUser, 'created_at') ?? now()->format('Y-m-d H:i:s'),
                 'updated_at' => now()->format('Y-m-d H:i:s')
             ];
