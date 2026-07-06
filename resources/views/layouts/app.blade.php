@@ -396,7 +396,7 @@ tailwind.config = {
                             <p class="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mt-1">
                                 @if($userSession->role_id == 1)
                                     Master Administrator
-                                @elseif($userSession->email === 'kajur.elektro@poliban.ac.id')
+                                @elseif($userSession->email === 3)
                                     Ketua Jurusan
                                 @elseif($userSession->role_id == 2)
                                     Admin Prodi

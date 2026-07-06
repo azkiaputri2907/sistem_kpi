@@ -71,7 +71,7 @@
                     Sistem Informasi Pelayanan Terpadu<br class="hidden md:inline">
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-400 uppercase">SIPANDU-ELEKTRO</span>
                 </h1>
-                
+
                 <p class="text-slate-300 text-xs md:text-sm leading-relaxed max-w-sm md:max-w-xs uppercase tracking-wide">Kelola antrean, pantau KPI, dan tingkatkan kualitas layanan institusi dalam satu dasbor.</p>
             </div>
 
@@ -116,11 +116,11 @@
                     <div class="flex justify-between mb-1 sm:mb-2">
                         <label class="block text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
                     </div>
-                    
+
                     <div class="relative flex items-center">
-                        <input type="password" id="passwordInput" name="password" placeholder="••••••••" 
+                        <input type="password" id="passwordInput" name="password" placeholder="••••••••"
                             class="w-full pl-4 pr-12 sm:pl-6 sm:pr-14 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-600/10 focus:border-blue-800 transition-all outline-none font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300" required>
-                        
+
                         <button type="button" onclick="togglePassword()" class="absolute right-4 sm:right-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors outline-none">
                             <i id="eyeIcon" class="fa-solid fa-eye"></i>
                         </button>
@@ -182,7 +182,7 @@
         function togglePassword() {
             const passwordInput = document.getElementById('passwordInput');
             const eyeIcon = document.getElementById('eyeIcon');
-            
+
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
                 eyeIcon.classList.remove('fa-eye');
