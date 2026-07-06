@@ -396,7 +396,7 @@ tailwind.config = {
                             <p class="text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 font-bold mt-1">
                                 @if($userSession->role_id == 1)
                                     Master Administrator
-                                @elseif($userSession->email === 3)
+                                @elseif($userSession->role_id === 3)
                                     Ketua Jurusan
                                 @elseif($userSession->role_id == 2)
                                     Admin Prodi
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <script>
 // ==================== LOGIK AUTO-LOGOUT 5 MENIT IDLE (MODAL KUSTOM MURNI) ====================
 const maxIdleTimeMilidetik = 5 * 60 * 1000;
-let hitungMundurBar; 
+let hitungMundurBar;
 
 function perbaruiAktivitasTerakhir() {
     localStorage.setItem('lastActivityTime', Date.now().toString());
@@ -672,7 +672,7 @@ function jalankanPengecekanIdle() {
 
         const modalIdle = document.getElementById('idle-logout-modal');
         const progressBar = document.getElementById('idle-progress');
-        progressBar.style.width = '100%'; 
+        progressBar.style.width = '100%';
         modalIdle.classList.remove('hidden');
 
         let sisaWaktuPersen = 100;
@@ -713,7 +713,7 @@ function eksekusiLogout() {
 }
 
 // ==================== GLOBAL CONTROLLER AUTO-REFRESH ====================
-let isLoadingActive = false; 
+let isLoadingActive = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     let refreshTimeLeft = 30;
@@ -801,7 +801,7 @@ const overlay = document.getElementById('sidebarOverlay');
 
 function toggleSidebar() {
     const isClosed = sidebar.classList.contains('-translate-x-full');
-    
+
     if (isClosed) {
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.remove('hidden');
@@ -819,7 +819,7 @@ function closeSidebar() {
         sidebar.classList.add('-translate-x-full');
         overlay.classList.remove('opacity-100');
         overlay.classList.add('opacity-0');
-        
+
         setTimeout(() => {
             overlay.classList.add('hidden');
         }, 300);
@@ -827,7 +827,7 @@ function closeSidebar() {
 }
 
 window.addEventListener('resize', () => {
-    if (window.innerWidth >= 1024) { 
+    if (window.innerWidth >= 1024) {
         sidebar.classList.remove('-translate-x-full');
         overlay.classList.add('hidden');
         overlay.classList.remove('opacity-100');
