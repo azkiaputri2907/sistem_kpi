@@ -159,153 +159,156 @@ tailwind.config = {
     </div>
 
     {{-- SIDEBAR --}}
-    <aside id="sidebar"
-        class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-screen w-[290px] bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
+   {{-- SIDEBAR --}}
+{{-- PERBAIKAN: Mengganti h-screen menjadi h-[100dvh] (Dynamic Viewport Height) untuk memaksa tinggi pas dengan ruang browser aktif di HP --}}
+<aside id="sidebar"
+    class="fixed lg:relative z-50 lg:z-0 top-0 left-0 h-[100dvh] w-[290px] bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 flex flex-col transition-all duration-300 -translate-x-full lg:translate-x-0">
 
-        {{-- LOGO --}}
-        <div class="h-24 px-6 flex items-center border-b border-slate-100 dark:border-slate-700">
+    {{-- LOGO --}}
+    {{-- PERBAIKAN: Ditambahkan flex-shrink-0 agar ukuran area logo tidak mengecil/tertekan saat menu navigasi penuh --}}
+    <div class="h-24 px-6 flex items-center border-b border-slate-100 dark:border-slate-700 flex-shrink-0">
 
-            <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-indigo-50 dark:bg-slate-700 shadow-sm flex-shrink-0">
-                <img src="{{ asset('img/logo-poliban.png') }}"
-                    alt="Logo"
-                    class="w-9 h-9 object-contain">
-            </div>
-
-            <div class="ml-4 overflow-hidden">
-                <h1 class="font-black text-slate-900 dark:text-white text-sm leading-tight truncate">
-                    Jurusan Teknik Elektro
-                </h1>
-
-                <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500 font-bold mt-1">
-                    Admin Panel
-                </p>
-            </div>
-
+        <div class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center bg-indigo-50 dark:bg-slate-700 shadow-sm flex-shrink-0">
+            <img src="{{ asset('img/logo-poliban.png') }}"
+                alt="Logo"
+                class="w-9 h-9 object-contain">
         </div>
+
+        <div class="ml-4 overflow-hidden">
+            <h1 class="font-black text-slate-900 dark:text-white text-sm leading-tight truncate">
+                Jurusan Teknik Elektro
+            </h1>
+
+            <p class="text-[10px] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500 font-bold mt-1">
+                Admin Panel
+            </p>
+        </div>
+
+    </div>
 
     {{-- MENU & LOGOUT CONTAINER --}}
-        {{-- Logika & alur tetap sama, hanya dibungkus flex-col agar tombol Keluar menempel di bawah layar HP --}}
-        <div class="flex-1 flex flex-col justify-between h-[calc(100vh-96px)] overflow-hidden">
+    {{-- PERBAIKAN: Menghapus kalkulasi h-[calc(100vh-96px)] yang merusak tinggi layar iPhone kecil, diganti flex-1 dan overflow-hidden agar pembagian tinggi atas-bawah otomatis pas secara elastis --}}
+    <div class="flex-1 flex flex-col justify-between overflow-hidden">
 
-            {{-- MENU NAVIGASI (Bisa di-scroll kalau penuh) --}}
-            <div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
-                <nav class="space-y-2">
+        {{-- MENU NAVIGASI (Bisa di-scroll kalau penuh) --}}
+        <div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
+            <nav class="space-y-2">
 
-                    {{-- DASHBOARD --}}
-                    @if(in_array($userSession->role_id, [1,2]))
-                    <a href="{{ route('dashboard') }}" onclick="toggleSidebar()"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                        <i class="fa-solid fa-chart-pie text-lg flex-shrink-0"></i>
-                        <span class="font-bold text-sm {{ request()->routeIs('dashboard') ? 'text-white' : '' }} truncate">
-                            Dashboard
-                        </span>
-                    </a>
-                    @endif
+                {{-- DASHBOARD --}}
+                @if(in_array($userSession->role_id, [1,2]))
+                <a href="{{ route('dashboard') }}" onclick="toggleSidebar()"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-chart-pie text-lg flex-shrink-0"></i>
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard') ? 'text-white' : '' }} truncate">
+                        Dashboard
+                    </span>
+                </a>
+                @endif
 
-                    {{-- ANTREAN --}}
-                    @if(in_array($userSession->role_id, [1,2]))
-                    <a href="{{ route('dashboard.antrean') }}" onclick="toggleSidebar()"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.antrean') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                        <i class="fa-solid fa-users-viewfinder text-lg flex-shrink-0"></i>
-                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.antrean') ? 'text-white' : '' }} truncate">
-                            Manajemen Antrean
-                        </span>
-                    </a>
-                    @endif
+                {{-- ANTREAN --}}
+                @if(in_array($userSession->role_id, [1,2]))
+                <a href="{{ route('dashboard.antrean') }}" onclick="toggleSidebar()"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.antrean') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-users-viewfinder text-lg flex-shrink-0"></i>
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.antrean') ? 'text-white' : '' }} truncate">
+                        Manajemen Antrean
+                    </span>
+                </a>
+                @endif
 
-                    {{-- ANALYTICS KPI --}}
-                    <a href="{{ route('dashboard.analytics') }}" onclick="toggleSidebar()"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group
+                {{-- ANALYTICS KPI --}}
+                <a href="{{ route('dashboard.analytics') }}" onclick="toggleSidebar()"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group
+                    {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-black'
+                        : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-chart-simple text-lg flex-shrink-0 transition-colors
                         {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-black'
-                            : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                        <i class="fa-solid fa-chart-simple text-lg flex-shrink-0 transition-colors
-                            {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
-                                ? 'text-white'
-                                : 'text-slate-400 group-hover:text-blue-600 dark:text-slate-500' }}"></i>
-                        <span class="font-bold text-sm truncate">
-                            Analytics KPI
-                        </span>
-                    </a>
+                            ? 'text-white'
+                            : 'text-slate-400 group-hover:text-blue-600 dark:text-slate-500' }}"></i>
+                    <span class="font-bold text-sm truncate">
+                        Analytics KPI
+                    </span>
+                </a>
 
-                    {{-- LAPORAN --}}
-                    <a href="{{ route('dashboard.laporan') }}" onclick="toggleSidebar()"
+                {{-- LAPORAN --}}
+                <a href="{{ route('dashboard.laporan') }}" onclick="toggleSidebar()"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.laporan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-file-export text-lg flex-shrink-0"></i>
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.laporan') ? 'text-white' : '' }} truncate">
+                        Laporan Ekspor
+                    </span>
+                </a>
+
+                {{-- ULASAN --}}
+                <a href="{{ route('dashboard.ulasan') }}" onclick="toggleSidebar()"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.ulasan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-comment-dots text-lg flex-shrink-0"></i>
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.ulasan') ? 'text-white' : '' }} truncate">
+                        Ulasan Pengunjung
+                    </span>
+                </a>
+
+                {{-- PIMPINAN --}}
+                @if($userSession->role_id != 1 && $userSession->role_id != 2)
+                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
+                        Tugas Pimpinan
+                    </p>
+                    <a href="{{ route('pimpinan.konfirmasi') }}" onclick="toggleSidebar()"
+                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
+                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                        <i class="fa-solid fa-file-signature text-lg flex-shrink-0"></i>
+                        <span class="font-bold text-sm {{ request()->routeIs('pimpinan.konfirmasi') ? 'text-white' : '' }} truncate">
+                            Konfirmasi Masuk
+                        </span>
+                        <span class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    </a>
+                </div>
+                @endif
+
+                {{-- SUPER ADMIN --}}
+                @if($userSession->role_id == 1)
+                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
+                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
+                        System Admin
+                    </p>
+                    <a href="{{ route('dashboard.control_panel') }}" onclick="toggleSidebar()"
                         class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.laporan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                        <i class="fa-solid fa-file-export text-lg flex-shrink-0"></i>
-                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.laporan') ? 'text-white' : '' }} truncate">
-                            Laporan Ekspor
+                        {{ request()->routeIs('dashboard.control_panel') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                        <i class="fa-solid fa-gears text-lg flex-shrink-0"></i>
+                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.control_panel') ? 'text-white' : '' }} truncate">
+                            Sistem Control
                         </span>
                     </a>
+                </div>
+                @endif
 
-                    {{-- ULASAN --}}
-                    <a href="{{ route('dashboard.ulasan') }}" onclick="toggleSidebar()"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.ulasan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                        <i class="fa-solid fa-comment-dots text-lg flex-shrink-0"></i>
-                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.ulasan') ? 'text-white' : '' }} truncate">
-                            Ulasan Pengunjung
-                        </span>
-                    </a>
-
-                    {{-- PIMPINAN --}}
-                    @if($userSession->role_id != 1 && $userSession->role_id != 2)
-                    <div class="pt-5 mt-5 border-t-2 border-red-500/30">
-                        <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
-                            Tugas Pimpinan
-                        </p>
-                        <a href="{{ route('pimpinan.konfirmasi') }}" onclick="toggleSidebar()"
-                            class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
-                            {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                            <i class="fa-solid fa-file-signature text-lg flex-shrink-0"></i>
-                            <span class="font-bold text-sm {{ request()->routeIs('pimpinan.konfirmasi') ? 'text-white' : '' }} truncate">
-                                Konfirmasi Masuk
-                            </span>
-                            <span class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        </a>
-                    </div>
-                    @endif
-
-                    {{-- SUPER ADMIN --}}
-                    @if($userSession->role_id == 1)
-                    <div class="pt-5 mt-5 border-t-2 border-red-500/30">
-                        <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
-                            System Admin
-                        </p>
-                        <a href="{{ route('dashboard.control_panel') }}" onclick="toggleSidebar()"
-                            class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                            {{ request()->routeIs('dashboard.control_panel') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                            <i class="fa-solid fa-gears text-lg flex-shrink-0"></i>
-                            <span class="font-bold text-sm {{ request()->routeIs('dashboard.control_panel') ? 'text-white' : '' }} truncate">
-                                Sistem Control
-                            </span>
-                        </a>
-                    </div>
-                    @endif
-
-                </nav>
-            </div>
-
-            {{-- TOMBOL KELUAR (Tetap Terlihat Cantik & Anti Tenggelam di HP) --}}
-            <div class="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0 pb-7 sm:pb-5">
-                <form action="{{ route('logout') }}" method="POST" id="logout-form">
-                    @csrf
-                    <button type="button" onclick="confirmLogout()"
-                        class="w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 active:scale-[0.98] transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 shadow-sm">
-                        <i class="fa-solid fa-arrow-right-from-bracket text-base flex-shrink-0"></i>
-                        <span class="font-bold text-sm">
-                            Keluar
-                        </span>
-                    </button>
-                </form>
-            </div>
-
+            </nav>
         </div>
 
-    </aside>
+        {{-- TOMBOL KELUAR --}}
+        {{-- PERBAIKAN: Mengubah padding bawah khusus versi mobile dengan pb-10 (lg:pb-5) agar tombol terdorong ke atas melewati batas bar url/tautan safari iPhone --}}
+        <div class="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex-shrink-0 pb-10 lg:pb-5">
+            <form action="{{ route('logout') }}" method="POST" id="logout-form">
+                @csrf
+                <button type="button" onclick="confirmLogout()"
+                    class="w-full flex items-center justify-center lg:justify-start gap-3 px-5 py-4 rounded-2xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 active:scale-[0.98] transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-900/30 shadow-sm">
+                    <i class="fa-solid fa-arrow-right-from-bracket text-base flex-shrink-0"></i>
+                    <span class="font-bold text-sm">
+                        Keluar
+                    </span>
+                </button>
+            </form>
+        </div>
 
+    </div>
+
+</aside>
     {{-- MAIN --}}
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
