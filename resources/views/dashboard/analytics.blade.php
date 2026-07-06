@@ -89,7 +89,7 @@
                 <i class="fa-solid fa-users"></i>
             </div>
         </div>
-        
+
         {{-- Progress Bar Target --}}
         @php
             $realisasi = $total_dilayani ?? $total_kunjungan;
@@ -170,7 +170,7 @@
                 <h3 class="text-lg md:text-xl font-black text-gray-800 dark:text-white tracking-tight">Tren Waktu Layanan (SLA)</h3>
                 <p class="text-[10px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest mt-1">Rata-rata menit per hari</p>
             </div>
-            <div class="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase">Stabil</div>
+            
         </div>
         <div class="h-[280px] md:h-[320px]">
             <canvas id="slaChart"></canvas>
@@ -547,7 +547,7 @@ function downloadLaporan(type) {
                             usePointStyle: true,
                             pointStyle: 'circle',
                             padding: 20,
-                            
+
                             // =============================================================
                             // TAMBAHAN SOLUSI: Menyelaraskan Warna Bulatan Legenda Aktif
                             // =============================================================
@@ -560,7 +560,7 @@ function downloadLaporan(type) {
                                         const warnaAktif = dataset.backgroundColor.find(function(color) {
                                             return color !== '#6b7280';
                                         });
-                                        // Jika ada hari yang aktif datanya (seperti hari Rabu), gunakan warna itu. 
+                                        // Jika ada hari yang aktif datanya (seperti hari Rabu), gunakan warna itu.
                                         // Jika kosong semua, biarkan default abu-abu.
                                         label.fillStyle = warnaAktif ? warnaAktif : '#6b7280';
                                         label.strokeStyle = warnaAktif ? warnaAktif : '#4b5563';
@@ -580,7 +580,7 @@ function downloadLaporan(type) {
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) label += ': ';
-                                if (context.raw !== null) label += context.raw; 
+                                if (context.raw !== null) label += context.raw;
                                 return label;
                             }
                         }
