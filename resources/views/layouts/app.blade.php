@@ -153,139 +153,91 @@
 
         </div>
 
-        {{-- MENU --}}
-        <div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
-<nav class="space-y-2">
+{{-- MENU --}}
+<div class="flex-1 overflow-y-auto sidebar-scroll px-4 py-6">
+    <nav class="space-y-2">
 
-                {{-- DASHBOARD --}}
-                @if(in_array($userSession->role_id, [1,2]))
-                <a href="{{ route('dashboard') }}"
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+        {{-- MENU UTAMA (Hanya untuk Admin/Staff, bukan Super Admin) --}}
+        @if(in_array($userSession->role_id, [1, 2]))
+            {{-- DASHBOARD --}}
+            <a href="{{ route('dashboard') }}"
+                class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="font-bold text-sm {{ request()->routeIs('dashboard') ? 'text-white' : '' }}">Dashboard</span>
+            </a>
+        @endif
+        @if($userSession->role_id == 2)
+            {{-- ANTREAN --}}
+            <a href="{{ route('dashboard.antrean') }}"
+                class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                {{ request()->routeIs('dashboard.antrean') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-100 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                <i class="fa-solid fa-users-viewfinder text-lg"></i>
+                <span class="font-bold text-sm {{ request()->routeIs('dashboard.antrean') ? 'text-white' : '' }}">Manajemen Antrean</span>
+            </a>
+        @endif
 
-                    <i class="fa-solid fa-chart-pie text-lg"></i>
+        {{-- ANALYTICS, LAPORAN, ULASAN (Muncul untuk semua kecuali Super Admin) --}}
+@if($userSession->email === 'kajur.elektro@poliban.ac.id' || ($userSession->role_id != 1 && $userSession->role_id != 2))
+            
+            {{-- ANALYTICS KPI --}}
+            <a href="{{ route('dashboard.analytics') }}"
+                class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group
+                {{ request()->routeIs('dashboard.analytics') ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                <i class="fa-solid fa-chart-simple text-lg transition-colors {{ request()->routeIs('dashboard.analytics') ? 'text-white' : 'text-slate-400 group-hover:text-blue-600' }}"></i>
+                <span class="font-bold text-sm">Analytics KPI</span>
+            </a>
+@endif
+            {{-- LAPORAN --}}
+            <a href="{{ route('dashboard.laporan') }}"
+                class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                {{ request()->routeIs('dashboard.laporan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                <i class="fa-solid fa-file-export text-lg"></i>
+                <span class="font-bold text-sm {{ request()->routeIs('dashboard.laporan') ? 'text-white' : '' }}">Laporan Ekspor</span>
+            </a>
+@if($userSession->role_id != 1)
+            {{-- ULASAN --}}
+            <a href="{{ route('dashboard.ulasan') }}"
+                class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                {{ request()->routeIs('dashboard.ulasan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                <i class="fa-solid fa-comment-dots text-lg"></i>
+                <span class="font-bold text-sm {{ request()->routeIs('dashboard.ulasan') ? 'text-white' : '' }}">Ulasan Pengunjung</span>
+            </a>
+        @endif
 
-                    <span class="font-bold text-sm {{ request()->routeIs('dashboard') ? 'text-white' : '' }}">
-                        Dashboard
-                    </span>
-
-                </a>
-                @endif
-
-                {{-- ANTREAN --}}
-                @if(in_array($userSession->role_id, [1,2]))
-                <a href="{{ route('dashboard.antrean') }}"
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.antrean') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-
-                    <i class="fa-solid fa-users-viewfinder text-lg"></i>
-
-                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.antrean') ? 'text-white' : '' }}">
-                        Manajemen Antrean
-                    </span>
-
-                </a>
-                @endif
-
-                {{-- ANALYTICS KPI (HANYA BAGIAN INI YANG DIUBAH) --}}
-<a href="{{ route('dashboard.analytics') }}"
-    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group
-    {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
-        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20 font-black'
-        : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-
-    <i class="fa-solid fa-chart-simple text-lg transition-colors
-        {{ (request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1,2])))
-            ? 'text-white'
-            : 'text-slate-400 group-hover:text-blue-600 dark:text-slate-500' }}"></i>
-
-    <span class="font-bold text-sm">
-        Analytics KPI
-    </span>
-
-</a>
-
-                {{-- LAPORAN --}}
-                <a href="{{ route('dashboard.laporan') }}"
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.laporan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-
-                    <i class="fa-solid fa-file-export text-lg"></i>
-
-                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.laporan') ? 'text-white' : '' }}">
-                        Laporan Ekspor
-                    </span>
-
-                </a>
-
-                {{-- ULASAN --}}
-                <a href="{{ route('dashboard.ulasan') }}"
-                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                    {{ request()->routeIs('dashboard.ulasan') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-
-                    <i class="fa-solid fa-comment-dots text-lg"></i>
-
-                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.ulasan') ? 'text-white' : '' }}">
-                        Ulasan Pengunjung
-                    </span>
-
-                </a>
-
-                {{-- PIMPINAN --}}
-                @if($userSession->role_id != 1 && $userSession->role_id != 2)
-
-                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
-
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
-                        Tugas Pimpinan
-                    </p>
-
-                    <a href="{{ route('pimpinan.konfirmasi') }}"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
-                        {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600' }}">
-
+        {{-- PIMPINAN --}}
+        @if($userSession->role_id != 1 && $userSession->role_id != 2)
+            <div class="pt-5 mt-5 border-t-2 border-red-500/30">
+                <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
+                    Tugas Pimpinan
+                </p>
+                <a href="{{ route('pimpinan.konfirmasi') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 relative
+                    {{ request()->routeIs('pimpinan.konfirmasi') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20 font-black' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600' }}">
                     <i class="fa-solid fa-file-signature text-lg"></i>
-
-                    <span class="font-bold text-sm {{ request()->routeIs('pimpinan.konfirmasi') ? 'text-white' : '' }}">
-                        Konfirmasi Masuk
-                    </span>
-
+                    <span class="font-bold text-sm {{ request()->routeIs('pimpinan.konfirmasi') ? 'text-white' : '' }}">Konfirmasi Masuk</span>
                     <span class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                </a>
+            </div>
+        @endif
 
-                    </a>
+        {{-- SUPER ADMIN (Sistem Control) --}}
+        @if($userSession->role_id == 1)
+            <div class="pt-5 mt-5 border-t-2 border-red-500/30">
+                <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
+                    System Admin
+                </p>
+                <a href="{{ route('dashboard.control_panel') }}"
+                    class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
+                    {{ request()->routeIs('dashboard.control_panel') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-gears text-lg"></i>
+                    <span class="font-bold text-sm {{ request()->routeIs('dashboard.control_panel') ? 'text-white' : '' }}">Sistem Control</span>
+                </a>
+            </div>
+        @endif
 
-                </div>
-
-                @endif
-
-                {{-- SUPER ADMIN --}}
-                @if($userSession->role_id == 1)
-
-                <div class="pt-5 mt-5 border-t-2 border-red-500/30">
-
-                    <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
-                        System Admin
-                    </p>
-
-                    <a href="{{ route('dashboard.control_panel') }}"
-                        class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200
-                        {{ request()->routeIs('dashboard.control_panel') ? 'bg-blue-600 text-amber-400 shadow-md shadow-blue-500/20' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-
-                        <i class="fa-solid fa-gears text-lg"></i>
-
-                        <span class="font-bold text-sm {{ request()->routeIs('dashboard.control_panel') ? 'text-white' : '' }}">
-                            Sistem Control
-                        </span>
-
-                    </a>
-
-                </div>
-
-                @endif
-
-            </nav>
-
-        </div>
+    </nav>
+</div>
 
         {{-- LOGOUT --}}
         <div class="p-5 border-t border-slate-100 dark:border-slate-700">
@@ -402,7 +354,7 @@
                                 @elseif($userSession->role_id == 2)
                                     Admin Prodi
                                 @else
-                                    Ketua Program Studi
+                                    Koordinator Program Studi
                                 @endif
                             </p>
                         </div>

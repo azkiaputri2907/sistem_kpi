@@ -198,42 +198,38 @@
     @endif
 
     {{-- System Status --}}
-    @if(!$statusOperasional['status'])
-        <div class="mb-6 bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-400 dark:border-amber-600 p-5 rounded-2xl flex items-center gap-4 text-amber-800 dark:text-amber-200">
-            <svg class="w-8 h-8 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <div>
-                <h4 class="font-bold text-base">Sistem Sedang Ditutup</h4>
-                <p class="text-xs mt-0.5 leading-relaxed">{{ $statusOperasional['pesan'] }}</p>
-            </div>
+@if(!$statusOperasional['status'])
+    <div class="mb-6 bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-400 dark:border-amber-600 p-5 rounded-2xl flex items-center gap-4 text-amber-800 dark:text-amber-200">
+        <svg class="w-8 h-8 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div>
+            <h4 class="font-bold text-base">Sistem Sedang Ditutup</h4>
+            <p class="text-xs mt-0.5 leading-relaxed">{{ $statusOperasional['pesan'] }}</p>
         </div>
-    @elseif($isLocked)
-        <div class="mb-6 bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 dark:border-rose-600 p-5 rounded-2xl flex items-center gap-4 text-rose-800 dark:text-rose-200">
-            <svg class="w-8 h-8 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-            <div>
-                <h4 class="font-bold text-base">Antrean Sedang Penuh</h4>
-                <p class="text-xs mt-0.5 leading-relaxed">Mohon tunggu hingga ada tamu yang selesai diproses.</p>
-            </div>
-        </div>
-    @endif
+    </div>
+@endif
 
-    <form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
-        @csrf
+<form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5" enctype="multipart/form-data">        
+    @csrf
 
-        {{-- Tipe Tamu Switcher --}}
-        <div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 mb-6 border border-slate-200/60 dark:border-slate-700">
-            <label class="flex-1 text-center cursor-pointer">
-                <input type="radio" name="tipe_tamu" value="Internal" checked onchange="handleTipeTamuChange()" class="peer hidden">
-                <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
-                    🎓 Tamu Internal (POLIBAN)
-                </div>
-            </label>
-            <label class="flex-1 text-center cursor-pointer">
-                <input type="radio" name="tipe_tamu" value="Eksternal" onchange="handleTipeTamuChange()" class="peer hidden">
-                <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
-                    🏢 Tamu Eksternal (Umum)
-                </div>
-            </label>
+{{-- Tipe Tamu Switcher --}}
+<div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 mb-6 border border-slate-200/60 dark:border-slate-700">
+    <label class="flex-1 text-center cursor-pointer">
+        <input type="radio" name="tipe_tamu" value="Internal" 
+               {{ old('tipe_tamu', 'Internal') == 'Internal' ? 'checked' : '' }} 
+               onchange="updateFormState()" class="peer hidden">
+        <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
+            🎓 Tamu Internal (POLIBAN)
         </div>
+    </label>
+    <label class="flex-1 text-center cursor-pointer">
+        <input type="radio" name="tipe_tamu" value="Eksternal" 
+               {{ old('tipe_tamu') == 'Eksternal' ? 'checked' : '' }} 
+               onchange="updateFormState()" class="peer hidden">
+        <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
+            🏢 Tamu Eksternal (Umum)
+        </div>
+    </label>
+</div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             {{-- Nama Lengkap --}}
@@ -294,61 +290,99 @@
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
         </div>
-        <select id="prodi_id" name="prodi_id" required onchange="toggleProdiLainnya(this.value)" class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
+        <select id="prodi_id" name="prodi_id" required onchange="updateFormState()" 
+            class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
             <option value="" disabled selected>Pilih Program Studi / Bagian...</option>
             @foreach($prodi as $p)
-                <option value="{{ $p->id }}" {{ old('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
+                <option value="{{ $p->id }}" 
+                    {{ $p->is_full ? 'disabled' : '' }} 
+                    {{ old('prodi_id') == $p->id ? 'selected' : '' }}>
+                    {{ $p->nama }} {{ $p->is_full ? '(Antrean Penuh)' : '' }}
+                </option>
             @endforeach
-            <option value="LAINNYA" {{ old('prodi_id') == 'LAINNYA' ? 'selected' : '' }} class="font-bold text-blue-600 dark:text-blue-400">Bagian Lainnya / Umum</option>
+            <option value="LAINNYA" {{ old('prodi_id') == 'LAINNYA' ? 'selected' : '' }} class="font-bold text-blue-600">
+                Bagian Lainnya / Umum
+            </option>
         </select>
+        {{-- Ikon panah bawah untuk memperjelas ini dropdown --}}
+        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
     </div>
 
     {{-- Input Nama Bagian Lainnya --}}
     <div id="container_prodi_lainnya" class="mt-3 hidden animate-fade-up">
-        <input type="text" id="prodi_lainnya" name="prodi_lainnya" value="{{ old('prodi_lainnya') }}" class="w-full px-4 py-2.5 bg-blue-50/50 dark:bg-slate-800 border border-blue-300 dark:border-blue-900 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Ketikkan nama bagian/tujuan...">
+        <input type="text" id="prodi_lainnya" name="prodi_lainnya" value="{{ old('prodi_lainnya') }}" 
+            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" 
+            placeholder="Ketikkan nama bagian/tujuan...">
     </div>
 
     {{-- Input Upload File --}}
-    <div id="container_file_surat" class="hidden mt-3 animate-fade-up">
-        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+    <div id="container_surat_disposisi" class="hidden mt-3 animate-fade-up">
+        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">
             Upload Surat Disposisi <span class="text-rose-500">*</span>
         </label>
         <div class="flex gap-2">
-            <input type="file" id="file_surat_input" name="file_surat" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-            <button type="button" onclick="clearFileInput()" class="px-3 py-2 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-200 transition text-sm">Reset</button>
+            <input type="file" id="surat_disposisi_input" name="surat_disposisi" 
+                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-200 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+            <button type="button" onclick="clearFileInput()" class="px-3 py-2 bg-rose-50 text-rose-600 rounded-xl hover:bg-rose-100 transition text-sm font-semibold">Reset</button>
         </div>
-        <p class="text-[11px] text-slate-500 mt-1">Format: PDF, JPG, PNG. Maksimal 2MB.</p>
+        <p class="text-[11px] text-slate-500 mt-1.5">Format: PDF, JPG, PNG. Maksimal 2MB.</p>
     </div>
 </div>
 
-            {{-- Kategori Keperluan --}}
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Kategori Keperluan</label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
-                            <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
-                        </svg>
-                    </div>
-                    <select id="keperluan_id" name="keperluan_id" required class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
-                        <option value="" disabled selected>Pilih Keperluan...</option>
-                        @foreach($keperluan as $k)
-                            <option value="{{ $k->id }}" {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>{{ $k->keterangan }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
+{{-- Kategori Keperluan --}}
+<div>
+    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Kategori Keperluan</label>
+    <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
+                <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
+            </svg>
         </div>
+        
+        {{-- Ubah onchange menjadi handleKeperluanChange --}}
+        <select id="keperluan_id" name="keperluan_id" required 
+                onchange="handleKeperluanChange(this)"
+                class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
+            <option value="" disabled selected>Pilih Keperluan...</option>
+            @foreach($keperluan as $k)
+                <option value="{{ $k->id }}" 
+                        data-estimasi="{{ $k->estimasi_waktu }}" 
+                        {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>
+                    {{ $k->keterangan }}
+                </option>
+            @endforeach
+            {{-- Tambahkan Opsi Lainnya --}}
+            <option value="LAINNYA" {{ old('keperluan_id') == 'LAINNYA' ? 'selected' : '' }} class="font-bold text-blue-600">
+                Lainnya (Tulis detail...)
+            </option>
+        </select>
+    </div>
 
-        <div>
-            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Keperluan (Detail)</label>
-            <textarea id="catatan_keperluan" name="catatan_keperluan" rows="3" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 resize-none placeholder:text-slate-400" placeholder="Ceritakan singkat tujuan kedatangan Anda...">{{ old('catatan_keperluan') }}</textarea>
-        </div>
+    {{-- Input Detail Keperluan Lainnya (Awalnya tersembunyi) --}}
+    <div id="container_keperluan_lainnya" class="mt-3 hidden animate-fade-up">
+        <input type="text" id="keperluan_lainnya" name="keperluan_lainnya" value="{{ old('keperluan_lainnya') }}" 
+            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" 
+            placeholder="Tuliskan detail keperluan Anda...">
+    </div>
 
-        <button type="submit" id="btnSubmit" {{ (!$statusOperasional['status'] || $isLocked) ? 'disabled' : '' }} class="w-full py-4 mt-4 bg-[#002B5B] text-white font-bold text-lg rounded-full hover:bg-blue-950 transition-all hover:-translate-y-0.5 shadow-md disabled:opacity-40 disabled:bg-slate-400 disabled:cursor-not-allowed">
-            {{ !$statusOperasional['status'] ? 'Sistem Sedang Ditutup' : ($isLocked ? 'Antrean Sedang Penuh' : 'Daftar Kunjungan') }}
-        </button>
+    {{-- Kotak Informasi Estimasi --}}
+    <div id="estimasi-box" class="hidden mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center gap-3 animate-in fade-in duration-300">
+        <i class="fa-solid fa-clock text-blue-600 dark:text-blue-400 text-sm"></i>
+        <span class="text-xs text-blue-700 dark:text-blue-300 font-bold">
+            Estimasi layanan: <span id="estimasi-text" class="font-black"></span>
+        </span>
+    </div>
+</div>
+
+        {{-- Tombol Submit --}}
+    <button type="submit" id="btnSubmit" 
+        {{ !$statusOperasional['status'] ? 'disabled' : '' }} 
+        class="w-full py-4 mt-4 bg-[#002B5B] text-white font-bold text-lg rounded-full hover:bg-blue-950 disabled:opacity-40 disabled:bg-slate-400 transition-all">
+        Daftar Kunjungan
+    </button>
     </form>
 </div>
         </div>
@@ -557,9 +591,9 @@
 <script>
     function toggleProdiLainnya(value) {
         const containerProdi = document.getElementById('container_prodi_lainnya');
-        const containerFile = document.getElementById('container_file_surat');
+        const containerFile = document.getElementById('container_surat_disposisi');
         const inputProdi = document.getElementById('prodi_lainnya');
-        const inputFile = document.getElementById('file_surat_input');
+        const inputFile = document.getElementById('surat_disposisi_input');
 
         if (value === 'LAINNYA') {
             containerProdi.classList.remove('hidden');
@@ -578,7 +612,7 @@
 
     // Fungsi untuk reset/hapus file yang dipilih
     function clearFileInput() {
-        const input = document.getElementById('file_surat_input');
+        const input = document.getElementById('surat_disposisi_input');
         input.value = ''; // Ini akan menghapus file yang terpilih
     }
 
@@ -698,8 +732,8 @@
         const inputInstansi = document.getElementById('asal_instansi');
         const prodiSelect = document.getElementById('prodi_id');
         const keperluanSelect = document.getElementById('keperluan_id');
-        const containerFileSurat = document.getElementById('container_file_surat');
-        const fileSuratInput = document.getElementById('file_surat_input');
+        const containerFileSurat = document.getElementById('container_surat_disposisi');
+        const fileSuratInput = document.getElementById('surat_disposisi_input');
 
         if (selectedTipe === 'Internal') {
             // === LOGIKA TAMU INTERNAL ===
@@ -748,35 +782,42 @@
     }
 
     // FUNGSI DROPDOWN PRODI (LAINNYA)
-    function toggleProdiLainnya(value) {
-        const containerProdiLainnya = document.getElementById('container_prodi_lainnya');
-        const inputProdiLainnya = document.getElementById('prodi_lainnya');
-        const containerFileSurat = document.getElementById('container_file_surat');
-        const fileSuratInput = document.getElementById('file_surat_input');
-        const selectedTipe = document.querySelector('input[name="tipe_tamu"]:checked').value;
+function toggleProdiLainnya(selectElement) {
+    const val = selectElement.value;
+    const containerLainnya = document.getElementById('container_prodi_lainnya');
+    const containerFile = document.getElementById('container_surat_disposisi');
+    const warningBox = document.getElementById('warning-antrean-penuh'); // Ambil elemen peringatan
+    
+    // 1. Ambil opsi yang dipilih
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
 
-        if (value === 'LAINNYA') {
-            containerProdiLainnya.classList.remove('hidden');
-            inputProdiLainnya.setAttribute('required', 'required');
+    // 2. Logika Peringatan (Hanya tampilkan peringatan)
+    if (selectedOption.disabled) {
+        warningBox.classList.remove('hidden');
+    } else {
+        warningBox.classList.add('hidden');
+    }
 
-            if (selectedTipe === 'Internal') {
-                containerFileSurat.classList.remove('hidden');
-                fileSuratInput.setAttribute('required', 'required');
-            }
+    // 3. Logika Tampilan (Lainnya & File)
+    if (val === 'LAINNYA') {
+        containerLainnya.classList.remove('hidden');
+        containerFile.classList.remove('hidden');
+    } else {
+        containerLainnya.classList.add('hidden');
+        
+        // Logika File jika bukan LAINNYA
+        const radioEksternal = document.querySelector('input[name="tipe_tamu"][value="Eksternal"]');
+        if (radioEksternal && radioEksternal.checked) {
+            containerFile.classList.remove('hidden');
         } else {
-            containerProdiLainnya.classList.add('hidden');
-            inputProdiLainnya.removeAttribute('required');
-
-            if (selectedTipe === 'Internal') {
-                containerFileSurat.classList.add('hidden');
-                fileSuratInput.removeAttribute('required');
-            }
+            containerFile.classList.add('hidden');
         }
     }
+}
 
     // RESET INPUT FILE
     function clearFileInput() {
-        const fileInput = document.getElementById('file_surat_input');
+        const fileInput = document.getElementById('surat_disposisi_input');
         if (fileInput) fileInput.value = '';
     }
 
@@ -816,5 +857,107 @@
         }
     });
 </script>
+<script>
+    function updateFormState() {
+        // 1. Ambil Elemen
+        const prodiSelect = document.getElementById('prodi_id');
+        const tipeTamu = document.querySelector('input[name="tipe_tamu"]:checked')?.value;
+        const btnSubmit = document.getElementById('btnSubmit');
+        const containerLainnya = document.getElementById('container_prodi_lainnya');
+        const containerFile = document.getElementById('container_surat_disposisi');
+        
+        // Data input
+        const selectedOption = prodiSelect.options[prodiSelect.selectedIndex];
+        const valProdi = prodiSelect.value;
+
+// 2. Logika Button
+if (valProdi !== "" && selectedOption.disabled) {
+    // Penuh
+    btnSubmit.disabled = true;
+    btnSubmit.innerText = "Antrean Prodi Penuh";
+} else if (valProdi === "") {
+    // Belum memilih (Tombol tetap aktif/tidak, sesuai keinginan Anda)
+    btnSubmit.disabled = false; 
+    btnSubmit.innerText = "Daftar Kunjungan";
+} else {
+    // Tersedia
+    btnSubmit.disabled = false;
+    btnSubmit.innerText = "Daftar Kunjungan";
+}
+
+        // 3. Logika Tampilan "Lainnya" (Hanya muncul jika pilih LAINNYA)
+        if (valProdi === 'LAINNYA') {
+            containerLainnya.classList.remove('hidden');
+        } else {
+            containerLainnya.classList.add('hidden');
+        }
+
+        // 4. Logika Tampilan "File Surat"
+        // Muncul jika: Pilih LAINNYA OR Tipe Tamu Eksternal
+        if (valProdi === 'LAINNYA' || tipeTamu === 'Eksternal') {
+            containerFile.classList.remove('hidden');
+        } else {
+            containerFile.classList.add('hidden');
+        }
+
+        // 5. Update Label Identitas
+        const labelIdentitas = document.getElementById('label_identitas');
+        const inputIdentitas = document.getElementById('identitas_no');
+        
+        if (tipeTamu === 'Internal') {
+            labelIdentitas.innerHTML = 'NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>';
+            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN';
+        } else {
+            labelIdentitas.innerHTML = 'NIM / NIP / NIDN / NIK <span class="text-rose-500 font-bold">*</span>';
+            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN/NIK';
+        }
+    }
+
+    // --- PENTING: Jalankan saat halaman dimuat ---
+    // Ini menangani kasus jika halaman reload karena validasi error 
+    // agar tampilan tetap sesuai dengan pilihan user yang lama (old value)
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFormState();
+    });
+
+    // Fungsi Reset File
+    function clearFileInput() {
+        document.getElementById('surat_disposisi_input').value = '';
+    }
+</script>
+
+<script>
+function handleKeperluanChange(selectElement) {
+    const val = selectElement.value;
+    const containerLainnya = document.getElementById('container_keperluan_lainnya');
+    const estimasiBox = document.getElementById('estimasi-box');
+
+    // 1. Logika untuk "LAINNYA"
+    if (val === 'LAINNYA') {
+        containerLainnya.classList.remove('hidden');
+        estimasiBox.classList.add('hidden'); // Sembunyikan estimasi karena custom
+    } else {
+        containerLainnya.classList.add('hidden');
+        // 2. Jalankan fungsi estimasi jika bukan "LAINNYA"
+        showEstimasi(selectElement);
+    }
+}
+
+// Fungsi existing Anda (pastikan tidak dihapus)
+function showEstimasi(selectElement) {
+    const box = document.getElementById('estimasi-box');
+    const text = document.getElementById('estimasi-text');
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const estimasi = selectedOption.getAttribute('data-estimasi');
+
+    if (estimasi && estimasi !== "") {
+        box.classList.remove('hidden');
+        text.innerText = estimasi;
+    } else {
+        box.classList.add('hidden');
+    }
+}
+</script>
+
 </body>
 </html>

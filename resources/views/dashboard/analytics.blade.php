@@ -166,23 +166,6 @@
     </div>
 </div>
 
-{{-- GRAFIK KINERJA LAYANAN --}}
-<div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm transition-colors duration-300">
-    <div class="mb-6">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-1">Analisis Kinerja Layanan Mingguan</h3>
-        <p class="text-slate-500 dark:text-slate-400 text-sm">
-            Menampilkan data performa pelayanan dari tanggal
-            {{-- PERBAIKAN DI SINI: Mengunci konversi awal minggu (Senin) dan akhir minggu (Jumat) agar tidak lompat pekan --}}
-            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse(request('start_date') ?? now())->startOfWeek(\Carbon\Carbon::MONDAY)->format('d M Y') }}</span>
-            s.d
-            <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ \Carbon\Carbon::parse(request('start_date') ?? now())->startOfWeek(\Carbon\Carbon::MONDAY)->addDays(4)->format('d M Y') }}</span>.
-        </p>
-    </div>
-    <div class="relative h-64 sm:h-72 w-full">
-        <canvas id="kinerjaChart"></canvas>
-    </div>
-</div>
-
 {{-- MODAL EKSPOR PERIODE --}}
 <div id="exportModal" class="fixed inset-0 z-[999] hidden bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 max-w-md w-full shadow-2xl animate-modal-up relative transition-colors duration-300">
@@ -429,102 +412,5 @@ function downloadLaporan(type) {
         isModalOpen = false;
     }, 15000);
 }
-</script>
-
-{{-- SCRIPT RENDERING CHART --}}
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const ctx = document.getElementById('kinerjaChart').getContext('2d');
-
-        const chartLabels = {!! json_encode($labels) !!};
-        let chartDatasets = {!! json_encode($chartDatasets) !!};
-
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const textColor = isDarkMode ? '#94a3b8' : '#64748b';
-        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
-
-        chartDatasets = chartDatasets.map(function(dataset) {
-            const dynamicColors = dataset.data.map(function(nilai) {
-                if (nilai >= 90) return '#3b82f6';
-                else if (nilai >= 76) return '#10b981';
-                else if (nilai >= 60) return '#f59e0b';
-                else if (nilai > 0) return '#ef4444';
-                else return '#6b7280';
-            });
-
-            const dynamicBorders = dataset.data.map(function(nilai) {
-                if (nilai >= 90) return '#2563eb';
-                else if (nilai >= 76) return '#059669';
-                else if (nilai >= 60) return '#d97706';
-                else if (nilai > 0) return '#dc2626';
-                else return '#4b5563';
-            });
-
-            dataset.backgroundColor = dynamicColors;
-            dataset.borderColor = dynamicBorders;
-            dataset.borderWidth = 1;
-            dataset.borderRadius = 6;
-
-            return dataset;
-        });
-
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: chartDatasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: textColor,
-                            font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
-                            boxWidth: 10,
-                            usePointStyle: true,
-                            pointStyle: 'circle',
-                            padding: 20
-                        }
-                    },
-                    tooltip: {
-                        padding: 12,
-                        backgroundColor: isDarkMode ? '#1e293b' : '#0f172a',
-                        titleFont: { size: 13, weight: 'bold' },
-                        bodyFont: { size: 13 },
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) label += ': ';
-                                if (context.raw !== null) label += context.raw + '%';
-                                return label;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: false,
-                        grid: { display: false },
-                        ticks: { color: textColor, font: { size: 11 } }
-                    },
-                    y: {
-                        stacked: false,
-                        grid: { color: gridColor },
-                        min: 0,
-                        max: 100,
-                        ticks: {
-                            color: textColor,
-                            font: { size: 11 },
-                            callback: function(value) { return value + '%'; }
-                        }
-                    }
-                }
-            }
-        });
-    });
 </script>
 @endpush

@@ -15,7 +15,7 @@
     {{-- HEADER SECTION --}}
     <div class="mb-8 pb-6 border-b border-slate-200/60 dark:border-slate-700/50">
         <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">{{ $judul_dashboard }}</h2>
-        <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pusat kendali manajemen pengguna dan konfigurasi data master berbasis Google Sheets.</p>
+        <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pusat kendali manajemen pengguna dan konfigurasi data</p>
     </div>
 
     {{-- ALERT NOTIFIKASI SUCCESS --}}
@@ -113,37 +113,66 @@
         <div class="lg:col-span-5 space-y-6 lg:space-y-8">
 
             {{-- DATA MASTER KEPERLUAN --}}
-            <div class="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300">
-                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mb-1">Master Keperluan</h3>
-                <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mb-6">Kelola opsi tujuan kunjungan tamu.</p>
+<div class="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300">
+    <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mb-1">Master Keperluan</h3>
+    <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mb-6">Kelola opsi tujuan kunjungan tamu dan estimasi waktunya.</p>
 
-                {{-- FORM INPUT DENGAN FITUR SHOW LOADING --}}
-                <form action="{{ route('keperluan.store') }}" method="POST" onsubmit="showLoadingOverlay()" class="relative mb-8 flex flex-col sm:block gap-3">
-                    @csrf
-                    <input type="text" name="keterangan" required
-                           class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 pr-4 sm:pr-28 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm sm:text-base"
-                           placeholder="Ketik keperluan baru...">
-                    <button type="submit" class="w-full sm:w-auto sm:absolute sm:right-2 sm:top-2 sm:bottom-2 bg-slate-900 dark:bg-red-600 hover:bg-slate-950 dark:hover:bg-red-700 text-white px-5 py-3.5 sm:py-0 rounded-xl font-black text-sm tracking-wider uppercase transition-all shadow-md active:scale-95 sm:active:scale-100">
-                        Simpan
-                    </button>
-                </form>
+    {{-- FORM INPUT DIPERBARUI --}}
+    <form action="{{ route('keperluan.store') }}" method="POST" onsubmit="showLoadingOverlay()" class="mb-8 space-y-3">
+        @csrf
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    {{-- Nama Keperluan (Full span) --}}
+    <div class="md:col-span-1">
+        <input type="text" name="keterangan" required
+               class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 text-sm"
+               placeholder="Nama Keperluan...">
+    </div>
 
-                {{-- BADGE TAG WRAPPER --}}
-                <div class="flex flex-wrap gap-2.5">
-                    @foreach($data_keperluan as $k)
-                    <div class="flex items-center gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group">
-                        <span class="font-bold text-xs sm:text-sm">{{ $k->keterangan }}</span>
-                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline">
-                            @csrf 
-                            @method('DELETE')
-                            <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </form>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
+    {{-- Input Angka --}}
+    <div class="md:col-span-1">
+        <input type="number" name="estimasi_jumlah" required min="1"
+               class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 text-sm"
+               placeholder="Jumlah (Contoh: 15)">
+    </div>
+
+    {{-- Dropdown Satuan --}}
+    <div class="md:col-span-1">
+        <select name="estimasi_satuan" required
+                class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 text-sm">
+            <option value="Menit">Menit</option>
+            <option value="Jam">Jam</option>
+            <option value="Hari">Hari</option>
+        </select>
+    </div>
+</div>
+        
+        <button type="submit" class="w-full bg-slate-900 dark:bg-red-600 hover:bg-slate-950 dark:hover:bg-red-700 text-white px-5 py-4 rounded-2xl font-black text-sm tracking-wider uppercase transition-all shadow-md active:scale-95">
+            Simpan Keperluan Baru
+        </button>
+    </form>
+
+    {{-- BADGE TAG WRAPPER --}}
+    <div class="flex flex-wrap gap-2.5">
+        @foreach($data_keperluan as $k)
+        <div class="flex items-center gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group">
+            <span class="font-bold text-xs sm:text-sm">{{ $k->keterangan }}</span>
+            {{-- Menampilkan estimasi waktu di samping nama keperluan --}}
+            <span class="text-[10px] font-bold text-slate-400 bg-white dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                {{ $k->estimasi_waktu }}
+            </span>
+            
+            {{-- Tombol Hapus (Pastikan route hapus sesuai dengan controller Anda) --}}
+            <form action="{{ route('keperluan.destroy', $k->id) }}" method="POST" class="delete-user-form inline">
+                @csrf 
+                @method('DELETE')
+                <button type="button" onclick="konfirmasiHapusUser(this)" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-red-600 transition-all">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                </button>
+            </form>
+        </div>
+        @endforeach
+    </div>
+</div>
 
             {{-- KARTU PREMIUM: KEAMANAN SISTEM (Gradasi Biru Malam Mewah ke Merah Elektro Tua) --}}
             <div class="bg-gradient-to-br from-slate-900 via-blue-950 to-red-950 dark:from-slate-900 dark:via-blue-950 dark:to-slate-950 rounded-[1.5rem] md:rounded-[2.5rem] p-6 sm:p-8 text-white shadow-xl shadow-slate-900/10 dark:shadow-none relative overflow-hidden transition-all border border-amber-500/10 dark:border-slate-700/60">
@@ -153,7 +182,7 @@
                         <i class="fa-solid fa-triangle-exclamation text-amber-400 animate-bounce"></i> Keamanan Sistem
                     </h4>
                     <p class="text-slate-200 dark:text-slate-400 text-xs sm:text-sm font-medium leading-relaxed opacity-90">
-                        Perubahan pada halaman ini berdampak langsung pada database master Spreadsheet. Pastikan data akun dan opsi keperluan baru yang dimasukkan sudah tervalidasi dengan benar.
+                        Perubahan pada halaman ini berdampak langsung pada database. Pastikan data akun dan opsi keperluan baru yang dimasukkan sudah tervalidasi dengan benar.
                     </p>
                 </div>
             </div>
@@ -223,13 +252,13 @@
                 <div>
                     <label class="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Password</label>
                     <input type="text" id="input_password" name="password" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/60 dark:border-transparent rounded-xl px-4 py-3 text-slate-800 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all text-sm font-bold" placeholder="Ketik password...">
-                    <p id="password_help" class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 hidden">*Biarkan kosong jika tidak ingin mengubah password lama di Spreadsheet.</p>
+                    <p id="password_help" class="text-[11px] text-slate-400 dark:text-slate-500 mt-1 hidden">*Biarkan kosong jika tidak ingin mengubah password lama.</p>
                 </div>
             </div>
 
             <div class="mt-8 flex gap-3">
                 <button type="button" onclick="closeUserModal()" class="w-1/2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 py-3 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Batal</button>
-                <button type="submit" class="w-1/2 bg-slate-900 hover:bg-slate-950 dark:bg-red-600 dark:hover:bg-red-700 text-white py-3 rounded-xl text-sm font-black transition-all shadow-md">Simpan ke Sheets</button>
+                <button type="submit" class="w-1/2 bg-slate-900 hover:bg-slate-950 dark:bg-red-600 dark:hover:bg-red-700 text-white py-3 rounded-xl text-sm font-black transition-all shadow-md">Simpan</button>
             </div>
         </form>
     </div>
@@ -244,8 +273,8 @@
             <div class="absolute inset-0 border-4 border-t-red-600 dark:border-t-amber-400 rounded-full animate-spin"></div>
         </div>
         <div class="text-center">
-            <h5 class="text-slate-900 dark:text-white font-bold text-base">Sinkronisasi Google Sheets...</h5>
-            <p class="text-slate-400 dark:text-slate-500 text-xs mt-1 font-medium">Mohon tunggu, server sedang menulis data langsung ke baris dokumen Spreadsheet Anda.</p>
+            <h5 class="text-slate-900 dark:text-white font-bold text-base">Sinkronisasi ...</h5>
+            <p class="text-slate-400 dark:text-slate-500 text-xs mt-1 font-medium">Mohon tunggu.</p>
         </div>
     </div>
 </div>
@@ -267,7 +296,7 @@
         if (typeof isModalOpen !== 'undefined') isModalOpen = true;
 
         if (user) {
-            title.innerText = 'Edit Data User (Sheets)';
+            title.innerText = 'Edit Data User';
             const userId = user.hasOwnProperty('id') ? user.id : user['id'];
             form.action = '/dashboard/control-panel/user/update/' + userId;
             methodField.value = 'PUT';
@@ -297,7 +326,7 @@
             pwdInput.value = '';
             pwdHelp.classList.remove('hidden');
         } else {
-            title.innerText = 'Tambah User Baru (Sheets)';
+            title.innerText = 'Tambah User Baru';
             form.action = "{{ route('control-panel.user.store') }}";
             methodField.value = 'POST';
 
@@ -354,7 +383,7 @@
 
         Swal.fire({
             title: 'Hapus Pengantar / User?',
-            text: "Data ini juga akan dihapus secara permanen dari Google Sheets!",
+            text: "Data ini juga akan dihapus secara permanen",
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444', 

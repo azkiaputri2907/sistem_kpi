@@ -1851,16 +1851,24 @@ public function controlPanel()
         return back()->with('success', 'Pilihan keperluan berhasil dihapus.');
     }
 
-    public function storeKeperluan(Request $request)
-    {
-        $request->validate(['keterangan' => 'required|string|max:255']);
+public function storeKeperluan(Request $request)
+{
+    $request->validate([
+        'keterangan' => 'required|string|max:255',
+        'estimasi_jumlah' => 'required|numeric',
+        'estimasi_satuan' => 'required|string'
+    ]);
 
-        $this->createSheet('master_keperluan', [
-            'keterangan' => $request->keterangan
-        ]);
+    // Gabungkan menjadi satu string, misal: "15 Menit"
+    $estimasi_gabungan = $request->estimasi_jumlah . ' ' . $request->estimasi_satuan;
 
-        return back()->with('success', 'Keperluan baru berhasil ditambahkan.');
-    }
+    $this->createSheet('master_keperluan', [
+        'keterangan' => $request->keterangan,
+        'estimasi_waktu' => $estimasi_gabungan
+    ]);
+
+    return back()->with('success', 'Keperluan berhasil ditambahkan.');
+}
 
     public function destroyUser($id)
     {

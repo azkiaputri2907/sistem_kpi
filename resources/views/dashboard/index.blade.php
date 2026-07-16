@@ -73,55 +73,91 @@
         </div>
     </div>
 
-    {{-- CARD STATISTIK --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-
-        {{-- TOTAL --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Total Kunjungan
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $total_kunjungan }}
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-users"></i>
-            </div>
+{{-- 1. BAGIAN STATISTIK (KPI Global) --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+    {{-- TOTAL --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
+        <div>
+            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Total Kunjungan</p>
+            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $total_kunjungan }}</h2>
         </div>
-
-        {{-- SLA --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Efektivitas (SLA)
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $efektivitas_persen }}%
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-clock"></i>
-            </div>
+        <div class="w-14 h-14 rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-users"></i>
         </div>
-
-        {{-- SURVEI --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-            <div>
-                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
-                    Kualitas (Survei)
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                    {{ $kualitas_rating }}
-                </h2>
-            </div>
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-                <i class="fa-solid fa-star"></i>
-            </div>
-        </div>
-
     </div>
+
+    {{-- SLA --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
+        <div>
+            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Efektivitas (SLA)</p>
+            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $efektivitas_persen }}%</h2>
+        </div>
+        <div class="w-14 h-14 rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-clock"></i>
+        </div>
+    </div>
+
+    {{-- SURVEI --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between sm:col-span-2 lg:col-span-1">
+        <div>
+            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Kualitas (Survei)</p>
+            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $kualitas_rating }}</h2>
+        </div>
+        <div class="w-14 h-14 rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center text-xl">
+            <i class="fa-solid fa-star"></i>
+        </div>
+    </div>
+</div>
+
+{{-- 2. BAGIAN DAFTAR TAMU (Split Internal & Eksternal) --}}
+@php
+    $internal = $data_kunjungan->where('tipe_tamu', 'Internal');
+    $eksternal = $data_kunjungan->where('tipe_tamu', 'Eksternal');
+@endphp
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    {{-- KOLOM KIRI: INTERNAL --}}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+            <h2 class="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-building-user"></i> Tamu Internal ({{ $internal->count() }})
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                @foreach($internal as $k)
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                            <div class="font-bold">{{ $k->pengunjung->nama_lengkap ?? 'Anonim' }}</div>
+                            <div class="text-[11px] text-slate-400">{{ $k->keperluan_master->keterangan ?? 'Umum' }}</div>
+                        </td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+    </div>
+
+    {{-- KOLOM KANAN: EKSTERNAL --}}
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
+            <h2 class="text-sm font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-globe"></i> Tamu Eksternal ({{ $eksternal->count() }})
+            </h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                @foreach($eksternal as $k)
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                            <div class="font-bold">{{ $k->pengunjung->nama_lengkap ?? 'Anonim' }}</div>
+                            <div class="text-[11px] text-slate-400">{{ $k->keperluan_master->keterangan ?? 'Umum' }}</div>
+                        </td>
+                    </tr>
+                @endforeach
+            </table>
+        </div>
+    </div>
+</div>
 
     {{-- TITLE SECTION ANTREAN --}}
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 w-full">
