@@ -145,91 +145,141 @@ class KunjunganController extends Controller
     }
 
 public function store(Request $request)
-    {
-        // 1. Validasi Keamanan (Back-End protection untuk Jam & Limit)
-        $statusOperasional = $this->cekSistemBuka();
-        if (!$statusOperasional['status']) {
-            return back()->withErrors(['sistem_tutup' => 'Pendaftaran ditolak: ' . $statusOperasional['pesan']])->withInput();
+{
+    // 1. Validasi Keamanan (Back-End protection untuk Jam & Limit)
+    $statusOperasional = $this->cekSistemBuka();
+    if (!$statusOperasional['status']) {
+        return back()->withErrors(['sistem_tutup' => 'Pendaftaran ditolak: ' . $statusOperasional['pesan']])->withInput();
+    }
+
+    if ($this->cekLimitAntrean() >= 10) {
+        return back()->withErrors(['limit_penuh' => 'Mohon maaf, antrean saat ini sedang penuh. Silakan coba beberapa saat lagi.'])->withInput();
+    }
+
+    // 2. Validasi Input (Sudah ramah Tamu Eksternal)
+    $request->validate([
+        'tipe_tamu'      => 'required|in:Internal,Eksternal',
+        'nama_lengkap'   => 'required|string|max:50',
+        'identitas_no'   => $request->tipe_tamu === 'Internal' ? 'required|string|max:30' : 'nullable|string|max:30',
+        'no_telepon'     => 'required|regex:/^[0-9]{10,15}$/',
+        'asal_instansi'  => 'required|string|max:50',
+        'prodi_id'       => $request->tipe_tamu === 'Internal' ? 'required' : 'nullable',
+        'prodi_lainnya'  => 'required_if:prodi_id,LAINNYA|nullable|string|max:100',
+        'keperluan_id'   => $request->tipe_tamu === 'Internal' ? 'required' : 'nullable',
+        'file_surat'     => $request->tipe_tamu === 'Eksternal'
+                            ? 'required|file|mimes:pdf,jpg,jpeg,png|max:2048'
+                            : 'required_if:prodi_id,LAINNYA|nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+    ], [
+        'no_telepon.regex'          => 'No WhatsApp wajib berupa angka 10-15 digit',
+        'prodi_lainnya.required_if' => 'Mohon isi nama prodi/bagian tujuan',
+        'file_surat.required'       => 'Wajib mengunggah surat disposisi untuk Tamu Eksternal',
+        'file_surat.required_if'    => 'Wajib mengunggah surat disposisi jika memilih Lainnya',
+        'file_surat.mimes'          => 'Format file harus PDF, JPG, atau PNG',
+        'file_surat.max'            => 'Ukuran file maksimal 2MB',
+    ]);
+
+    try {
+       // 3. Normalisasi Nomor Telepon (Agar sinkron dan tidak salah mendeteksi pengunjung)
+        $noTeleponInput = $request->no_telepon;
+        if (str_starts_with($noTeleponInput, '+62')) {
+            $noTeleponInput = substr($noTeleponInput, 3);
+        }
+        if (str_starts_with($noTeleponInput, '0')) {
+            $noTeleponInput = substr($noTeleponInput, 1);
         }
 
-        if ($this->cekLimitAntrean() >= 10) {
-            return back()->withErrors(['limit_penuh' => 'Mohon maaf, antrean saat ini sedang penuh. Silakan coba beberapa saat lagi.'])->withInput();
-        }
+        // Cari atau Buat Pengunjung
+        $pengunjungList = $this->readSheet('pengunjung');
 
-        // 2. Validasi Input
-        $request->validate([
-            'tipe_identitas' => 'required|in:Internal,Eksternal',
-            'nama_lengkap'   => 'required|string|max:50',
-            'no_telepon'     => 'required|regex:/^[0-9]{10,15}$/',
-            'asal_instansi'  => 'required|string|max:50',
-            'prodi_id'       => 'required',
-            'prodi_lainnya'  => 'required_if:prodi_id,LAINNYA|nullable|string|max:100',
-            'keperluan_id'   => 'required',
-            'file_surat'     => 'required_if:prodi_id,LAINNYA|nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ], [
-            'no_telepon.regex'        => 'No WhatsApp wajib berupa angka 10-15 digit',
-            'prodi_lainnya.required_if'=> 'Mohon isi nama prodi/bagian tujuan',
-            'file_surat.required_if'  => 'Wajib mengunggah surat disposisi jika memilih Lainnya',
-            'file_surat.mimes'        => 'Format file harus PDF, JPG, atau PNG',
-            'file_surat.max'          => 'Ukuran file maksimal 2MB',
-        ]);
+        // PENGAMAN URUTAN: Jika ada ID lama yang kosong/null di sheet, isi sementara dengan nomor urutan barisnya
+        $pengunjungList = $pengunjungList->map(function ($item, $index) {
+            $item->id = empty($item->id) ? (int)($index + 1) : (int)$item->id;
+            return $item;
+        });
 
-        try {
-            // 3. Cari atau Buat Pengunjung
-            $pengunjungList = $this->readSheet('pengunjung');
-            $pengunjung = $pengunjungList->firstWhere('no_telepon', $request->no_telepon);
-
-            $pengunjungId = null;
-            if (!$pengunjung) {
-                $baru = $this->createSheet('pengunjung', [
-                    'nama_lengkap' => $request->nama_lengkap,
-                    'no_telepon'   => $request->no_telepon,
-                    'identitas_no' => $request->identitas_no,
-                    'asal_instansi'=> $request->asal_instansi
-                ]);
-                $pengunjungId = is_array($baru) && isset($baru['inserted_id']) ? $baru['inserted_id'] : rand(1000, 9999);
+        // PENCARIAN AKURAT:
+        // - Internal dicari berdasarkan NIM/NIP.
+        // - Eksternal dicari berdasarkan No HP DAN Nama Lengkap (menghindari duplikasi jika 1 nomor dipakai beda orang).
+        $pengunjung = $pengunjungList->first(function ($value) use ($request, $noTeleponInput) {
+            if ($request->tipe_tamu === 'Internal') {
+                return !empty($value->identitas_no) && trim($value->identitas_no) === trim($request->identitas_no);
             } else {
-                $pengunjungId = $pengunjung->id;
+                return !empty($value->no_telepon) &&
+                       trim($value->no_telepon) === trim($noTeleponInput) &&
+                       strtolower(trim($value->nama_lengkap)) === strtolower(trim($request->nama_lengkap));
             }
+        });
 
-            // 4. Proses Upload File (Jika ada)
-            $pathFile = null;
-            if ($request->hasFile('file_surat')) {
-                $file = $request->file('file_surat');
-                $namaFile = 'surat_' . time() . '_' . $file->getClientOriginalName();
-                $file->move(public_path('uploads/surat'), $namaFile);
-                $pathFile = 'uploads/surat/' . $namaFile;
+        $pengunjungId = null;
+        if (!$pengunjung) {
+            // SINKRONISASI ID URUT: ID baru berdasarkan ID maksimal + 1 agar tidak bentrok
+            $maxId = $pengunjungList->max('id') ?? 0;
+            $pengunjungId = $maxId + 1;
+
+            // PASTIKAN DATA INI DITULIS KE GOOGLE SPREADSHEET 'pengunjung'
+            $this->createSheet('pengunjung', [
+                'id'            => $pengunjungId,
+                'identitas_no'  => $request->identitas_no ?? '-', // Tamu eksternal diberi default minus jika kosong
+                'nama_lengkap'  => $request->nama_lengkap,
+                'asal_instansi' => $request->asal_instansi,
+                'no_telepon'    => $noTeleponInput,
+                'tipe_tamu'     => $request->tipe_tamu, // <--- Ini mengirim "Eksternal" ke sheet!
+                'created_at'    => Carbon::now('Asia/Makassar')->toDateTimeString(),
+                'updated_at'    => Carbon::now('Asia/Makassar')->toDateTimeString(),
+            ]);
+        } else {
+            // Jika pengunjung sudah ada, kita gunakan ID-nya
+            $pengunjungId = $pengunjung->id;
+        }
+        // 4. Proses Upload File (Jika ada)
+        $pathFile = null;
+        if ($request->hasFile('file_surat')) {
+            $file = $request->file('file_surat');
+            $namaFile = 'surat_' . time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('uploads/surat'), $namaFile);
+            $pathFile = 'uploads/surat/' . $namaFile;
+        }
+
+        // 5. Setup Data Kunjungan (LOGIKA PREFIX EK- & IN- DIMASUKKAN DI SINI)
+        $prefix = ($request->tipe_tamu === 'Eksternal') ? 'EK-' : 'IN-';
+        $nomor_kunjungan = $prefix . date('ymd') . '-' . rand(100, 999);
+
+        $catatanAkhir = $request->catatan_keperluan ?? '-';
+
+        // Default value jika kosong
+        $prodiIdSimpan = $request->prodi_id ?? '-';
+        $keperluanIdSimpan = $request->keperluan_id ?? '-';
+
+        // Penyesuaian jika Tamu Eksternal atau Memilih Prodi LAINNYA
+        if ($request->tipe_tamu === 'Eksternal' || $request->prodi_id === 'LAINNYA') {
+            $prodiIdSimpan = '-';
+            if ($request->tipe_tamu === 'Eksternal') {
+                $keperluanIdSimpan = '-';
             }
-
-            // 5. Setup Data Kunjungan
-            $nomor_kunjungan = 'IN-' . date('ymd') . '-' . rand(100, 999);
-            $catatanAkhir = $request->catatan_keperluan ?? '-';
-            $prodiIdSimpan = $request->prodi_id;
-            
-            // Logika khusus "LAINNYA"
-            if ($request->prodi_id === 'LAINNYA') {
-                $prodiIdSimpan = 0; 
+            if ($request->filled('prodi_lainnya')) {
                 $catatanAkhir = "[Tujuan Bagian: " . $request->prodi_lainnya . "] - " . $catatanAkhir;
             }
+        }
 
-            $kunjunganData = [
-                'nomor_kunjungan' => $nomor_kunjungan,
-                'pengunjung_id'   => $pengunjungId,
-                'tipe_tamu'       => $request->tipe_tamu,
-                'prodi_id'        => $prodiIdSimpan,
-                'keperluan_id'    => $request->keperluan_id,
-                'keperluan'       => $catatanAkhir,
-                'file_surat'      => $pathFile, // Simpan path file di sini
-                'hari_kunjungan'  => Carbon::now('Asia/Makassar')->locale('id')->isoFormat('dddd'),
-                'tanggal'         => Carbon::now('Asia/Makassar')->toDateString(),
-                'status_layanan'  => 'Antre',
-                'status_pimpinan' => 'Menunggu',
-            ];
+        $kunjunganData = [
+            'nomor_kunjungan' => $nomor_kunjungan,
+            'pengunjung_id'   => $pengunjungId, // DISIMPAN SINKRON dengan ID pengunjung di atas
+            'tipe_tamu'       => $request->tipe_tamu,
+            'prodi_id'        => $prodiIdSimpan,
+            'keperluan_id'    => $keperluanIdSimpan,
+            'keperluan'       => $catatanAkhir,
+            'file_surat'      => $pathFile ?? '-',
+            'hari_kunjungan'  => Carbon::now('Asia/Makassar')->locale('id')->isoFormat('dddd'),
+            'tanggal'         => Carbon::now('Asia/Makassar')->toDateString(),
+            'status_layanan'  => 'Antre',
+            'status_pimpinan' => 'Menunggu',
+        ];
 
-            // 6. Simpan ke Spreadsheet
-            $createKunjungan = $this->createSheet('kunjungan', $kunjunganData);
+        // 6. Simpan ke Spreadsheet
+        $createKunjungan = $this->createSheet('kunjungan', $kunjunganData);
 
-            // 7. Notifikasi Email (Optional)
+        // 7. Notifikasi Email Pimpinan (Hanya dikirim jika internal prodi valid)
+        if ($request->tipe_tamu === 'Internal' && $prodiIdSimpan !== '-') {
             try {
                 $semuaUser = $this->readSheet('master_user');
                 $pimpinan = $semuaUser->filter(function($u) use ($prodiIdSimpan) {
@@ -238,7 +288,7 @@ public function store(Request $request)
 
                 foreach ($pimpinan as $user) {
                     Mail::send('emails.notifikasi_kunjungan', [
-                        'kunjungan' => (object) array_merge($kunjunganData, ['id' => rand(1000, 9999)]), 
+                        'kunjungan' => (object) array_merge($kunjunganData, ['id' => rand(1000, 9999)]),
                         'url_login' => url('/login')
                     ], function($message) use ($user) {
                         $message->to($user->email)->subject('Notifikasi Antrean Baru');
@@ -247,51 +297,68 @@ public function store(Request $request)
             } catch (\Exception $e) {
                 Log::warning("Email pimpinan gagal terkirim: " . $e->getMessage());
             }
-
-            return redirect('/status/' . $nomor_kunjungan)->with('success', 'Pendaftaran antrean berhasil!');
-
-        } catch (\Exception $e) {
-            Log::error("Proses pendaftaran gagal: " . $e->getMessage());
-            return back()->withErrors(['error' => 'Terjadi kesalahan sistem, silakan coba lagi nanti.'])->withInput();
         }
+
+        return redirect('/status/' . $nomor_kunjungan)->with('success', 'Pendaftaran antrean berhasil!');
+
+    } catch (\Exception $e) {
+        Log::error("Proses pendaftaran gagal: " . $e->getMessage());
+        return back()->withErrors(['error' => 'Terjadi kesalahan sistem, silakan coba lagi nanti.'])->withInput();
     }
+}
 
-    public function getAntreanDiproses()
-    {
-        try {
-            $kunjunganList = $this->readSheet('kunjungan');
-            $prodiList = $this->readSheet('master_prodi_instansi');
+   public function getAntreanDiproses()
+{
+    try {
+        $kunjunganList = $this->readSheet('kunjungan');
+        $prodiList = $this->readSheet('master_prodi_instansi');
 
-            // Ambil semua yang berstatus Antre atau Diproses
-            $antreanAktif = $kunjunganList->filter(function($item) {
-                $status = isset($item->status_layanan) ? strtolower(trim($item->status_layanan)) : '';
-                return in_array($status, ['antre', 'diproses']);
-            });
+        // 1. Ambil semua antrean yang berstatus Antre atau Diproses
+        $antreanAktif = $kunjunganList->filter(function($item) {
+            $status = isset($item->status_layanan) ? strtolower(trim($item->status_layanan)) : '';
+            return in_array($status, ['antre', 'diproses']);
+        });
 
-            // Kelompokkan berdasarkan Prodi ID
-            $grouped = $antreanAktif->groupBy('prodi_id')->map(function($items, $prodiId) use ($prodiList) {
+        // 2. Normalisasi prodi_id sebelum dikelompokkan agar '-' atau '0' atau kosong menyatu ke satu grup
+        $antreanAktif = $antreanAktif->map(function($item) {
+            $prodiId = isset($item->prodi_id) ? trim($item->prodi_id) : '-';
+            // Jika prodi_id adalah '0' atau kosong, samakan menjadi '-'
+            if ($prodiId === '0' || $prodiId === '') {
+                $prodiId = '-';
+            }
+            $item->prodi_id_normalized = $prodiId;
+            return $item;
+        });
+
+        // 3. Kelompokkan berdasarkan Prodi ID yang sudah dinormalisasi
+        $grouped = $antreanAktif->groupBy('prodi_id_normalized')->map(function($items, $prodiId) use ($prodiList) {
+            // Jika ID-nya adalah '-', otomatis langsung beri nama Bagian Umum
+            if ($prodiId === '-') {
+                $namaProdi = 'Bagian Umum / Lainnya';
+            } else {
                 $prodiObj = $prodiList->firstWhere('id', $prodiId);
-                // Jika ID 0 atau tidak ditemukan, beri nama Bagian Umum / Lainnya
                 $namaProdi = $prodiObj ? $prodiObj->nama : 'Bagian Umum / Lainnya';
-                
-                return [
-                    'prodi' => $namaProdi,
-                    'antrean' => $items->pluck('nomor_kunjungan')->values()
-                ];
-            })->values();
+            }
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $grouped
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 500);
-        }
+            return [
+                'prodi' => $namaProdi,
+                'antrean' => $items->pluck('nomor_kunjungan')->values()
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $grouped
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'data' => []
+        ], 500);
     }
+}
 
     public function cekStatus($id)
     {

@@ -177,10 +177,10 @@
                                     : $badgeClass }}">
                                 {{ $k->status_layanan }}
                             </span>
-                            <h4 class="mt-3 text-lg font-black text-slate-900 dark:text-white leading-tight">
-                                {{ $k->pengunjung->nama_lengkap }}
+                           <h4 class="mt-3 text-lg font-black text-slate-900 dark:text-white leading-tight">
+                                {{ $k->nama_lengkap ?? $k->pengunjung?->nama_lengkap ?? 'Pengunjung' }}
                             </h4>
-                            <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-0.5">
+                                 <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-0.5">
                                 <i class="fa-solid fa-building text-[10px] mr-1"></i> {{ $k->pengunjung->asal_instansi ?? '-' }}
                             </p>
                         </div>
@@ -683,14 +683,14 @@ function showGlobalLoading(pesanText = "Sedang memproses data, mohon tunggu...")
         showConfirmButton: false,
         background: isDarkMode ? '#1e293b' : '#ffffff',
         color: isDarkMode ? '#f8fafc' : '#1f2937',
-        
+
         // EFEK BLUR DI LATAR BELAKANG (Backdrop Blur)
         backdrop: `
             rgba(15, 23, 42, 0.3)
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
         `,
-        
+
         customClass: {
             popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-8',
             title: 'font-black text-xl tracking-tight',
@@ -721,7 +721,7 @@ function konfirmasiSelesai(id, nomor) {
 
         background: isDarkMode ? '#1e293b' : '#ffffff',
         color: isDarkMode ? '#f8fafc' : '#1f2937',
-        confirmButtonColor: '#10b981', 
+        confirmButtonColor: '#10b981',
         cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
 
         // EFEK BLUR DI LATAR BELAKANG (Backdrop Blur)

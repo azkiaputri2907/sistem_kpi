@@ -162,7 +162,7 @@
                 <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Buku Tamu Digital</h2>
             </div>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-xl">
-                Isi form di bawah ini untuk memulai layanan kunjungan Anda. 
+                Isi form di bawah ini untuk memulai layanan kunjungan Anda.
                 Jika sebelumnya pernah berkunjung, Anda cukup memasukkan <span class="font-bold text-blue-700 dark:text-blue-400">NIM/NIP/NIDN/NIK</span> untuk mengambil data otomatis.
             </p>
         </div>
@@ -218,7 +218,7 @@
 
     <form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
         @csrf
-        
+
         {{-- Tipe Tamu Switcher --}}
         <div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 mb-6 border border-slate-200/60 dark:border-slate-700">
             <label class="flex-1 text-center cursor-pointer">
@@ -288,7 +288,7 @@
 {{-- Tujuan --}}
 <div>
     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tujuan (Prodi/Bagian)</label>
-    
+
     {{-- Dropdown Select --}}
     <div class="relative">
         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
@@ -560,7 +560,7 @@
         const containerFile = document.getElementById('container_file_surat');
         const inputProdi = document.getElementById('prodi_lainnya');
         const inputFile = document.getElementById('file_surat_input');
-        
+
         if (value === 'LAINNYA') {
             containerProdi.classList.remove('hidden');
             containerFile.classList.remove('hidden');
@@ -572,7 +572,7 @@
             inputProdi.removeAttribute('required');
             inputFile.removeAttribute('required');
             // Opsional: Clear otomatis jika user berubah pikiran
-            clearFileInput(); 
+            clearFileInput();
         }
     }
 
@@ -687,56 +687,133 @@
         });
     </script>
     <script>
-    function pilihTipeTamu(tipe) {
+    // SATU FUNGSI UNTUK MENGATUR SEMUA TAMPILAN FORM (GABUNGAN LOGIKA)
+    function handleTipeTamuChange() {
+        // 1. Ambil tipe tamu yang sedang dicentang (Internal / Eksternal)
+        const selectedTipe = document.querySelector('input[name="tipe_tamu"]:checked').value;
+
+        // 2. Ambil semua elemen yang ingin dimanipulasi
         const labelIdentitas = document.getElementById('label_identitas');
         const inputIdentitas = document.getElementById('identitas_no');
         const inputInstansi = document.getElementById('asal_instansi');
+        const prodiSelect = document.getElementById('prodi_id');
+        const keperluanSelect = document.getElementById('keperluan_id');
+        const containerFileSurat = document.getElementById('container_file_surat');
+        const fileSuratInput = document.getElementById('file_surat_input');
 
-        if (tipe === 'Internal') {
-            // Internal: NIM/NIP, Instansi POLIBAN
+        if (selectedTipe === 'Internal') {
+            // === LOGIKA TAMU INTERNAL ===
+            // Ganti Label & Placeholder Identitas
             labelIdentitas.innerHTML = 'NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>';
-            inputIdentitas.placeholder = 'Contoh: C03032...';
-            
+            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN (Contoh: C03032...)';
+            inputIdentitas.setAttribute('required', 'required');
+
+            // Kunci Instansi ke "POLIBAN"
             inputInstansi.value = 'POLIBAN';
             inputInstansi.readOnly = true;
             inputInstansi.classList.add('bg-slate-200/70', 'cursor-not-allowed');
             inputInstansi.classList.remove('bg-slate-50', 'dark:bg-slate-800');
+
+            // Dropdown tujuan wajib diisi
+            prodiSelect.setAttribute('required', 'required');
+            keperluanSelect.setAttribute('required', 'required');
+
+            // Sembunyikan upload surat secara default (kecuali tujuannya LAINNYA)
+            if (prodiSelect.value !== 'LAINNYA') {
+                containerFileSurat.classList.add('hidden');
+                fileSuratInput.removeAttribute('required');
+            }
         } else {
-            // Eksternal: NIK/KTP, Instansi Bebas
-            labelIdentitas.innerHTML = 'NIK / No. KTP / SIM <span class="text-slate-400 dark:text-slate-500 font-normal">(Opsional)</span>';
-            inputIdentitas.placeholder = 'Masukkan No. Identitas';
-            
+            // === LOGIKA TAMU EKSTERNAL ===
+            // Ganti Label & Placeholder Identitas (Opsional)
+            labelIdentitas.innerHTML = 'Nomor Identitas (NIK KTP / SIM / Paspor) <span class="text-slate-400 font-normal">(Opsional)</span>';
+            inputIdentitas.placeholder = 'Masukkan Nomor KTP / NIK jika ada';
+            inputIdentitas.removeAttribute('required');
+
+            // Bebaskan input Instansi
             inputInstansi.value = '';
+            inputInstansi.placeholder = 'Contoh: PT XYZ / Umum';
             inputInstansi.readOnly = false;
             inputInstansi.classList.remove('bg-slate-200/70', 'cursor-not-allowed');
             inputInstansi.classList.add('bg-slate-50', 'dark:bg-slate-800');
-            inputInstansi.placeholder = 'Contoh: PT XYZ / Umum';
+
+            // Copot required dropdown agar browser tidak memblokir submit
+            prodiSelect.removeAttribute('required');
+            keperluanSelect.removeAttribute('required');
+
+            // Wajibkan upload file surat disposisi untuk eksternal
+            containerFileSurat.classList.remove('hidden');
+            fileSuratInput.setAttribute('required', 'required');
         }
     }
-</script>
-<script>
-    function handleTipeTamuChange() {
-        // Ambil elemen radio button yang terpilih
+
+    // FUNGSI DROPDOWN PRODI (LAINNYA)
+    function toggleProdiLainnya(value) {
+        const containerProdiLainnya = document.getElementById('container_prodi_lainnya');
+        const inputProdiLainnya = document.getElementById('prodi_lainnya');
+        const containerFileSurat = document.getElementById('container_file_surat');
+        const fileSuratInput = document.getElementById('file_surat_input');
         const selectedTipe = document.querySelector('input[name="tipe_tamu"]:checked').value;
-        
-        // Ambil elemen label dan input
-        const labelIdentitas = document.getElementById('label_identitas');
-        const inputIdentitas = document.getElementById('identitas_no');
 
-        if (selectedTipe === 'Internal') {
-            // Update Label & Placeholder untuk Internal
-            labelIdentitas.innerHTML = 'NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>';
-            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN';
+        if (value === 'LAINNYA') {
+            containerProdiLainnya.classList.remove('hidden');
+            inputProdiLainnya.setAttribute('required', 'required');
+
+            if (selectedTipe === 'Internal') {
+                containerFileSurat.classList.remove('hidden');
+                fileSuratInput.setAttribute('required', 'required');
+            }
         } else {
-            // Update Label & Placeholder untuk Eksternal
-            labelIdentitas.innerHTML = 'NIM / NIP / NIDN / NIK <span class="text-rose-500 font-bold">*</span>';
-            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN/NIK';
+            containerProdiLainnya.classList.add('hidden');
+            inputProdiLainnya.removeAttribute('required');
+
+            if (selectedTipe === 'Internal') {
+                containerFileSurat.classList.add('hidden');
+                fileSuratInput.removeAttribute('required');
+            }
         }
     }
 
-    // Jalankan fungsi saat halaman pertama kali dimuat (untuk memastikan state benar)
+    // RESET INPUT FILE
+    function clearFileInput() {
+        const fileInput = document.getElementById('file_surat_input');
+        if (fileInput) fileInput.value = '';
+    }
+
+    // JALANKAN SAAT HALAMAN SELESAI DI-LOAD
     document.addEventListener('DOMContentLoaded', function() {
+        // Sinkronkan state awal formulir
         handleTipeTamuChange();
+
+        // Daftarkan event listener ke input radio tipe_tamu
+        const tipeTamuRadios = document.querySelectorAll('input[name="tipe_tamu"]');
+        tipeTamuRadios.forEach(radio => {
+            radio.addEventListener('change', handleTipeTamuChange);
+        });
+
+        // Amankan pengiriman form agar data 'tipe_tamu' terkirim secara utuh ke Laravel
+        const formKunjungan = document.getElementById('form_kunjungan');
+        if (formKunjungan) {
+            formKunjungan.addEventListener('submit', function() {
+                const tipeTamuTerpilih = document.querySelector('input[name="tipe_tamu"]:checked').value;
+
+                // Tambahkan hidden input cadangan agar value tidak hilang di jalan
+                let hiddenInput = document.querySelector('input[type="hidden"][name="tipe_tamu"]');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'tipe_tamu';
+                    formKunjungan.appendChild(hiddenInput);
+                }
+                hiddenInput.value = tipeTamuTerpilih;
+
+                const btnSubmit = document.getElementById('btnSubmit');
+                if (btnSubmit) {
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerText = 'Mengirim data...';
+                }
+            });
+        }
     });
 </script>
 </body>

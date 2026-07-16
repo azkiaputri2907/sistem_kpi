@@ -78,11 +78,11 @@
 <div class="relative bg-white/10 backdrop-blur-md py-3 sm:py-4 px-2 rounded-2xl sm:rounded-3xl border border-white/20 cursor-pointer transition-all hover:bg-white/15 active:scale-95 group"
      onclick="salinNomorAntrean('{{ $kunjungan->nomor_kunjungan }}')"
      title="Klik untuk menyalin nomor antrean">
-    
+
     <p class="text-4xl sm:text-[3.5rem] font-black tracking-tighter leading-none mb-1 break-all select-none">
         {{ $kunjungan->nomor_kunjungan }}
     </p>
-    
+
     <span id="notif-salin" class="absolute left-1/2 -translate-x-1/2 -bottom-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md opacity-0 transition-all duration-300 pointer-events-none transform translate-y-1">
         ✓ Tersalin
     </span>
@@ -156,10 +156,12 @@
                 @endif
             @endif
 
-            <div class="px-6 sm:px-8 py-4 sm:py-6 flex justify-between gap-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
+           <div class="px-6 sm:px-8 py-4 sm:py-6 flex justify-between gap-4 border-b border-slate-50 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/20">
                 <div class="min-w-0 flex-1">
                     <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Pengunjung</p>
-                    <p class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{{ $kunjungan->pengunjung->nama_lengkap }}</p>
+                    <p class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 truncate">
+                        {{ $kunjungan->pengunjung?->nama_lengkap ?? 'Pengunjung' }}
+                    </p>
                 </div>
                 <div class="text-right flex-shrink-0">
                     <p class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Waktu Terbit</p>
@@ -386,11 +388,11 @@
 function salinNomorAntrean(teks) {
     navigator.clipboard.writeText(teks).then(() => {
         const notif = document.getElementById('notif-salin');
-        
+
         // Memunculkan notifikasi dengan efek transisi ke atas
         notif.classList.remove('opacity-0', 'translate-y-1');
         notif.classList.add('opacity-100', 'translate-y-0');
-        
+
         // Menyembunyikan kembali notifikasi setelah 2 detik
         setTimeout(() => {
             notif.classList.remove('opacity-100', 'translate-y-0');
