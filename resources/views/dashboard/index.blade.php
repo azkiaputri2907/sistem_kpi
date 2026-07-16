@@ -72,91 +72,95 @@
 
         </div>
     </div>
+{{-- CARD STATISTIK --}}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
 
-{{-- 1. BAGIAN STATISTIK (KPI Global) --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-    {{-- TOTAL --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-        <div>
-            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Total Kunjungan</p>
-            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $total_kunjungan }}</h2>
+    {{-- TOTAL KUNJUNGAN + TARGET TRACKER --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Kuantitas Layanan
+                </p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $total_dilayani ?? 0 }}
+                    </h2>
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500">
+                        / {{ $target_tamu ?? 10 }} Selesai
+                    </span>
+                </div>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-users"></i>
+            </div>
         </div>
-        <div class="w-14 h-14 rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-users"></i>
+        
+        {{-- Progress Bar Target (Menggunakan $skor_kuantitas dari Controller) --}}
+        <div class="mt-2">
+            <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
+                <span class="text-slate-400 dark:text-slate-500">Progres Target Harian</span>
+                <span class="text-blue-600 dark:text-blue-400">{{ $skor_kuantitas }}%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 dark:bg-blue-600 rounded-full transition-all duration-500" style="width: {{ $skor_kuantitas }}%"></div>
+            </div>
         </div>
     </div>
 
-    {{-- SLA --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between">
-        <div>
-            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Efektivitas (SLA)</p>
-            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $efektivitas_persen }}%</h2>
+    {{-- SLA (EFEKTIVITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Efektivitas (SLA)
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                    {{ $efektivitas_persen }}%
+                </h2>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-clock"></i>
+            </div>
         </div>
-        <div class="w-14 h-14 rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-clock"></i>
-        </div>
-    </div>
-
-    {{-- SURVEI --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between sm:col-span-2 lg:col-span-1">
-        <div>
-            <p class="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-1">Kualitas (Survei)</p>
-            <h2 class="text-3xl font-black text-slate-900 dark:text-white">{{ $kualitas_rating }}</h2>
-        </div>
-        <div class="w-14 h-14 rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center text-xl">
-            <i class="fa-solid fa-star"></i>
-        </div>
-    </div>
-</div>
-
-{{-- 2. BAGIAN DAFTAR TAMU (Split Internal & Eksternal) --}}
-@php
-    $internal = $data_kunjungan->where('tipe_tamu', 'Internal');
-    $eksternal = $data_kunjungan->where('tipe_tamu', 'Eksternal');
-@endphp
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-    {{-- KOLOM KIRI: INTERNAL --}}
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
-            <h2 class="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-building-user"></i> Tamu Internal ({{ $internal->count() }})
-            </h2>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                @foreach($internal as $k)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                            <div class="font-bold">{{ $k->pengunjung->nama_lengkap ?? 'Anonim' }}</div>
-                            <div class="text-[11px] text-slate-400">{{ $k->keperluan_master->keterangan ?? 'Umum' }}</div>
-                        </td>
-                    </tr>
-                @endforeach
-            </table>
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
+            <span>Mengukur ketepatan waktu durasi pelayanan</span>
         </div>
     </div>
 
-    {{-- KOLOM KANAN: EKSTERNAL --}}
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-between items-center">
-            <h2 class="text-sm font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                <i class="fa-solid fa-globe"></i> Tamu Eksternal ({{ $eksternal->count() }})
-            </h2>
+    {{-- SURVEI (KUALITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Kualitas (Survei)
+                </p>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $kualitas_rating }}
+                    </h2>
+                    <div class="flex text-amber-400 text-xs gap-0.5 mb-1">
+                        @if(is_numeric($kualitas_rating) && $kualitas_rating > 0)
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="{{ $i <= round($kualitas_rating) ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                            @endfor
+                        @else
+                            <span class="text-slate-400 dark:text-slate-600 font-bold text-xs">Belum ada ulasan</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-star"></i>
+            </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
-                @foreach($eksternal as $k)
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                        <td class="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                            <div class="font-bold">{{ $k->pengunjung->nama_lengkap ?? 'Anonim' }}</div>
-                            <div class="text-[11px] text-slate-400">{{ $k->keperluan_master->keterangan ?? 'Umum' }}</div>
-                        </td>
-                    </tr>
-                @endforeach
-            </table>
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-heart text-rose-500 text-[10px]"></i>
+            <span>Berdasarkan akumulasi indeks kepuasan tamu</span>
         </div>
     </div>
+
 </div>
 
     {{-- TITLE SECTION ANTREAN --}}
@@ -175,228 +179,134 @@
             </a>
         @endif
     </div>
+@php
+    // FILTER DATA (Tetap efisien)
+    $data_internal = $data_kunjungan->filter(fn($k) => $k->pengunjung?->tipe_tamu == 'Internal');
+    $data_eksternal = $data_kunjungan->filter(fn($k) => $k->pengunjung?->tipe_tamu == 'Eksternal');
+    $ulasan_internal = ($data_ulasan ?? collect())->filter(fn($u) => $u->kunjungan?->pengunjung?->tipe_tamu == 'Internal');
+    $ulasan_eksternal = ($data_ulasan ?? collect())->filter(fn($u) => $u->kunjungan?->pengunjung?->tipe_tamu == 'Eksternal');
+@endphp
 
-    {{-- LIST ANTREAN --}}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+{{-- 1. SECTION ANTREAN --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+    @foreach(['Internal' => $data_internal, 'Eksternal' => $data_eksternal] as $label => $data)
+    <div>
+        <div class="flex items-center gap-3 mb-6">
+            <div class="w-1.5 h-8 {{ $label == 'Internal' ? 'bg-indigo-500' : 'bg-amber-500' }} rounded-full"></div>
+            <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tight">Tamu {{ $label }} ({{ $data->count() }})</h3>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-4">
+            @forelse($data->take(6) as $k)
+                @php
+                    $status = $k->status_layanan;
+                    $config = match($status) {
+                        'Antre'    => ['border' => 'border-amber-300', 'badge' => 'bg-amber-100 text-amber-600'],
+                        'Diproses' => ['border' => 'border-emerald-300', 'badge' => 'bg-emerald-100 text-emerald-600'],
+                        'Selesai'  => ['border' => 'border-blue-300', 'badge' => 'bg-blue-100 text-blue-600'],
+                        'Ditolak'  => ['border' => 'border-rose-300', 'badge' => 'bg-rose-100 text-rose-600'],
+                        default    => ['border' => 'border-slate-300', 'badge' => 'bg-slate-100 text-slate-600'],
+                    };
+                @endphp
 
-        @forelse($data_kunjungan->take(6) as $k)
-
-            @php
-                $isAntre = $k->status_layanan == 'Antre';
-                $isDiproses = $k->status_layanan == 'Diproses';
-                $isSelesai = $k->status_layanan == 'Selesai';
-                $isDitolak = $k->status_layanan == 'Ditolak';
-
-                $borderClass = $isDitolak
-                    ? 'border-rose-500 bg-rose-50/20 dark:bg-rose-950/10'
-                    : ($isAntre
-                        ? 'border-amber-300 dark:border-amber-500/50'
-                        : ($isDiproses
-                            ? 'border-blue-300 dark:border-blue-500/50'
-                            : 'border-emerald-300 dark:border-emerald-500/50'
-                        )
-                    );
-                $badgeClass = $isAntre ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400' : ($isDiproses ? 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400' : 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400');
-            @endphp
-
-            <div class="bg-white dark:bg-slate-800 rounded-[2rem] border-2 {{ $borderClass }} p-4 sm:p-5 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
-
-                <div class="absolute -right-4 -top-4 w-20 h-20 bg-slate-50 dark:bg-slate-700/30 rounded-full -z-0 group-hover:scale-150 transition-transform duration-500"></div>
-
-                <div class="relative z-10 flex flex-col h-full">
-                    {{-- HEADER CARD --}}
-                    <div class="flex items-start justify-between gap-3 mb-4">
-                        <div class="flex-1">
-                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest
-                                {{ $k->status_layanan == 'Ditolak'
-                                    ? 'bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 ring-1 ring-rose-200 dark:ring-rose-800'
-                                    : $badgeClass }}">
-                                {{ $k->status_layanan }}
-                            </span>
-                           <h4 class="mt-3 text-lg font-black text-slate-900 dark:text-white leading-tight">
-                                {{ $k->nama_lengkap ?? $k->pengunjung?->nama_lengkap ?? 'Pengunjung' }}
-                            </h4>
-                                 <p class="text-xs font-bold text-slate-400 dark:text-slate-500 mt-0.5">
-                                <i class="fa-solid fa-building text-[10px] mr-1"></i> {{ $k->pengunjung->asal_instansi ?? '-' }}
-                            </p>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <h2 class="text-xs sm:text-sm font-black text-slate-880 dark:text-slate-200 tracking-tight bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-xl inline-block">
-                                {{ $k->nomor_kunjungan }}
-                            </h2>
-                            <p class="text-[10px] text-slate-400 dark:text-slate-500 font-black mt-1 pr-1">
-                                <i class="fa-regular fa-clock mr-1"></i>{{ $k->created_at->format('H:i') }}
-                            </p>
-                        </div>
-                    </div>
-
-                    {{-- KEPERLUAN --}}
-                    <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3.5 border border-slate-100 dark:border-slate-700 mb-4 min-h-[100px] flex flex-col">
-                        <p class="text-[9px] uppercase font-black tracking-widest text-indigo-500 dark:text-indigo-400 mb-2">
-                            Keperluan
-                        </p>
-                        <div class="mb-2">
-                            <p class="text-[8px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">
-                                Jenis
-                            </p>
-                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 italic">
-                                {{ $k->keperluan_master->keterangan ?? '-' }}
-                            </p>
-                        </div>
-                        @if(!empty($k->keperluan))
-                            <div>
-                                <p class="text-[8px] uppercase font-black text-slate-400 dark:text-slate-500 tracking-widest">
-                                    Detail
-                                </p>
-                                <p class="text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic line-clamp-2">
-                                    "{{ $k->keperluan }}"
-                                </p>
+                <div class="bg-white dark:bg-slate-800 rounded-[2rem] border-2 {{ $config['border'] }} p-5 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-slate-50 dark:bg-slate-700/30 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                    
+                    <div class="relative z-10">
+                        {{-- HEADER --}}
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest {{ $config['badge'] }}">{{ $k->status_layanan }}</span>
+                            <div class="text-right">
+                                <span class="block text-[10px] font-black bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-xl text-slate-600 dark:text-slate-300">{{ $k->nomor_kunjungan }}</span>
+                                <p class="text-[9px] text-slate-400 font-bold mt-1"><i class="fa-regular fa-clock mr-1"></i>{{ $k->created_at->format('H:i') }}</p>
                             </div>
-                        @endif
-                    </div>
-
-{{-- FOOTER BUTTONS --}}
-<div class="mt-auto flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
-    @if ($user->role_id == 2)
-        <div class="flex items-center gap-2 w-full">
-            @if($isAntre)
-                <div class="flex flex-row items-center gap-2 w-full">
-                    {{-- TOMBOL MULAI --}}
-                    <button type="button" onclick="bukaModalProses('{{ $k->nomor_kunjungan }}')"
-                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm active:scale-[0.98]">
-                        <i class="fa-solid fa-play text-[10px] pl-0.5"></i>
-                        <span class="text-[11px] font-black uppercase tracking-wider">Mulai</span>
-                    </button>
-
-                    {{-- TOMBOL TOLAK --}}
-                    <button type="button" onclick="bukaModalTolak('{{ $k->id }}')"
-                        class="flex-1 h-9 px-3 sm:px-4 flex items-center justify-center gap-1.5 bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-500 dark:hover:bg-rose-600 hover:text-white dark:hover:text-white rounded-xl transition-all active:scale-[0.98]">
-                        <i class="fa-solid fa-xmark text-xs"></i>
-                        <span class="text-[11px] font-black uppercase tracking-wider">Tolak</span>
-                    </button>
-                </div>
-            @elseif($isDiproses)
-                {{-- TOMBOL SELESAI --}}
-                <form id="form-selesai-{{ $k->id }}" action="{{ route('kunjungan.selesai', $k->id) }}" method="POST" class="inline-block">
-                    @csrf
-                    <button type="button" onclick="konfirmasiSelesai('{{ $k->id }}', '{{ $k->nomor_kunjungan }}')" title="Selesaikan Antrean"
-                        class="w-9 h-9 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-all shadow-sm active:scale-95 shrink-0">
-                        <i class="fa-solid fa-check text-sm"></i>
-                    </button>
-                </form>
-            @elseif($isSelesai)
-                {{-- BADGE SELESAI --}}
-                <div title="Selesai" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 rounded-full shrink-0">
-                    <i class="fa-solid fa-check-double text-xs"></i>
-                </div>
-            @endif
-        </div>
-
-        {{-- FITUR TAMBAHAN SETELAH SELESAI (KIRIM EMAIL & TERUSKAN) --}}
-        <div class="flex items-center gap-2">
-            @if($isSelesai)
-                <form action="{{ route('kunjungan.kirim-email', ['id' => $k->id]) }}" method="POST" class="inline-block">
-                    @csrf
-                    <button type="submit" title="Kirim Email" class="w-9 h-9 flex items-center justify-center bg-sky-50 dark:bg-sky-950/40 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-600 dark:text-sky-400 rounded-full transition-all active:scale-95 shrink-0">
-                        <i class="fa-regular fa-envelope text-sm"></i>
-                    </button>
-                </form>
-
-                <form action="{{ route('kunjungan.tanggapan', $k->id) }}" method="POST" class="inline-block">
-                    @csrf
-                    <button type="submit" title="Teruskan ke Pimpinan" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-600 dark:text-amber-400 rounded-full transition-all active:scale-95 shrink-0">
-                        <i class="fa-solid fa-share-nodes text-sm"></i>
-                    </button>
-                </form>
-            @endif
-        </div>
-    @else
-        {{-- TAMPILAN READ-ONLY UNTUK SUPER ADMIN / LAINNYA (DENGAN TAMPILAN TAILWIND) --}}
-        <div class="flex items-center justify-center w-full py-1">
-            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/50 w-full justify-center">
-                <i class="fa-solid fa-eye text-[11px]"></i>
-                (Read-Only)
-            </span>
-        </div>
-    @endif
-</div>
-                </div>
-            </div>
-
-        @empty
-            <div class="col-span-full bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2.5rem] py-20 px-6 text-center">
-                <div class="w-20 h-20 mx-auto rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-300 dark:text-slate-500 text-3xl mb-5">
-                    <i class="fa-solid fa-inbox"></i>
-                </div>
-                <h3 class="text-xl font-black text-slate-500 dark:text-slate-400">Belum Ada Antrean</h3>
-                <p class="text-slate-400 dark:text-slate-500 mt-2 text-sm max-w-xs mx-auto">
-                    Antrean baru yang masuk akan muncul secara otomatis di sini.
-                </p>
-            </div>
-        @endforelse
-
-    </div>
-
-    {{-- TITLE SECTION ULASAN TERBARU --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-14 mb-6 w-full">
-        <div class="flex items-center gap-3">
-            <div class="w-1.5 h-8 bg-amber-500 rounded-full"></div>
-            <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                Ulasan Terbaru
-            </h3>
-        </div>
-
-        @if(($data_ulasan ?? collect())->count() > 3)
-            <a href="{{ route('dashboard.ulasan') }}" class="w-full sm:w-auto px-6 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black text-xs uppercase tracking-widest rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 shrink-0">
-                <span>Lihat semua ulasan</span>
-                <i class="fa-solid fa-arrow-right text-xs"></i>
-            </a>
-        @endif
-    </div>
-{{-- LIST 3 ULASAN TERBARU --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-6">
-        @forelse(($data_ulasan ?? collect())->take(3) as $item)
-            @php
-                $detail = $item->survey->detail ?? null;
-                $avgRating = $detail ? ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5) / 5 : 0;
-                $ratingBulat = round($avgRating);
-            @endphp
-            <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-full group">
-                <div>
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex gap-1 text-amber-400">
-                            @for($i = 1; $i <= 5; $i++)
-                                <i class="fa-solid fa-star text-xs {{ $i <= $ratingBulat ? '' : 'text-slate-100 dark:text-slate-700' }}"></i>
-                            @endfor
                         </div>
-                        <!-- MENGUBAH ASAL INSTANSI MENJADI DIRAHASIAKAN -->
-                        <span class="bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-slate-100 dark:border-slate-700 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/40 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 group-hover:border-indigo-100 dark:group-hover:border-indigo-900 transition-colors">
-                            DIRAHASIAKAN
-                        </span>
+
+                        {{-- NAMA & INSTANSI --}}
+                        <h4 class="text-lg font-black text-slate-900 dark:text-white leading-tight">{{ $k->nama_lengkap ?? $k->pengunjung?->nama_lengkap ?? 'Pengunjung' }}</h4>
+                        <p class="text-xs font-bold text-slate-400 mt-1 mb-4"><i class="fa-solid fa-building mr-1"></i> {{ $k->pengunjung->asal_instansi ?? '-' }}</p>
+
+                        {{-- BOX KEPERLUAN --}}
+                        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3.5 border border-slate-100 dark:border-slate-700">
+                            <p class="text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1">Keperluan</p>
+                            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 italic mb-2">{{ $k->keperluan_master->keterangan ?? '-' }}</p>
+                            @if(!empty($k->keperluan))
+                                <p class="text-[8px] uppercase font-black text-slate-400 tracking-widest mb-1 mt-2">Detail</p>
+                                <p class="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-relaxed italic line-clamp-2">"{{ $k->keperluan }}"</p>
+                            @endif
+                        </div>
+
+                        {{-- EXTRA INFO (STATUS DETAILS) --}}
+                        <div class="mt-4 space-y-2">
+                            {{-- ALASAN DITOLAK --}}
+                            @if($k->status_layanan == 'Ditolak' && !empty($k->alasan_tolak))
+                                <div class="p-2.5 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-100 dark:border-rose-900/50">
+                                    <p class="text-[8px] font-black uppercase text-rose-600 dark:text-rose-400 tracking-widest">Alasan Penolakan</p>
+                                    <p class="text-[11px] font-bold text-rose-700 dark:text-rose-300">{{ $k->alasan_tolak }}</p>
+                                </div>
+                            @endif
+
+                            {{-- RESPONS PIMPINAN --}}
+                            @if(!empty($k->catatan_pimpinan))
+                                <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl border border-indigo-100 dark:border-indigo-900/50">
+                                    <p class="text-[8px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-widest">Respon Pimpinan</p>
+                                    <p class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300">{{ $k->catatan_pimpinan }}</p>
+                                </div>
+                            @endif
+
+{{-- Waktu Berakhir (Selesai atau Ditolak) --}}
+@php
+    // Mencoba mengambil waktu_selesai_layanan, jika kosong gunakan updated_at
+    $waktuSelesai = !empty($k->waktu_selesai_layanan) ? $k->waktu_selesai_layanan : $k->updated_at;
+    $isSelesai = ($k->status_layanan == 'Selesai');
+@endphp
+
+@if(in_array($k->status_layanan, ['Selesai', 'Ditolak']) && !empty($waktuSelesai))
+    <div class="text-[10px] {{ $isSelesai ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }} font-bold">
+        <i class="fa-solid {{ $isSelesai ? 'fa-check-circle' : 'fa-times-circle' }} mr-1"></i> 
+        {{ $isSelesai ? 'Selesai' : 'Ditolak' }}: {{ \Carbon\Carbon::parse($waktuSelesai)->format('H:i') }}
+    </div>
+@endif
+                        </div>
                     </div>
-                    <p class="text-slate-700 dark:text-slate-300 font-bold text-sm sm:text-base leading-relaxed mb-6 text-left italic">
-                        "{!! $item->survey->kritik_saran ?? 'Hanya memberikan rating bintang.' !!}"
-                    </p>
                 </div>
-                <div class="pt-4 border-t border-slate-50 dark:border-slate-700 flex flex-col text-left">
-                    <!-- MENGUBAH NAMA LENGKAP MENJADI ANONIM -->
-                    <span class="text-slate-900 dark:text-white font-black text-sm">
-                        Anonim
-                    </span>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-                        <span class="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-wider">
-                            {{ $item->created_at->diffForHumans() }}
-                        </span>
-                    </div>
+            @empty
+                <div class="bg-slate-50 dark:bg-slate-800/50 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] py-10 text-center text-slate-400">Belum ada antrean</div>
+            @endforelse
+        </div>
+    </div>
+    @endforeach
+</div>
+
+{{-- 2. SECTION ULASAN --}}
+<div class="flex items-center gap-3 mb-6">
+    <div class="w-1.5 h-8 bg-indigo-500 rounded-full"></div>
+    <h3 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">Ulasan Terbaru</h3>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    @foreach(['Internal' => $ulasan_internal, 'Eksternal' => $ulasan_eksternal] as $label => $data)
+    <div class="space-y-4">
+        <h4 class="text-[10px] font-black uppercase text-indigo-400 tracking-[0.2em] italic mb-2">{{ $label }}</h4>
+        @forelse($data->take(3) as $item)
+            @php 
+                $avg = ($item->survey?->detail ? ($item->survey->detail->p1 + $item->survey->detail->p2 + $item->survey->detail->p3 + $item->survey->detail->p4 + $item->survey->detail->p5) / 5 : 0);
+            @endphp
+            {{-- CARD ULASAN PREMIUM --}}
+            <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-[2rem] border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all">
+                <div class="flex gap-1 text-amber-400 mb-4">
+                    @for($i=1; $i<=5; $i++) <i class="fa-solid fa-star text-[10px] {{ $i <= round($avg) ? '' : 'text-slate-100 dark:text-slate-700' }}"></i> @endfor
+                </div>
+                <p class="text-slate-700 dark:text-slate-300 font-bold text-sm leading-relaxed italic mb-6">"{!! $item->survey->kritik_saran ?? 'Hanya memberikan rating.' !!}"</p>
+                <div class="pt-4 border-t border-slate-50 dark:border-slate-700">
+                    <span class="text-slate-900 dark:text-white font-black text-xs uppercase tracking-widest">Anonim</span>
                 </div>
             </div>
         @empty
-            <div class="col-span-full bg-white dark:bg-slate-800 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] py-10 px-6 text-center">
-                <p class="text-slate-400 dark:text-slate-500 font-bold text-sm">Belum ada ulasan yang masuk.</p>
-            </div>
+            <div class="p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] text-center text-slate-400 text-xs">Belum ada ulasan</div>
         @endforelse
     </div>
+    @endforeach
 </div>
 
 {{-- MODAL EKSPOR PERIODE (TEMA PREMIUM MATCHING) --}}
@@ -462,83 +372,6 @@
         <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mb-4"></div>
         <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider mb-1">Menyiapkan Dokumen</h3>
         <p class="text-[11px] text-slate-400 dark:text-gray-400 leading-relaxed">Mohon tunggu, sistem sedang merangkum data laporan...</p>
-    </div>
-</div>
-
-{{-- MODAL TOLAK --}}
-<div id="modalTolak" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2rem] p-6 shadow-2xl border dark:border-slate-800">
-        <div class="mb-5">
-            <h2 class="text-xl font-black text-slate-900 dark:text-white">Tolak Antrean</h2>
-            <p class="text-sm text-slate-400 dark:text-slate-500 mt-1">Wajib isi alasan penolakan</p>
-        </div>
-       <form id="formTolak" method="POST" action="">
-    @csrf
-    <textarea name="alasan_tolak" required
-        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-rose-100 dark:focus:ring-rose-950 outline-none"
-        placeholder="Contoh: Dokumen tidak lengkap / data tidak valid"></textarea>
-    <div class="flex gap-3 mt-5">
-        <button type="button" onclick="tutupModalTolak()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black text-xs uppercase">Batal</button>
-        <button type="submit" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase shadow-lg dark:shadow-none">Kirim Penolakan</button>
-    </div>
-</form>
-    </div>
-</div>
-
-{{-- MODAL SLA --}}
-<div id="modalProsesSLA" class="fixed inset-0 z-[999] hidden items-center justify-center p-4 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity duration-300">
-    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] p-6 sm:p-10 shadow-2xl border dark:border-slate-800 transform transition-all scale-95 opacity-0 relative overflow-hidden" id="modalContentSLA">
-
-        <div id="loadingOverlaySLA" class="absolute inset-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center hidden transition-all duration-300">
-            <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-            <p class="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">Memproses...</p>
-        </div>
-
-        <div class="text-center mb-6">
-            <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl sm:text-3xl mx-auto mb-5 shadow-inner">
-                <i class="fa-solid fa-hourglass-half"></i>
-            </div>
-            <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Estimasi Layanan</h2>
-            <p class="text-slate-400 dark:text-slate-500 text-xs sm:text-sm mt-2 font-medium">Tentukan waktu pelayanan secara realistis</p>
-        </div>
-
-        <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50">
-            <p class="text-[10px] uppercase font-black tracking-widest text-amber-600 dark:text-amber-400 mb-2">Perhatian</p>
-            <p class="text-xs text-amber-700 dark:text-amber-300 font-semibold leading-relaxed">
-                Estimasi hanya bisa diinput <b>1 kali</b>. Pastikan sudah sesuai dengan <b>jenis keperluan</b> dan perkiraan waktu pengerjaan layanan.
-            </p>
-        </div>
-
-        <form id="formSLA" method="POST">
-            @csrf
-            <div class="grid grid-cols-1 gap-5 mb-8">
-                <div class="space-y-2">
-                    <label class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ml-2 tracking-widest">Durasi Pelayanan</label>
-                    <input type="number" id="inputEstimasi" name="estimasi_sla" required
-                        class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 font-bold text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none transition-all placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                        placeholder="Contoh: 15">
-                </div>
-                <div class="space-y-2">
-                    <label class="text-[10px] uppercase font-black text-slate-400 dark:text-slate-500 ml-2 tracking-widest">Satuan Waktu</label>
-                    <div class="relative">
-                        <select id="selectSatuan" name="satuan_sla" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl px-5 py-4 font-bold text-slate-700 dark:text-slate-300 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all">
-                            <option value="Menit" class="dark:bg-slate-900">Menit</option>
-                            <option value="Hari" class="dark:bg-slate-900">Hari</option>
-                        </select>
-                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-                <button type="button" id="btnKembali" onclick="tutupModal()" class="order-2 sm:order-1 flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black uppercase text-[11px] tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">Kembali</button>
-                <button type="submit" id="btnSubmitSLA" class="order-1 sm:order-2 flex-1 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-[11px] tracking-widest shadow-lg dark:shadow-none transition-all flex items-center justify-center gap-2">
-                    <span id="btnText">Mulai Sekarang</span>
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -738,52 +571,6 @@ function showGlobalLoading(pesanText = "Sedang memproses data, mohon tunggu...")
     });
 }
 
-// ==========================================
-// KONFIRMASI SELESAI (Bisa di-blur)
-// ==========================================
-function konfirmasiSelesai(id, nomor) {
-    const form = document.getElementById(`form-selesai-${id}`);
-    if (!form) return;
-
-    const isDarkMode = document.documentElement.classList.contains('dark');
-
-    Swal.fire({
-        title: 'Selesaikan Layanan?',
-        text: `Apakah Anda yakin ingin menyelesaikan antrean nomor ${nomor}? Pastikan pelayanan telah selesai dikerjakan.`,
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Selesai',
-        cancelButtonText: 'Batal',
-
-        background: isDarkMode ? '#1e293b' : '#ffffff',
-        color: isDarkMode ? '#f8fafc' : '#1f2937',
-        confirmButtonColor: '#10b981',
-        cancelButtonColor: isDarkMode ? '#475569' : '#94a3b8',
-
-        // EFEK BLUR DI LATAR BELAKANG (Backdrop Blur)
-        backdrop: `
-            rgba(15, 23, 42, 0.2)
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-        `,
-
-        customClass: {
-            popup: 'rounded-[2rem] shadow-2xl border border-gray-100 dark:border-slate-700 p-6',
-            title: 'font-black text-xl tracking-tight',
-            htmlContainer: 'text-sm text-gray-500 dark:text-gray-400 mt-2',
-            confirmButton: 'rounded-xl font-bold text-sm px-5 py-2.5',
-            cancelButton: 'rounded-xl font-bold text-sm px-5 py-2.5'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Panggil fungsi pop-up loading global yang sudah di-blur di atas
-            if (typeof showGlobalLoading === 'function') {
-                showGlobalLoading("Sedang memperbarui status layanan menjadi selesai...");
-            }
-            form.submit();
-        }
-    });
-}
 
     // ====================================================================================
     // PERBAIKAN AMAN: MERAPIKAN STRUKTUR SUBMIT FORM ESTIMASI TANPA MENGHAPUS LOGIKA KODE

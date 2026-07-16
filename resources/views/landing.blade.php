@@ -108,7 +108,7 @@
                 </div>
 
 <h1 class="font-title text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.1] mb-6 text-slate-900 dark:text-white tracking-tight">
-    SIPANDU-KPI <br class="hidden lg:inline">
+    SIPANDU-ELEKTRO <br class="hidden lg:inline">
     <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-sky-500 dark:from-blue-400 dark:via-blue-300 dark:to-teal-400 block mt-2 font-extrabold text-2xl md:text-3xl lg:text-4xl xl:text-5xl uppercase tracking-normal">
         Jurusan Teknik Elektro
     </span>
@@ -151,6 +151,20 @@
         </span>
         <span class="text-[9px] font-medium text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Live</span>
     </div>
+</div>
+
+<div class="mt-3 w-full max-w-md">
+    <a href="https://drive.google.com/drive/folders/1GpRV-R806FoCF2FdAFFwsGHBtogvzKkD?usp=sharing"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="w-full h-12 rounded-2xl bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm border border-white dark:border-slate-800 shadow-sm flex items-center justify-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:scale-[1.01] active:scale-[0.99] transition-all duration-300 group">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-blue-500 dark:text-blue-400 group-hover:animate-bounce">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+
+        <span>Unduh Buku Panduan Sistem (Manual Book)</span>
+    </a>
 </div>
             </div>
 
@@ -434,10 +448,6 @@
             <div class="text-center md:text-left">
                 <p class="font-bold text-slate-800 dark:text-slate-200 mb-1">Sistem Informasi Pelayanan Publik & Monitoring Kinerja Admin</p>
                 <p>&copy; 2026 Jurusan Teknik Elektro - Politeknik Negeri Banjarmasin</p>
-            </div>
-            <div class="flex gap-6 items-center">
-                <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privasi & Keamanan</a>
-                <a href="#" class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Panduan Layanan</a>
             </div>
         </div>
     </footer>
@@ -961,3 +971,4 @@ function showEstimasi(selectElement) {
 
 </body>
 </html>
+pa

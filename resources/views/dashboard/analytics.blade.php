@@ -67,39 +67,99 @@
 </div>
 
 {{-- CARD STATISTIK --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-    {{-- TOTAL --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-        <div>
-            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Total Kunjungan</p>
-            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $total_kunjungan }}</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+
+    {{-- TOTAL KUNJUNGAN + TARGET TRACKER --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Kuantitas Layanan
+                </p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $total_dilayani ?? $total_kunjungan }}
+                    </h2>
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500">
+                        / {{ $target_tamu ?? 10 }} Selesai
+                    </span>
+                </div>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-users"></i>
+            </div>
         </div>
-        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-            <i class="fa-solid fa-users"></i>
+
+        {{-- Progress Bar Target --}}
+        @php
+            $realisasi = $total_dilayani ?? $total_kunjungan;
+            $target = $target_tamu ?? 10;
+            $persenKuantitas = $target > 0 ? min(100, round(($realisasi / $target) * 100)) : 0;
+        @endphp
+        <div class="mt-2">
+            <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
+                <span class="text-slate-400 dark:text-slate-500">Progres Target Bulan Ini</span>
+                <span class="text-blue-600 dark:text-blue-400">{{ $persenKuantitas }}%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500 dark:bg-blue-600 rounded-full transition-all duration-500" style="width: {{ $persenKuantitas }}%"></div>
+            </div>
         </div>
     </div>
 
-    {{-- SLA --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
-        <div>
-            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Efektivitas (SLA)</p>
-            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $efektivitas_persen }}%</h2>
+    {{-- SLA (EFEKTIVITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Efektivitas (SLA)
+                </p>
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                    {{ $efektivitas_persen ?? $efektivitas }}%
+                </h2>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-clock"></i>
+            </div>
         </div>
-        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-            <i class="fa-solid fa-clock"></i>
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>
+            <span>Mengukur ketepatan waktu durasi pelayanan</span>
         </div>
     </div>
 
-    {{-- SURVEI --}}
-    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow sm:col-span-2 lg:col-span-1">
-        <div>
-            <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">Kualitas (Survei)</p>
-            <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{{ $kualitas_rating }}</h2>
+    {{-- SURVEI (KUALITAS) --}}
+    <div class="bg-white dark:bg-slate-800 rounded-[2rem] p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-all duration-300 group sm:col-span-2 lg:col-span-1">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <p class="text-[10px] sm:text-[11px] uppercase font-black tracking-widest text-slate-400 dark:text-slate-500 mb-1">
+                    Kualitas (Survei)
+                </p>
+                <div class="flex items-center gap-2">
+                    <h2 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                        {{ $kualitas_rating }}
+                    </h2>
+                    <div class="flex text-amber-400 text-xs gap-0.5 mb-1">
+                        @if(is_numeric($kualitas_rating) && $kualitas_rating > 0)
+                            @for($i = 1; $i <= 5; $i++)
+                                <i class="{{ $i <= round($kualitas_rating) ? 'fa-solid' : 'fa-regular' }} fa-star"></i>
+                            @endfor
+                        @else
+                            <span class="text-slate-400 dark:text-slate-600 font-bold text-xs">Belum ada ulasan</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                <i class="fa-solid fa-star"></i>
+            </div>
         </div>
-        <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-amber-100 dark:bg-amber-950/40 text-amber-500 dark:text-amber-400 flex items-center justify-center text-xl sm:text-2xl shrink-0">
-            <i class="fa-solid fa-star"></i>
+        <div class="mt-auto pt-2 border-t border-slate-50 dark:border-slate-700/30 flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
+            <i class="fa-solid fa-heart text-rose-500 text-[10px]"></i>
+            <span>Berdasarkan akumulasi indeks kepuasan tamu</span>
         </div>
     </div>
+
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
@@ -110,7 +170,7 @@
                 <h3 class="text-lg md:text-xl font-black text-gray-800 dark:text-white tracking-tight">Tren Waktu Layanan (SLA)</h3>
                 <p class="text-[10px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest mt-1">Rata-rata menit per hari</p>
             </div>
-            <div class="bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 dark:text-emerald-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase">Stabil</div>
+            
         </div>
         <div class="h-[280px] md:h-[320px]">
             <canvas id="slaChart"></canvas>
@@ -412,5 +472,123 @@ function downloadLaporan(type) {
         isModalOpen = false;
     }, 15000);
 }
+</script>
+
+{{-- SCRIPT RENDERING CHART --}}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('kinerjaChart').getContext('2d');
+
+        const chartLabels = {!! json_encode($labels) !!};
+        let chartDatasets = {!! json_encode($chartDatasets) !!};
+
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        const textColor = isDarkMode ? '#94a3b8' : '#64748b';
+        const gridColor = isDarkMode ? 'rgba(148, 163, 184, 0.1)' : 'rgba(100, 116, 139, 0.05)';
+
+        chartDatasets = chartDatasets.map(function(dataset) {
+            const dynamicColors = dataset.data.map(function(nilai) {
+                if (nilai >= 90) return '#3b82f6';
+                else if (nilai >= 76) return '#10b981';
+                else if (nilai >= 60) return '#f59e0b';
+                else if (nilai > 0) return '#ef4444';
+                else return '#6b7280'; // Abu-abu default
+            });
+
+            const dynamicBorders = dataset.data.map(function(nilai) {
+                if (nilai >= 90) return '#2563eb';
+                else if (nilai >= 76) return '#059669';
+                else if (nilai >= 60) return '#d97706';
+                else if (nilai > 0) return '#dc2626';
+                else return '#4b5563';
+            });
+
+            dataset.backgroundColor = dynamicColors;
+            dataset.borderColor = dynamicBorders;
+            dataset.borderWidth = 1;
+            dataset.borderRadius = 6;
+
+            return dataset;
+        });
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: chartDatasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor,
+                            font: { family: 'Plus Jakarta Sans, sans-serif', weight: '600', size: 11 },
+                            boxWidth: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20,
+
+                            // =============================================================
+                            // TAMBAHAN SOLUSI: Menyelaraskan Warna Bulatan Legenda Aktif
+                            // =============================================================
+                            generateLabels: function(chart) {
+                                const defaults = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                                defaults.forEach(function(label, index) {
+                                    const dataset = chart.data.datasets[index];
+                                    if (Array.isArray(dataset.backgroundColor)) {
+                                        // Cari warna di dalam array yang BUKAN abu-abu default (#6b7280)
+                                        const warnaAktif = dataset.backgroundColor.find(function(color) {
+                                            return color !== '#6b7280';
+                                        });
+                                        // Jika ada hari yang aktif datanya (seperti hari Rabu), gunakan warna itu.
+                                        // Jika kosong semua, biarkan default abu-abu.
+                                        label.fillStyle = warnaAktif ? warnaAktif : '#6b7280';
+                                        label.strokeStyle = warnaAktif ? warnaAktif : '#4b5563';
+                                    }
+                                });
+                                return defaults;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        backgroundColor: isDarkMode ? '#1e293b' : '#0f172a',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 13 },
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.raw !== null) label += context.raw;
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        grid: { display: false },
+                        ticks: { color: textColor, font: { size: 11 } }
+                    },
+                    y: {
+                        stacked: false,
+                        grid: { color: gridColor },
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            color: textColor,
+                            font: { size: 11 },
+                            callback: function(value) { return value; }
+                        }
+                    }
+                }
+            }
+        });
+    });
 </script>
 @endpush

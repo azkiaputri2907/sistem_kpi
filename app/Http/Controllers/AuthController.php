@@ -12,7 +12,7 @@ class AuthController extends Controller
     // =========================================================================
     // HELPER SPREADSHEET
     // =========================================================================
-    
+
     private function getApiUrl()
     {
         return env('GOOGLE_SCRIPT_URL');
@@ -24,7 +24,7 @@ class AuthController extends Controller
             'action' => 'read',
             'sheet'  => $sheetName
         ]);
-        
+
         $data = $response->json('data') ?? [];
         return collect(json_decode(json_encode($data), FALSE));
     }

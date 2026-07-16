@@ -82,18 +82,23 @@ class DashboardController extends Controller
         return Http::post($this->getApiUrl() . '?action=delete&sheet=' . $sheetName, ['id' => $id])->json();
     }
 
-    private function applyAccessFilter($collection, $user)
-    {
-        if ($user->role_id == 1 || $user->role_id == 3) {
-            return $collection;
-        }
-
-        if (in_array($user->role_id, [2, 4]) && $user->prodi_id) {
-            return $collection->where('prodi_id', $user->prodi_id)->values();
-        }
-
-        return collect([]);
+private function applyAccessFilter($collection, $user)
+{
+    // Admin Super / Kajur (ID 1 atau 3) tetap bisa lihat semua
+    if ($user->role_id == 1 || $user->role_id == 3) {
+        return $collection;
     }
+
+    // Ubah bagian ini untuk mengizinkan 'LAINNYA'
+    if (in_array($user->role_id, [2, 4]) && $user->prodi_id) {
+        return $collection->filter(function($item) use ($user) {
+            // Tampilkan jika prodi cocok ATAU jika prodi adalah 'LAINNYA'
+            return $item->prodi_id == $user->prodi_id || $item->prodi_id == 'LAINNYA';
+        })->values();
+    }
+
+    return collect([]);
+}
 
     // =========================================================================
     // HELPER: MENGAMANKAN SESSION USER
@@ -110,7 +115,7 @@ class DashboardController extends Controller
     // CORE DASHBOARD CONTROLLER
     // =========================================================================
 
-    public function index()
+public function index()
 {
     // Panggil fungsi pengaman session
     $user = $this->getSessionUser();
@@ -167,20 +172,18 @@ class DashboardController extends Controller
             ->values();
     }
     
-    // =========================================================
-    // TAMBAHAN BARU: FILTER HANYA BULAN DAN TAHUN SEKARANG
-    // =========================================================
-    $bulanSekarang = Carbon::now()->format('m'); // Ambil angka bulan (misal: 07)
-    $tahunSekarang = Carbon::now()->format('Y'); // Ambil angka tahun (misal: 2026)
+// =========================================================
+// MODIFIKASI: FILTER HARI INI (PAKAI CREATED_AT)
+// =========================================================
+$hariIni = Carbon::now('Asia/Makassar')->format('Y-m-d'); 
 
-    $kunjunganRaw = $kunjunganRaw->filter(function($item) use ($bulanSekarang, $tahunSekarang) {
-        // Ambil data tanggal dari kolom 'tanggal' di Google Sheets
-        $tanggalKunjungan = Carbon::parse($item->tanggal ?? now());
-        
-        // Hanya loloskan data yang bulan dan tahunnya cocok dengan hari ini
-        return $tanggalKunjungan->format('m') === $bulanSekarang && 
-               $tanggalKunjungan->format('Y') === $tahunSekarang;
-    })->values();
+$kunjunganRaw = $kunjunganRaw->filter(function($item) use ($hariIni) {
+    // Pakai created_at karena sudah pasti ada isinya dari sistem
+    // Dan pastikan timezone-nya WITA
+    $tanggalData = Carbon::parse($item->created_at, 'Asia/Makassar')->format('Y-m-d');
+    
+    return $tanggalData === $hariIni;
+})->values();
 
     // =========================================================
     // MAPPING RELASI DATA
@@ -251,9 +254,8 @@ class DashboardController extends Controller
     })->sortByDesc('created_at')->values();
 
     // =========================================================
-    // DATA ULASAN TERBARU (PROSES TAMBAHAN)
+    // DATA ULASAN TERBARU
     // =========================================================
-    // Mengambil data ulasan dari kunjungan yang sudah di-filter di atas
     $dataUlasan = $kunjunganData->filter(function($k) use ($db) {
         return $db['survey']->contains('kunjungan_id', $k->id);
     })->map(function($k) use ($db) {
@@ -269,8 +271,8 @@ class DashboardController extends Controller
 
     })->values();
 
-// =========================================================
-    // KPI KUANTITAS (DENGAN TARGET 10 PENGUNJUNG BULANAN)
+    // =========================================================
+    // KPI KUANTITAS (TARGET 10/HARI, MAX 100)
     // =========================================================
     $totalKunjungan = $kunjunganData->count();
 
@@ -282,20 +284,17 @@ class DashboardController extends Controller
         return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
     })->count();
 
-    // Data yang dihitung sebagai kinerja pelayanan yang diproses (Selesai + Ditolak)
     $totalDilayani = $jumlahSelesai + $jumlahDitolakKuantitas;
     
-    // Target ditetapkan 10 pengunjung sebulan
+    // Target 10 per hari
     $targetTamu = 10; 
     
-    // Rumus: (Total Dilayani / Target 10) * 100%
-    $skorKuantitas = $targetTamu > 0 
-        ? round(($totalDilayani / $targetTamu) * 100, 1) 
-        : 0;
-    $skorKuantitas = max(0, min(100, $skorKuantitas)); // Batasi maksimal nilai 100%
+    // Hitung persentase dan batasi maksimal 100
+    $skorMentah = $targetTamu > 0 ? ($totalDilayani / $targetTamu) * 100 : 0;
+    $skorKuantitas = min(100, round($skorMentah, 1)); 
 
     // =========================================================
-    // KPI EFEKTIVITAS (SLA) - TETAP JAGA FUNGSI ASLI 100%
+    // KPI EFEKTIVITAS (SLA, MAX 100)
     // =========================================================
     $jumlahTepatWaktu = $kunjunganData->filter(function($item) {
         return strtoupper(trim($item->status_sla ?? '')) == 'TEPAT WAKTU';
@@ -311,28 +310,25 @@ class DashboardController extends Controller
 
     $nilaiEfektivitas = ($jumlahTepatWaktu * 1) + ($jumlahTerlambat * 0.5) + ($jumlahDitolak * 0);
     
-    // Efektivitas pembaginya tetap total kunjungan bulan ini agar adil
-    $efektivitas = $totalKunjungan > 0 ? round(($nilaiEfektivitas / $totalKunjungan) * 100, 1) : 0;
-    $efektivitas = max(0, min(100, $efektivitas));
+    $efektivitasMentah = $totalKunjungan > 0 ? ($nilaiEfektivitas / $totalKunjungan) * 100 : 0;
+    $efektivitas = min(100, round($efektivitasMentah, 1));
 
     // =========================================================
     // PERSENTASE PENOLAKAN
     // =========================================================
     $persentasePenolakan = $totalKunjungan > 0 ? round(($jumlahDitolak / $totalKunjungan) * 100, 1) : 0;
 
-// =========================================================
-    // KPI KUALITAS SURVEY (FIX MURNI SESUAI GAMBAR RUMUS LAPORAN TA)
+    // =========================================================
+    // KPI KUALITAS SURVEY
     // =========================================================
     $totalSkorSurvey = 0;
     $jumlahResponden = 0;
 
     foreach ($kunjunganData as $k) {
-        // Cari data survey yang terhubung dengan kunjungan ini
         $surv = $db['survey']->filter(function($s) use ($k) {
             return $s->kunjungan_id == $k->id;
         })->first();
 
-        // Pastikan datanya ada dan kolom skor_total tidak kosong
         if ($surv && isset($surv->skor_total)) {
             $totalSkorSurvey += (int)$surv->skor_total;
             $jumlahResponden++;
@@ -343,57 +339,59 @@ class DashboardController extends Controller
     $skorKualitas = 0;
 
     if ($jumlahResponden > 0) {
-        // 1. Nilai KPI Kualitas Kinerja (Rata-rata Skor Total dari Google Sheets)
-        // Contoh: (100 + 100) / 2 = 100
-        $skorKualitas = round($totalSkorSurvey / $jumlahResponden, 1);
-        $skorKualitas = max(0, min(100, $skorKualitas)); // Proteksi maksimal batas nilai 100
-
-        // 2. Rumus dari Gambar TA Anda: Rata-rata Skor Total / 20
-        // Contoh: 100 / 20 = 5.0
+        $skorKualitasMentah = $totalSkorSurvey / $jumlahResponden;
+        $skorKualitas = min(100, round($skorKualitasMentah, 1));
+        
         $ratingAngka = $skorKualitas / 20;
         $kualitasRating = number_format(round($ratingAngka, 1), 1);
     }
 
-    // =========================================================
-    // TOTAL KPI
-    // =========================================================
-    $kpiTotal =
-        (0.20 * $skorKuantitas) +
-        (0.40 * $efektivitas) +
-        (0.40 * $skorKualitas);
+// =========================================================
+// TOTAL KPI
+// =========================================================
+$kpiTotal = (0.20 * $skorKuantitas) + (0.40 * $efektivitas) + (0.40 * $skorKualitas);
+$kpiTotal = round($kpiTotal, 1);
 
-    $kpiTotal = round($kpiTotal, 1);
+// Lakukan update otomatis untuk antrean yang kedaluwarsa
+$kunjunganRaw->each(function($k) {
+    // 1. Cek jika status Antre dan sudah lewat 10 menit
+    if ($k->status_layanan == 'Antre' && Carbon::parse($k->created_at)->addMinutes(10)->isPast()) {
+        
+        // 2. Update ke Google Sheets via API
+        // Pastikan 'kunjungan' adalah nama sheet Anda
+        $this->updateSheet('kunjungan', $k->id, [
+            'status_layanan' => 'Ditolak',
+            'alasan_tolak' => 'ADMIN TIDAK ADA DITEMPAT',
+            'waktu_selesai_layanan' => Carbon::now('Asia/Makassar')->toDateTimeString()
+        ]);
+        
+        // 3. Update objek di memori (agar tampilan dashboard langsung berubah tanpa refresh ulang)
+        $k->status_layanan = 'Ditolak';
+        $k->id = $k->id;
+        $k->alasan_tolak = 'ADMIN TIDAK ADA DITEMPAT';
+    }
+});
 
     // =========================================================
     // RETURN VIEW
     // =========================================================
     return view('dashboard.index', [
-
         'user' => $user,
         'isGlobal' => $isGlobal,
         'judul_dashboard' => 'Dashboard Utama',
         'data_kunjungan' => $kunjunganData,
         'daftar_prodi' => $daftar_prodi,
-
-        // VARIABEL BARU: Di-passing agar terbaca di dashboard utama
         'data_ulasan' => $dataUlasan,
-
-        // Statistik
         'total_kunjungan' => $totalKunjungan,
         'total_dilayani' => $totalDilayani,
-
         'jumlah_tepat_waktu' => $jumlahTepatWaktu,
         'jumlah_terlambat' => $jumlahTerlambat,
         'jumlah_ditolak' => $jumlahDitolak,
-
-        // KPI
         'skor_kuantitas' => $skorKuantitas,
         'efektivitas_persen' => $efektivitas,
         'kualitas_rating' => $kualitasRating,
         'skor_kualitas' => $skorKualitas,
         'kpi_total' => $kpiTotal,
-
-        // Tambahan
         'persentase_penolakan' => $persentasePenolakan,
         'target_tamu' => $targetTamu,
     ]);
@@ -1270,95 +1268,6 @@ public function exportUlasan(Request $request)
     );
 }
 
-public function manajemenAntrean(Request $request)
-{
-    $user = $this->getSessionUser();
-    if (!$user) return redirect('/login');
-
-    $db = $this->readMultipleSheets([
-        'kunjungan',
-        'pengunjung',
-        'master_prodi_instansi',
-        'master_keperluan'
-    ]);
-
-    // Set relasi prodi ke object user agar pas di view blade (untuk user non-admin)
-    $user->prodi = $db['master_prodi_instansi']
-        ->firstWhere('id', $user->prodi_id);
-
-    // Ambil daftar prodi khusus yang bertipe 'Prodi' saja agar dropdown terisi
-    $daftar_prodi = $db['master_prodi_instansi']
-        ->where('jenis', 'Prodi')
-        ->values();
-
-    $query = $this->applyAccessFilter($db['kunjungan'], $user);
-
-    // FILTER PRODI (Sesuai dengan logika fungsi laporan Anda)
-    if (request()->filled('prodi_id')) {
-        $query = $query
-            ->where('prodi_id', request('prodi_id'))
-            ->values();
-    }
-
-    // FILTER PENCARIAN NAMA / NOMOR KUNJUNGAN
-    if ($request->has('search') && $request->search != '') {
-        $search = strtolower($request->search);
-
-        $query = $query->filter(function ($k) use ($search, $db) {
-            $pengunjung = $db['pengunjung']
-                ->firstWhere('id', $k->pengunjung_id);
-
-            return str_contains(strtolower($k->nomor_kunjungan ?? ''), $search)
-                || str_contains(strtolower($pengunjung->nama_lengkap ?? ''), $search);
-        });
-    }
-
-    // MAP DATA DAN RELASI MANUAL UNTUK TABEL ANTREAN
-    $data_kunjungan = $query->map(function ($k) use ($db) {
-
-        $k->pengunjung = $db['pengunjung']
-            ->firstWhere('id', $k->pengunjung_id);
-
-        $k->prodi = $db['master_prodi_instansi']
-            ->firstWhere('id', $k->prodi_id);
-
-        $k->keperluan_master = $db['master_keperluan']
-            ->firstWhere('id', $k->keperluan_id);
-
-        // Format tanggal menggunakan Carbon
-        $k->created_at = Carbon::parse($k->created_at ?? now());
-
-        // Hitung durasi layanan
-        $k->durasi_layanan = '-';
-        if (!empty($k->waktu_mulai_layanan) && !empty($k->waktu_selesai_layanan)) {
-            $waktuMulai = Carbon::parse($k->waktu_mulai_layanan);
-            $waktuAkhir = Carbon::parse($k->waktu_selesai_layanan);
-
-            $totalDetik = $waktuMulai->diffInSeconds($waktuAkhir);
-
-            $jam = floor($totalDetik / 3600);
-            $menit = floor(($totalDetik % 3600) / 60);
-            $detik = $totalDetik % 60;
-
-            if ($jam > 0) {
-                $k->durasi_layanan = "{$jam} Jam {$menit} Mnt";
-            } elseif ($menit > 0) {
-                $k->durasi_layanan = "{$menit} Mnt {$detik} Dtk";
-            } else {
-                $k->durasi_layanan = "{$detik} Detik";
-            }
-        }
-
-        return $k;
-    })->sortByDesc('created_at')->values();
-
-    return view('dashboard.antrean', [
-        'user' => $user,
-        'daftar_prodi' => $daftar_prodi, // Sekarang data dipastikan terisi & terkirim ke view
-        'data_kunjungan' => $data_kunjungan,
-        'judul_dashboard' => 'Manajemen Antrean'
-    ]);
-}
 
     public function ulasanLayanan()
     {
@@ -1444,28 +1353,134 @@ public function manajemenAntrean(Request $request)
     // AKSI PERUBAHAN DATA
     // =========================================================================
 
-    public function mulaiProses(Request $request, $nomor_kunjungan)
-    {
-        $request->validate([
-            'estimasi_sla' => 'required|integer|min:1',
-            'satuan_sla' => 'required|in:Menit,Hari'
-        ]);
+public function manajemenAntrean(Request $request)
+{
+    $user = $this->getSessionUser();
+    if (!$user) return redirect('/login');
 
-        $kunjungan = $this->readSheet('kunjungan')->firstWhere('nomor_kunjungan', $nomor_kunjungan);
-        if (!$kunjungan) return back()->with('error', 'Data tidak ditemukan.');
+    $db = $this->readMultipleSheets([
+        'kunjungan',
+        'pengunjung',
+        'master_prodi_instansi',
+        'master_keperluan'
+    ]);
 
-        $this->updateSheet('kunjungan', $kunjungan->id, [
-            'status_layanan' => 'Diproses',
-            'estimasi_sla' => $request->estimasi_sla,
-            'satuan_sla' => $request->satuan_sla,
-            'user_id' => $this->getSessionUser()->id ?? 0,
+    $user->prodi = $db['master_prodi_instansi']->firstWhere('id', $user->prodi_id);
 
-            // TAMBAHKAN BARIS INI UNTUK MENCATAT WAKTU MULAI LAYANAN
-            'waktu_mulai_layanan' => Carbon::now()->toDateTimeString(),
-        ]);
+    $daftar_prodi = $db['master_prodi_instansi']
+        ->where('jenis', 'Prodi')
+        ->values();
 
-        return back()->with('success', 'Antrean ' . $nomor_kunjungan . ' berhasil diproses.');
+    $query = $this->applyAccessFilter($db['kunjungan'], $user);
+
+    // FILTER PRODI
+    if (request()->filled('prodi_id')) {
+        $query = $query->where('prodi_id', request('prodi_id'))->values();
     }
+
+    // FILTER PENCARIAN NAMA / NOMOR KUNJUNGAN
+    if ($request->has('search') && $request->search != '') {
+        $search = strtolower($request->search);
+        $query = $query->filter(function ($k) use ($search, $db) {
+            $pengunjung = $db['pengunjung']->firstWhere('id', $k->pengunjung_id);
+            return str_contains(strtolower($k->nomor_kunjungan ?? ''), $search)
+                || str_contains(strtolower($pengunjung->nama_lengkap ?? ''), $search);
+        });
+    }
+
+    $now = Carbon::now('Asia/Makassar');
+
+    // =========================================================================
+    // LOGIKA AUTO-REJECT 10 MENIT & MAPPING DATA ANTREAN
+    // =========================================================================
+    $data_kunjungan = $query->map(function ($k) use ($db, $now) {
+        $k->pengunjung = $db['pengunjung']->firstWhere('id', $k->pengunjung_id);
+        $k->prodi = $db['master_prodi_instansi']->firstWhere('id', $k->prodi_id);
+        $k->keperluan_master = $db['master_keperluan']->firstWhere('id', $k->keperluan_id);
+        $k->created_at = Carbon::parse($k->created_at ?? now(), 'Asia/Makassar');
+
+        // 1. Deteksi Tipe Tamu (Internal / Eksternal) untuk Tab Filter
+        $k->tipe_tamu = strtolower(trim($k->pengunjung->tipe_tamu ?? 'eksternal'));
+
+        // 2. Cek Auto-Reject jika status masih 'Antre' dan sudah melewati batas 10 menit
+        if (strcasecmp(trim($k->status_layanan ?? ''), 'Antre') === 0) {
+            $batasRespon = $k->created_at->copy()->addMinutes(10);
+            
+            if ($now->greaterThan($batasRespon)) {
+                // Eksekusi update otomatis ke Google Sheets
+                $this->updateSheet('kunjungan', $k->id, [
+                    'status_layanan'        => 'Ditolak',
+                    'status_sla'            => 'DITOLAK',
+                    'alasan_tolak'          => 'ADMIN TIDAK ADA DITEMPAT (Auto-reject sistem 10 menit)',
+                    'waktu_selesai_layanan' => $now->toDateTimeString(),
+                    'skor_pelayanan'        => 0
+                ]);
+
+                // Perbarui properti objek lokal agar UI langsung berubah saat di-render
+                $k->status_layanan = 'Ditolak';
+                $k->status_sla     = 'DITOLAK';
+                $k->alasan_tolak   = 'ADMIN TIDAK ADA DITEMPAT (Auto-reject sistem 10 menit)';
+                $k->waktu_selesai_layanan = $now->toDateTimeString();
+            }
+        }
+
+        // 3. Hitung durasi layanan untuk yang sudah selesai
+        $k->durasi_layanan = '-';
+        if (!empty($k->waktu_mulai_layanan) && !empty($k->waktu_selesai_layanan)) {
+            $waktuMulai = Carbon::parse($k->waktu_mulai_layanan, 'Asia/Makassar');
+            $waktuAkhir = Carbon::parse($k->waktu_selesai_layanan, 'Asia/Makassar');
+            $totalDetik = $waktuMulai->diffInSeconds($waktuAkhir);
+
+            $jam = floor($totalDetik / 3600);
+            $menit = floor(($totalDetik % 3600) / 60);
+            $detik = $totalDetik % 60;
+
+            if ($jam > 0) {
+                $k->durasi_layanan = "{$jam} Jam {$menit} Mnt";
+            } elseif ($menit > 0) {
+                $k->durasi_layanan = "{$menit} Mnt {$detik} Dtk";
+            } else {
+                $k->durasi_layanan = "{$detik} Detik";
+            }
+        }
+
+        return $k;
+    })->sortByDesc('created_at')->values();
+
+    return view('dashboard.antrean', [
+        'user' => $user,
+        'daftar_prodi' => $daftar_prodi,
+        'data_kunjungan' => $data_kunjungan,
+        'judul_dashboard' => 'Manajemen Antrean'
+    ]);
+}
+
+public function mulaiProses($nomor_kunjungan)
+{
+    // 1. Ambil data kunjungan
+    $kunjungan = $this->readSheet('kunjungan')->firstWhere('nomor_kunjungan', $nomor_kunjungan);
+    if (!$kunjungan) return back()->with('error', 'Data kunjungan tidak ditemukan.');
+
+    // 2. Ambil data master keperluan untuk menarik estimasi otomatis
+    $master = $this->readSheet('master_keperluan')->firstWhere('keterangan', $kunjungan->keperluan);
+
+    // 3. Pecah string estimasi dari master (misal: "2 Hari" atau "30 Menit")
+    $estimasi_waktu = $master ? $master->estimasi_waktu : '30 Menit';
+    $parts = explode(' ', trim($estimasi_waktu));
+    $estimasi = (int) ($parts[0] ?? 30);
+    $satuan = ucwords(strtolower($parts[1] ?? 'Menit'));
+
+    // 4. Update ke Google Sheets dengan mencatat waktu mulai saat ini juga
+    $this->updateSheet('kunjungan', $kunjungan->id, [
+        'status_layanan'      => 'Diproses',
+        'estimasi_sla'        => $estimasi,
+        'satuan_sla'          => $satuan,
+        'user_id'             => $this->getSessionUser()->id ?? 0,
+        'waktu_mulai_layanan' => Carbon::now('Asia/Makassar')->toDateTimeString(),
+    ]);
+
+    return back()->with('success', 'Antrean berhasil dimulai dengan estimasi waktu otomatis: ' . $estimasi . ' ' . $satuan);
+}
 
     public function tolak(Request $request, $id)
     {

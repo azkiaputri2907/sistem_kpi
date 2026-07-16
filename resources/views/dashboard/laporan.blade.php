@@ -18,47 +18,47 @@
         </div>
 
         {{-- ACTIONS ROW --}}
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+<div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
 
-            {{-- FORM FILTER PRODI --}}
-            <form action="{{ route('dashboard.laporan') }}" method="GET" class="w-full sm:w-auto">
-                @php
-                    $isSuper = $user->role_id == 1 || $user->role_id == 3;
-                @endphp
+    {{-- FORM FILTER PRODI --}}
+    <form action="{{ route('dashboard.laporan') }}" method="GET" class="w-full sm:w-auto m-0">
+        @php
+            $isSuper = $user->role_id == 1 || $user->role_id == 3;
+        @endphp
 
-                <div class="relative w-full sm:w-64">
-                    <select name="prodi_id"
-                        onchange="handleSelectProdiLoading(this)"
-                        {{ !$isSuper ? 'disabled' : '' }}
-                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
+        <div class="relative w-full sm:w-64">
+            <select name="prodi_id"
+                onchange="handleSelectProdiLoading(this)"
+                {{ !$isSuper ? 'disabled' : '' }}
+                class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
 
-                        @if($isSuper)
-                            <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
-                            @foreach($daftar_prodi as $p)
-                                <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
-                                    🎓 {{ $p->nama }}
-                                </option>
-                            @endforeach
-                        @else
-                            <option selected class="dark:bg-slate-800">
-                                🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
-                            </option>
-                        @endif
-                    </select>
-                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
-                        <i class="fa-solid fa-chevron-down"></i>
-                    </div>
-                </div>
-            </form>
+                @if($isSuper)
+                    <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
+                    @foreach($daftar_prodi as $p)
+                        <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
+                            🎓 {{ $p->nama }}
+                        </option>
+                    @endforeach
+                @else
+                    <option selected class="dark:bg-slate-800">
+                        🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
+                    </option>
+                @endif
+            </select>
+            <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
+                <i class="fa-solid fa-chevron-down"></i>
+            </div>
+        </div>
+    </form>
 
-            {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
-            <div class="relative w-full sm:w-auto text-left">
-                <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
-                    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto  bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
-                    <i class="fa-solid fa-file-export text-base"></i>
-                    <span>Ekspor Laporan</span>
-                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
-                </button>
+    {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
+    <div class="relative w-full sm:w-auto text-left">
+        <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
+            class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
+            <i class="fa-solid fa-file-export text-base"></i>
+            <span>Ekspor Laporan</span>
+            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
+        </button>
 
                 {{-- MENU DROPDOWN --}}
                 <div id="exportDropdownMenu"

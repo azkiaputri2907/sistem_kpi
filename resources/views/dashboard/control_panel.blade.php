@@ -43,67 +43,103 @@
     </div>
     @endif
 
-    {{-- GRID LAYOUT RESPONSIVE --}}
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+   {{-- GRID LAYOUT RESPONSIVE --}}
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 w-full">
 
-        {{-- KARTU KIRI: MANAJEMEN PENGGUNA --}}
-        <div class="lg:col-span-7 bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300">
+    {{-- KARTU KIRI: MANAJEMEN PENGGUNA --}}
+    <div class="lg:col-span-7 bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300 w-full overflow-hidden">
 
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                    <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">Manajemen Pengguna</h3>
-                    <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mt-0.5">Total {{ count($data_users) }} akun terdaftar</p>
-                </div>
-                {{-- Tombol Merah Elektro dengan Icon Kuning Emas --}}
-                <button onclick="openUserModal()" class="w-full sm:w-auto inline-flex justify-center items-center bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-5 py-3.5 rounded-2xl text-sm font-black transition-all shadow-lg shadow-red-600/10 hover:scale-[1.02] active:scale-[0.98]">
-                    <i class="fa-solid fa-user-plus mr-2 text-amber-300 animate-pulse"></i> Tambah User
-                </button>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div class="min-w-0 flex-1">
+                <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white truncate">Manajemen Pengguna</h3>
+                <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mt-0.5">Total {{ count($data_users) }} akun terdaftar</p>
             </div>
+            {{-- Tombol Merah Elektro dengan Icon Kuning Emas --}}
+            <button onclick="openUserModal()" class="w-full sm:w-auto inline-flex justify-center items-center bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 text-white px-5 py-3.5 rounded-2xl text-sm font-black transition-all shadow-lg shadow-red-600/10 hover:scale-[1.02] active:scale-[0.98] flex-shrink-0">
+                <i class="fa-solid fa-user-plus mr-2 text-amber-300 animate-pulse"></i> Tambah User
+            </button>
+        </div>
 
-            {{-- LIST USER RESPONSIVE DARI SPREADSHEET --}}
-            <div class="space-y-4">
-                @foreach($data_users as $u)
-                <div class="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 rounded-[1.5rem] sm:rounded-[2rem] border border-transparent hover:border-slate-100 dark:hover:border-slate-700/80 transition-all gap-4">
-                    <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto">
-                        {{-- Avatar dengan Gradasi Biru Malam ke Merah + Border Glow Amber --}}
-                        <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-slate-900 via-blue-950 to-red-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-md border border-amber-500/20 group-hover:border-amber-400 transition-all group-hover:scale-105 flex-shrink-0">
-                            <span class="text-base sm:text-lg font-black text-amber-400 tracking-wider">{{ strtoupper(substr(data_get($u, 'name', 'U'), 0, 1)) }}</span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="font-extrabold text-slate-800 dark:text-white text-base sm:text-lg truncate group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors">{{ data_get($u, 'name') }}</p>
-                            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
-                                {{-- Badge Role Biru Malam / Kuning --}}
-                                <span class="text-[10px] font-black px-2.5 py-0.5 bg-slate-900 dark:bg-slate-950 text-amber-400 rounded-md uppercase tracking-wider border border-amber-500/20">
-                                    {{ data_get($u, 'nama_role') ?? 'Tanpa Role' }}
-                                </span>
-                                @if(data_get($u, 'nama_prodi'))
-                                <span class="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
-                                {{-- Badge Prodi Merah Lembut --}}
-                                <span class="text-[10px] font-black px-2.5 py-0.5 bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-md uppercase tracking-wider max-w-[140px] truncate border border-red-500/10">
-                                    {{ data_get($u, 'nama_prodi') }}
-                                </span>
-                                @endif
-                                <span class="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
-                                <span class="text-slate-400 dark:text-slate-500 text-xs font-semibold truncate block sm:inline w-full sm:w-auto">{{ data_get($u, 'email') }}</span>
-                            </div>
+        {{-- LIST USER RESPONSIVE DARI SPREADSHEET --}}
+        <div class="space-y-4">
+            @foreach($data_users as $u)
+            <div class="group flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-200/50 dark:hover:shadow-slate-950/50 rounded-[1.5rem] sm:rounded-[2rem] border border-transparent hover:border-slate-100 dark:hover:border-slate-700/80 transition-all gap-4 w-full overflow-hidden">
+                <div class="flex items-center gap-4 sm:gap-5 w-full sm:w-auto min-w-0 flex-1">
+                    {{-- Avatar dengan Gradasi Biru Malam ke Merah + Border Glow Amber --}}
+                    <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-slate-900 via-blue-950 to-red-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-md border border-amber-500/20 group-hover:border-amber-400 transition-all group-hover:scale-105 flex-shrink-0">
+                        <span class="text-base sm:text-lg font-black text-amber-400 tracking-wider">{{ strtoupper(substr(data_get($u, 'name', 'U'), 0, 1)) }}</span>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-extrabold text-slate-800 dark:text-white text-base sm:text-lg truncate group-hover:text-red-600 dark:group-hover:text-amber-400 transition-colors">{{ data_get($u, 'name') }}</p>
+                        <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 min-w-0 w-full">
+                            {{-- Badge Role Biru Malam / Kuning --}}
+                            <span class="text-[10px] font-black px-2.5 py-0.5 bg-slate-900 dark:bg-slate-950 text-amber-400 rounded-md uppercase tracking-wider border border-amber-500/20 flex-shrink-0">
+                                {{ data_get($u, 'nama_role') ?? 'Tanpa Role' }}
+                            </span>
+                            @if(data_get($u, 'nama_prodi'))
+                            <span class="text-slate-300 dark:text-slate-600 hidden sm:inline flex-shrink-0">•</span>
+                            {{-- Badge Prodi Merah Lembut --}}
+                            <span class="text-[10px] font-black px-2.5 py-0.5 bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 rounded-md uppercase tracking-wider max-w-[140px] truncate border border-red-500/10 flex-shrink-0">
+                                {{ data_get($u, 'nama_prodi') }}
+                            </span>
+                            @endif
+                            <span class="text-slate-300 dark:text-slate-600 hidden sm:inline flex-shrink-0">•</span>
+                            <span class="text-slate-400 dark:text-slate-500 text-xs font-semibold break-all sm:truncate block w-full sm:w-auto min-w-0">{{ data_get($u, 'email') }}</span>
                         </div>
                     </div>
+                </div>
 
-                    {{-- TOMBOL AKSI CRUD USER SPREADSHEET --}}
-                    <div class="flex items-center gap-2 w-full sm:w-auto justify-end border-t border-slate-100 dark:border-slate-700/50 sm:border-0 pt-3 sm:pt-0">
-                        <button onclick="openUserModal({{ json_encode($u) }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-amber-500/30">
-                            <i class="fa-solid fa-pen-to-square"></i>
+                {{-- TOMBOL AKSI CRUD USER SPREADSHEET --}}
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end border-t border-slate-100 dark:border-slate-700/50 sm:border-0 pt-3 sm:pt-0 flex-shrink-0">
+                    <button onclick="openUserModal({{ json_encode($u) }})" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-amber-500 dark:hover:text-amber-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-amber-500/30 flex-shrink-0">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+
+                    {{-- Form Menggunakan Class Khusus agar Dapat Ditangkap JavaScript SweetAlert --}}
+                    <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline flex-shrink-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30 flex-shrink-0">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
-                        
-                        {{-- Form Menggunakan Class Khusus agar Dapat Ditangkap JavaScript SweetAlert --}}
-                        <form action="{{ route('control-panel.user.destroy', data_get($u, 'id')) }}" method="POST" class="delete-user-form inline">
-                            @csrf 
-                            @method('DELETE')
-                            <button type="button" onclick="konfirmasiHapusUser(this)" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 hover:border-red-500/30">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </form>
-                    </div>
+                    </form>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- KARTU KANAN: MASTER DATA & KEAMANAN --}}
+    <div class="lg:col-span-5 space-y-6 lg:space-y-8 w-full overflow-hidden">
+
+        {{-- DATA MASTER KEPERLUAN --}}
+        <div class="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300 w-full overflow-hidden">
+            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mb-1 truncate">Master Keperluan</h3>
+            <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mb-6">Kelola opsi tujuan kunjungan tamu.</p>
+
+            {{-- FORM INPUT DENGAN FITUR SHOW LOADING --}}
+            <form action="{{ route('keperluan.store') }}" method="POST" onsubmit="showLoadingOverlay()" class="relative mb-8 flex flex-col sm:block gap-3 w-full">
+                @csrf
+                <input type="text" name="keterangan" required
+                       class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 pr-4 sm:pr-28 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm sm:text-base"
+                       placeholder="Ketik keperluan baru...">
+                <button type="submit" class="w-full sm:w-auto sm:absolute sm:right-2 sm:top-2 sm:bottom-2 bg-slate-900 dark:bg-red-600 hover:bg-slate-950 dark:hover:bg-red-700 text-white px-5 py-3.5 sm:py-0 rounded-xl font-black text-sm tracking-wider uppercase transition-all shadow-md active:scale-95 sm:active:scale-100 flex-shrink-0">
+                    Simpan
+                </button>
+            </form>
+
+            {{-- BADGE TAG WRAPPER --}}
+            <div class="flex flex-wrap gap-2.5 w-full">
+                @foreach($data_keperluan as $k)
+                <div class="flex items-center justify-between sm:justify-start gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group max-w-full overflow-hidden">
+                    <span class="font-bold text-xs sm:text-sm truncate min-w-0 flex-1 break-words pr-1">{{ $k->keterangan }}</span>
+                    <form action="{{ route('keperluan.destroy', $k->id) }}" method="POST" class="delete-keperluan-form inline flex-shrink-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="button" onclick="konfirmasiHapusKeperluan(this)" class="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 flex-shrink-0">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </form>
                 </div>
                 @endforeach
             </div>
@@ -188,9 +224,9 @@
             </div>
 
         </div>
+
     </div>
 </div>
-
 {{-- MODAL INPUT DATA USER --}}
 <div id="userModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 transition-all duration-300">
     <div id="userModalContent" class="bg-white dark:bg-slate-800 w-full max-w-md rounded-[2rem] p-6 sm:p-8 shadow-2xl border border-slate-100 dark:border-slate-700 transform scale-95 opacity-0 transition-all duration-200">
@@ -386,11 +422,11 @@
             text: "Data ini juga akan dihapus secara permanen",
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#ef4444', 
-            cancelButtonColor: isDark ? '#475569' : '#94a3b8', 
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: isDark ? '#475569' : '#94a3b8',
             confirmButtonText: 'Ya, Hapus Data',
             cancelButtonText: 'Batal',
-            background: isDark ? '#1e293b' : '#ffffff', 
+            background: isDark ? '#1e293b' : '#ffffff',
             color: isDark ? '#f8fafc' : '#1e293b',
             iconColor: '#ef4444',
             customClass: {
@@ -404,11 +440,43 @@
             if (result.isConfirmed) {
                 // Berjalan beriringan, memunculkan loading spinner orisinil sistem Anda
                 showLoadingOverlay();
-                
+
                 // Submit form pembuang data sheets yang membungkus button ini
                 buttonElement.closest('.delete-user-form').submit();
             }
         });
     }
+    function konfirmasiHapusKeperluan(buttonElement) {
+    const isDark = document.documentElement.classList.contains('dark');
+
+    Swal.fire({
+        title: 'Hapus Opsi Keperluan?',
+        text: "Pilihan kategori keperluan ini akan dihapus permanen dari Google Sheets!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: isDark ? '#475569' : '#94a3b8',
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        background: isDark ? '#1e293b' : '#ffffff',
+        color: isDark ? '#f8fafc' : '#1e293b',
+        iconColor: '#ef4444',
+        customClass: {
+            popup: 'rounded-[2rem] border border-slate-100 dark:border-slate-700 shadow-xl',
+            title: 'font-black tracking-tight text-xl pt-2',
+            htmlContainer: 'text-sm font-medium opacity-80',
+            confirmButton: 'rounded-xl font-bold px-5 py-2.5 text-sm mx-1',
+            cancelButton: 'rounded-xl font-bold px-5 py-2.5 text-sm text-gray-700 dark:text-gray-200 mx-1'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Memunculkan loading screen sinkronisasi sheets bawaan sistem kamu
+            showLoadingOverlay();
+
+            // Submit form milik keperluan
+            buttonElement.closest('.delete-keperluan-form').submit();
+        }
+    });
+}
 </script>
 @endsection

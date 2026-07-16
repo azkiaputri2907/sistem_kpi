@@ -44,17 +44,43 @@ class KunjunganController extends Controller
         }
     }
 
-    private function createSheet($sheetName, $data)
+private function createSheet($sheetName, $data)
     {
-        $response = Http::post($this->getApiUrl() . '?action=create&sheet=' . $sheetName, $data);
-        return $response->json() ?? ['inserted_id' => rand(1000, 9999)]; // Fallback jika gagal
+        try {
+            $response = Http::post($this->getApiUrl() . '?action=create&sheet=' . $sheetName, $data);
+            
+            // Jika sukses dan berbentuk array JSON, langsung kembalikan responnya
+            if ($response->successful() && is_array($response->json())) {
+                return $response->json();
+            }
+            
+            // Jika gagal/timeout, kembalikan array kosong (jangan pakai rand() lagi!)
+            \Illuminate\Support\Facades\Log::warning("API Create gagal atau timeout di sheet: " . $sheetName);
+            return [];
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Exception pada createSheet $sheetName: " . $e->getMessage());
+            return [];
+        }
     }
 
     private function updateSheet($sheetName, $id, $data)
     {
-        $data['id'] = $id;
-        $response = Http::post($this->getApiUrl() . '?action=update&sheet=' . $sheetName, $data);
-        return $response->json() ?? [];
+        try {
+            $data['id'] = $id;
+            $response = Http::post($this->getApiUrl() . '?action=update&sheet=' . $sheetName, $data);
+            
+            if ($response->successful() && is_array($response->json())) {
+                return $response->json();
+            }
+            
+            \Illuminate\Support\Facades\Log::warning("API Update gagal di sheet: " . $sheetName);
+            return [];
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Exception pada updateSheet $sheetName: " . $e->getMessage());
+            return [];
+        }
     }
 
     // =========================================================================
@@ -263,10 +289,10 @@ public function store(Request $request)
             'nomor_kunjungan' => $nomor_kunjungan,
             'pengunjung_id'   => $pengunjungId,
             'tipe_tamu'       => $request->tipe_tamu,
-            'prodi_id'        => $request->prodi_id ?? '-',
+            'prodi_id'        => $request->prodi_id ?? 'LAINNYA', // Simpan sebagai LAINNYA
             'keperluan_id'    => $request->keperluan_id ?? '-',
             'keperluan'       => $catatanAkhir,
-            'surat_disposisi' => $pathFile, // <--- FILE DISIMPAN DI SINI
+            'surat_disposisi' => $pathFile,
             'hari_kunjungan'  => Carbon::now('Asia/Makassar')->locale('id')->isoFormat('dddd'),
             'tanggal'         => Carbon::now('Asia/Makassar')->toDateString(),
             'status_layanan'  => 'Antre',
@@ -281,59 +307,6 @@ public function store(Request $request)
     } catch (\Exception $e) {
         Log::error("Proses pendaftaran gagal: " . $e->getMessage());
         return back()->withErrors(['error' => 'Gagal memproses data. Coba lagi nanti.'])->withInput();
-    }
-}
-
-   public function getAntreanDiproses()
-{
-    try {
-        $kunjunganList = $this->readSheet('kunjungan');
-        $prodiList = $this->readSheet('master_prodi_instansi');
-
-        // 1. Ambil semua antrean yang berstatus Antre atau Diproses
-        $antreanAktif = $kunjunganList->filter(function($item) {
-            $status = isset($item->status_layanan) ? strtolower(trim($item->status_layanan)) : '';
-            return in_array($status, ['antre', 'diproses']);
-        });
-
-        // 2. Normalisasi prodi_id sebelum dikelompokkan agar '-' atau '0' atau kosong menyatu ke satu grup
-        $antreanAktif = $antreanAktif->map(function($item) {
-            $prodiId = isset($item->prodi_id) ? trim($item->prodi_id) : '-';
-            // Jika prodi_id adalah '0' atau kosong, samakan menjadi '-'
-            if ($prodiId === '0' || $prodiId === '') {
-                $prodiId = '-';
-            }
-            $item->prodi_id_normalized = $prodiId;
-            return $item;
-        });
-
-        // 3. Kelompokkan berdasarkan Prodi ID yang sudah dinormalisasi
-        $grouped = $antreanAktif->groupBy('prodi_id_normalized')->map(function($items, $prodiId) use ($prodiList) {
-            // Jika ID-nya adalah '-', otomatis langsung beri nama Bagian Umum
-            if ($prodiId === '-') {
-                $namaProdi = 'Bagian Umum / Lainnya';
-            } else {
-                $prodiObj = $prodiList->firstWhere('id', $prodiId);
-                $namaProdi = $prodiObj ? $prodiObj->nama : 'Bagian Umum / Lainnya';
-            }
-
-            return [
-                'prodi' => $namaProdi,
-                'antrean' => $items->pluck('nomor_kunjungan')->values()
-            ];
-        })->values();
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $grouped
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'data' => []
-        ], 500);
     }
 }
 
@@ -433,50 +406,58 @@ public function store(Request $request)
         ));
     }
 
-    public function storeSurvey(Request $request)
-    {
-        $request->validate([
-            'nomor_kunjungan' => 'required',
-            'jawaban' => 'required|array',
-            'catatan' => 'nullable|string',
-        ]);
+public function storeSurvey(Request $request)
+{
+    $request->validate([
+        'nomor_kunjungan' => 'required',
+        'jawaban' => 'required|array',
+        'catatan' => 'nullable|string',
+    ]);
 
-        $kunjunganList = $this->readSheet('kunjungan');
-        $kunjungan = $kunjunganList->firstWhere('nomor_kunjungan', $request->nomor_kunjungan);
+    $kunjunganList = $this->readSheet('kunjungan');
+    $kunjungan = $kunjunganList->firstWhere('nomor_kunjungan', $request->nomor_kunjungan);
 
-        if (!$kunjungan) {
-            return back()->with('error', 'Data kunjungan tidak ditemukan.');
-        }
-
-        $p1 = $request->jawaban[1] ?? 0;
-        $p2 = $request->jawaban[2] ?? 0;
-        $p3 = $request->jawaban[3] ?? 0;
-        $p4 = $request->jawaban[4] ?? 0;
-        $p5 = $request->jawaban[5] ?? 0;
-
-        $skor_total_y = ($p1 + $p2 + $p3 + $p4 + $p5) * 4;
-
-        // Simpan Survey (Dapatkan ID baru)
-        $simpanSurvey = $this->createSheet('survey', [
-            'kunjungan_id' => $kunjungan->id,
-            'kritik_saran' => $request->catatan,
-            'skor_total'   => $skor_total_y
-        ]);
-
-        $surveyId = $simpanSurvey['inserted_id'] ?? rand(1000, 9999); // Fallback jika API gagal return id
-
-        // Simpan Detail Survey
-        $this->createSheet('detail_survey', [
-            'survey_id' => $surveyId,
-            'p1' => $p1,
-            'p2' => $p2,
-            'p3' => $p3,
-            'p4' => $p4,
-            'p5' => $p5,
-        ]);
-
-        return back()->with('success', 'Terima kasih atas ulasan Anda!');
+    if (!$kunjungan) {
+        return back()->with('error', 'Data kunjungan tidak ditemukan.');
     }
+
+    $p1 = $request->jawaban[1] ?? 0;
+    $p2 = $request->jawaban[2] ?? 0;
+    $p3 = $request->jawaban[3] ?? 0;
+    $p4 = $request->jawaban[4] ?? 0;
+    $p5 = $request->jawaban[5] ?? 0;
+
+    $skor_total_y = ($p1 + $p2 + $p3 + $p4 + $p5) * 4;
+
+    // 1. Simpan ke sheet 'survey'
+    $simpanSurvey = $this->createSheet('survey', [
+        'kunjungan_id' => $kunjungan->id,
+        'kritik_saran' => $request->catatan,
+        'skor_total'   => $skor_total_y
+    ]);
+
+    // 2. Proteksi Penguncian ID: Jika API telat membalas, baca sheet untuk mengambil ID riil terakhir
+    $surveyId = null;
+    if (is_array($simpanSurvey) && isset($simpanSurvey['inserted_id'])) {
+        $surveyId = $simpanSurvey['inserted_id'];
+    } else {
+        $bacaUlangSurvey = $this->readSheet('survey');
+        $surveyTerakhir = $bacaUlangSurvey->where('kunjungan_id', $kunjungan->id)->last();
+        $surveyId = $surveyTerakhir ? $surveyTerakhir->id : rand(1, 99); 
+    }
+
+    // 3. Simpan Detail Survey menggunakan ID yang valid
+    $this->createSheet('detail_survey', [
+        'survey_id' => $surveyId,
+        'p1' => $p1,
+        'p2' => $p2,
+        'p3' => $p3,
+        'p4' => $p4,
+        'p5' => $p5,
+    ]);
+
+    return back()->with('success', 'Terima kasih atas ulasan Anda!');
+}
 
 public function kirimMassal(Request $request)
 {
@@ -530,5 +511,34 @@ public function kirimMassal(Request $request)
         return response()->json([
             'status' => 'not_found'
         ]);
+    }
+    public function getAntreanDiproses()
+    {
+        try {
+            $kunjunganList = $this->readSheet('kunjungan');
+
+            // Ambil SEMUA data tanpa filter tanggal hari ini
+            $antreanAktif = $kunjunganList->filter(function($item) {
+                $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
+
+                // Ambil semua yang berstatus "Diproses" (tidak peduli tanggal berapa)
+                return strtolower($status) === 'diproses';
+            })->map(function($item) {
+                return [
+                    'nomor' => $item->nomor_kunjungan
+                ];
+            })->values();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $antreanAktif
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
     }
 }

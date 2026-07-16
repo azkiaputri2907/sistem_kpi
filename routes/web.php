@@ -5,13 +5,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PimpinanKonfirmasiController;
 use App\Http\Controllers\ControlPanelController;
-use App\Http\Controllers\KunjunganController;
 
 
 
 use App\Http\Middleware\CekSessionLogin;
 
-Route::get('/api/antrean-diproses', [KunjunganController::class, 'getAntreanDiproses'])->name('api.antrean.diproses');
+Route::get('/antrean-diproses', 'App\Http\Controllers\KunjunganController@getAntreanDiproses')
+    ->name('api.antrean.diproses');
+    
 /*
 notif data masuk dari pengunjung ke adminnn
 */

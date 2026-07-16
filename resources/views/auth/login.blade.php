@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Sistem - Politeknik Negeri Banjarmasin</title>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -39,12 +41,11 @@
             color: #93c5fd;
             background-color: rgba(59, 130, 246, 0.15);
         }
-    .swal2-backdrop-show {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
-}
-
+        .swal2-backdrop-show {
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+        }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8 transition-colors duration-300">
@@ -68,14 +69,14 @@
 
                 <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight mb-3 md:mb-4">
                     Sistem Informasi Pelayanan Terpadu<br class="hidden md:inline">
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-400 uppercase">SIPANDU-KPI</span>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-400 uppercase">SIPANDU-ELEKTRO</span>
                 </h1>
-                
+
                 <p class="text-slate-300 text-xs md:text-sm leading-relaxed max-w-sm md:max-w-xs uppercase tracking-wide">Kelola antrean, pantau KPI, dan tingkatkan kualitas layanan institusi dalam satu dasbor.</p>
             </div>
 
             <div class="relative z-10 pt-6 md:pt-10">
-                <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Digital Gate System v2.0</p>
+                <p class="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Digital Gate System</p>
             </div>
         </div>
 
@@ -171,6 +172,21 @@
                 modal.classList.remove('hidden');
             }
         });
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('passwordInput');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            }
+        }
     </script>
 </body>
 </html>
