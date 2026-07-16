@@ -112,41 +112,25 @@
                 </div>
 
                 <div>
-                    <div class="flex justify-between mb-1 sm:mb-2">
-                        <label class="block text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
-                        <a href="#" class="text-[9px] sm:text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest hover:underline">Lupa Password?</a>
-                    </div>
-                    <input type="password" name="password" placeholder="••••••••" class="w-full px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-600/10 focus:border-blue-800 transition-all outline-none font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300" required>
-                </div>
-
-                <div>
-                    <label class="block text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 sm:mb-3">
-                        Pilih Role (Akses Sistem)
-                    </label>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                        <div>
-                            <input type="radio" name="role_id" id="roleAdmin" value="2" class="hidden role-radio" checked>
-                            <label for="roleAdmin" class="flex items-center justify-center py-2.5 sm:py-3 px-2 border border-slate-100 dark:border-slate-800 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-950 transition-all text-center text-slate-700 dark:text-slate-300">
-                                Admin Prodi
-                            </label>
-                        </div>
-
-                        <div>
-                            <input type="radio" name="role_id" id="roleLeader" value="pimpinan" class="hidden role-radio">
-                            <label for="roleLeader" class="flex items-center justify-center py-2.5 sm:py-3 px-2 border border-slate-100 dark:border-slate-800 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-950 transition-all text-center text-slate-700 dark:text-slate-300">
-                                Pimpinan
-                            </label>
-                        </div>
-
-                        <div>
-                            <input type="radio" name="role_id" id="roleSuper" value="1" class="hidden role-radio">
-                            <label for="roleSuper" class="flex items-center justify-center py-2.5 sm:py-3 px-2 border border-slate-100 dark:border-slate-800 rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-tighter cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-950 transition-all text-center text-slate-700 dark:text-slate-300">
-                                Super Admin
-                            </label>
-                        </div>
-                    </div>
-                </div>
+    <div class="flex justify-between mb-1 sm:mb-2">
+        <label class="block text-[9px] sm:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Password</label>
+        <a href="#" class="text-[9px] sm:text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest hover:underline">Lupa Password?</a>
+    </div>
+    
+    <div class="relative">
+        <input type="password" id="passwordInput" name="password" placeholder="••••••••" class="w-full px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-600/10 focus:border-blue-800 transition-all outline-none font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 pr-12" required>
+        
+        <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 dark:text-slate-500 hover:text-blue-800 dark:hover:text-blue-400 transition-colors">
+            <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <svg id="eye-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.96 9.96 0 011.563-2.687m4.61-4.61A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.96 9.96 0 01-1.563 2.687m-4.61 4.61L18.364 18.364M1 1l22 22" />
+            </svg>
+        </button>
+    </div>
+</div>
 
                 <button type="submit" class="w-full gradient-btn text-white py-4 sm:py-5 rounded-xl sm:rounded-[1.5rem] font-extrabold text-xs sm:text-sm uppercase tracking-widest shadow-lg shadow-blue-900/20 dark:shadow-none hover:opacity-95 transition-all active:scale-95">
                     Masuk Sistem
@@ -163,6 +147,23 @@
         </div>
     </div>
 
+    <script>
+    function togglePassword() {
+        const input = document.getElementById('passwordInput');
+        const eyeIcon = document.getElementById('eye-icon');
+        const eyeOffIcon = document.getElementById('eye-off-icon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeIcon.classList.add('hidden');
+            eyeOffIcon.classList.remove('hidden');
+        } else {
+            input.type = 'password';
+            eyeIcon.classList.remove('hidden');
+            eyeOffIcon.classList.add('hidden');
+        }
+    }
+</script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', function() {
             const modal = document.getElementById('loading-modal');

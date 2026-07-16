@@ -154,159 +154,203 @@
 </div>
             </div>
 
-            <div class="order-2 lg:order-2 bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
-                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-                    <div>
-                        <div class="flex items-center gap-3 mb-2">
-                            <div class="w-1.5 h-6 bg-amber-500 rounded-full"></div>
-                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">
-                                Buku Tamu Digital
-                            </h2>
-                        </div>
-                        <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-xl">
-                            Isi form di bawah ini untuk memulai layanan kunjungan Anda.
-                            Jika sebelumnya pernah berkunjung, Anda cukup memasukkan
-                            <span class="font-bold text-blue-700 dark:text-blue-400">NIM/NIP/NIK</span>
-                            untuk mengambil data otomatis.
-                        </p>
-                    </div>
-
-                    <div class="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
-                        <button type="button" onclick="cekPengunjungLama()" class="w-full md:w-auto px-5 py-2.5 border-2 border-slate-800 dark:border-slate-600 text-slate-800 dark:text-slate-300 font-bold text-xs rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-all whitespace-nowrap">
-                            Cek Data Sebelumnya
-                        </button>
-                        <span id="status-cek" class="text-xs font-bold text-amber-500"></span>
-                    </div>
-
-                    <div id="loading-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
-                        <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-11/12 text-center animate-fade-in">
-                            <div class="w-12 h-12 border-4 border-blue-800 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Memproses Data</h3>
-                            <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">Mohon tunggu sebentar, sistem sedang mengecek data Anda...</p>
-                        </div>
-                    </div>
-                </div>
-
-                @if(session('success'))
-                <div class="mb-8 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl font-medium border border-emerald-100 dark:border-emerald-900/50 flex items-center gap-3">
-                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    {{ session('success') }}
-                </div>
-                @endif
-
-                @if ($errors->any())
-                <div class="mb-8 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-900/50">
-                    <div class="font-bold flex items-center gap-2 mb-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Gagal menyimpan data:
-                    </div>
-                    <ul class="list-disc pl-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-                @endif
-
-                <form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
-                    @csrf
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nama Lengkap</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/xl" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
-                                </div>
-                                <input type="text" id="nama_lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Jhon Doe">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">NIM/NIP/NIK <span class="text-slate-400 dark:text-slate-500 font-normal">(Opsional)</span></label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 006 0h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
-                                </div>
-                                <input type="text" id="identitas_no" name="identitas_no" value="{{ old('identitas_no') }}" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="C03...">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">No. WhatsApp</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
-                                </div>
-                                <input type="text" id="no_telepon" name="no_telepon" value="{{ old('no_telepon') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="0812...">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Asal Instansi / Kategori</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
-                                </div>
-                                <input type="text" id="asal_instansi" name="asal_instansi" value="{{ old('asal_instansi') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Mis: Poliban">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tujuan (Prodi/Bagian)</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                                </div>
-                                <select id="prodi_id" name="prodi_id" required class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
-                                    <option value="" disabled selected>Pilih Program Studi...</option>
-                                    @foreach($prodi as $p)
-                                        <option value="{{ $p->id }}" {{ old('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Kategori Keperluan</label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
-                                        <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
-                                    </svg>
-                                </div>
-                                <select id="keperluan_id" name="keperluan_id" required class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
-                                    <option value="" disabled selected>Pilih Keperluan...</option>
-                                    @foreach($keperluan as $k)
-                                        <option value="{{ $k->id }}" {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>
-                                            {{ $k->keterangan }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Keperluan (Detail)</label>
-                        <textarea id="catatan_keperluan" name="catatan_keperluan" rows="3" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 resize-none placeholder:text-slate-400" placeholder="Ceritakan singkat tujuan kedatangan Anda...">{{ old('catatan_keperluan') }}</textarea>
-                    </div>
-
-                    <button type="submit" id="btnSubmit" class="w-full py-4 mt-4 bg-[#002B5B] text-white font-bold text-lg rounded-full hover:bg-blue-950 transition-all hover:-translate-y-0.5 shadow-md disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none">
-                        Daftar Kunjungan
-                    </button>
-                </form>
+<div class="order-2 lg:order-2 bg-white dark:bg-slate-900 p-6 lg:p-10 rounded-[2rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-1.5 h-6 bg-amber-500 rounded-full"></div>
+                <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Buku Tamu Digital</h2>
             </div>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed max-w-xl">
+                Isi form di bawah ini untuk memulai layanan kunjungan Anda. 
+                Jika sebelumnya pernah berkunjung, Anda cukup memasukkan <span class="font-bold text-blue-700 dark:text-blue-400">NIM/NIP/NIDN/NIK</span> untuk mengambil data otomatis.
+            </p>
+        </div>
+
+        <div class="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
+            <button type="button" onclick="cekPengunjungLama()" class="w-full md:w-auto px-5 py-2.5 border-2 border-slate-800 dark:border-slate-600 text-slate-800 dark:text-slate-300 font-bold text-xs rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-all whitespace-nowrap">
+                Cek Data Sebelumnya
+            </button>
+            <span id="status-cek" class="text-xs font-bold text-amber-500"></span>
+        </div>
+    </div>
+
+    {{-- Flash Messages --}}
+    @if(session('success'))
+    <div class="mb-8 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl font-medium border border-emerald-100 dark:border-emerald-900/50 flex items-center gap-3">
+        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if ($errors->any())
+    <div class="mb-8 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-900/50">
+        <div class="font-bold flex items-center gap-2 mb-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Gagal menyimpan data:
+        </div>
+        <ul class="list-disc pl-5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    {{-- System Status --}}
+    @if(!$statusOperasional['status'])
+        <div class="mb-6 bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-400 dark:border-amber-600 p-5 rounded-2xl flex items-center gap-4 text-amber-800 dark:text-amber-200">
+            <svg class="w-8 h-8 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                <h4 class="font-bold text-base">Sistem Sedang Ditutup</h4>
+                <p class="text-xs mt-0.5 leading-relaxed">{{ $statusOperasional['pesan'] }}</p>
+            </div>
+        </div>
+    @elseif($isLocked)
+        <div class="mb-6 bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-400 dark:border-rose-600 p-5 rounded-2xl flex items-center gap-4 text-rose-800 dark:text-rose-200">
+            <svg class="w-8 h-8 text-rose-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+            <div>
+                <h4 class="font-bold text-base">Antrean Sedang Penuh</h4>
+                <p class="text-xs mt-0.5 leading-relaxed">Mohon tunggu hingga ada tamu yang selesai diproses.</p>
+            </div>
+        </div>
+    @endif
+
+    <form id="formKunjungan" action="{{ route('kunjungan.store') }}" method="POST" class="space-y-5">
+        @csrf
+        
+        {{-- Tipe Tamu Switcher --}}
+        <div class="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex gap-1 mb-6 border border-slate-200/60 dark:border-slate-700">
+            <label class="flex-1 text-center cursor-pointer">
+                <input type="radio" name="tipe_tamu" value="Internal" checked onchange="handleTipeTamuChange()" class="peer hidden">
+                <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
+                    🎓 Tamu Internal (POLIBAN)
+                </div>
+            </label>
+            <label class="flex-1 text-center cursor-pointer">
+                <input type="radio" name="tipe_tamu" value="Eksternal" onchange="handleTipeTamuChange()" class="peer hidden">
+                <div class="py-2.5 px-4 rounded-xl text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 peer-checked:bg-[#002B5B] peer-checked:text-white peer-checked:shadow-md transition-all">
+                    🏢 Tamu Eksternal (Umum)
+                </div>
+            </label>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {{-- Nama Lengkap --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nama Lengkap</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <input type="text" id="nama_lengkap" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="John Doe">
+                </div>
+            </div>
+
+            {{-- Identitas --}}
+            <div>
+                <label id="label_identitas" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                    NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>
+                </label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zM4 4h3a3 3 0 006 0h3a2 2 0 012 2v9a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2zm2.5 7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm2.45 4a2.5 2.5 0 10-4.9 0h4.9zM12 9a1 1 0 100 2h3a1 1 0 100-2h-3zm-1 4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <input type="text" id="identitas_no" name="identitas_no" value="{{ old('identitas_no') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Masukkan NIM/NIP">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {{-- No WhatsApp --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">No. WhatsApp</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" /></svg>
+                    </div>
+                    <input type="text" id="no_telepon" name="no_telepon" value="{{ old('no_telepon') }}" required minlength="10" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="081234567890">
+                </div>
+            </div>
+            {{-- Asal Instansi --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Asal Instansi</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <input type="text" id="asal_instansi" name="asal_instansi" value="{{ old('asal_instansi') }}" required class="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Mis: Poliban">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+{{-- Tujuan --}}
+<div>
+    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Tujuan (Prodi/Bagian)</label>
+    
+    {{-- Dropdown Select --}}
+    <div class="relative">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+        </div>
+        <select id="prodi_id" name="prodi_id" required onchange="toggleProdiLainnya(this.value)" class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
+            <option value="" disabled selected>Pilih Program Studi / Bagian...</option>
+            @foreach($prodi as $p)
+                <option value="{{ $p->id }}" {{ old('prodi_id') == $p->id ? 'selected' : '' }}>{{ $p->nama }}</option>
+            @endforeach
+            <option value="LAINNYA" {{ old('prodi_id') == 'LAINNYA' ? 'selected' : '' }} class="font-bold text-blue-600 dark:text-blue-400">Bagian Lainnya / Umum</option>
+        </select>
+    </div>
+
+    {{-- Input Nama Bagian Lainnya --}}
+    <div id="container_prodi_lainnya" class="mt-3 hidden animate-fade-up">
+        <input type="text" id="prodi_lainnya" name="prodi_lainnya" value="{{ old('prodi_lainnya') }}" class="w-full px-4 py-2.5 bg-blue-50/50 dark:bg-slate-800 border border-blue-300 dark:border-blue-900 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 placeholder:text-slate-400" placeholder="Ketikkan nama bagian/tujuan...">
+    </div>
+
+    {{-- Input Upload File --}}
+    <div id="container_file_surat" class="hidden mt-3 animate-fade-up">
+        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+            Upload Surat Disposisi <span class="text-rose-500">*</span>
+        </label>
+        <div class="flex gap-2">
+            <input type="file" id="file_surat_input" name="file_surat" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+            <button type="button" onclick="clearFileInput()" class="px-3 py-2 bg-rose-100 text-rose-600 rounded-xl hover:bg-rose-200 transition text-sm">Reset</button>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">Format: PDF, JPG, PNG. Maksimal 2MB.</p>
+    </div>
+</div>
+
+            {{-- Kategori Keperluan --}}
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Kategori Keperluan</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clip-rule="evenodd" />
+                            <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
+                        </svg>
+                    </div>
+                    <select id="keperluan_id" name="keperluan_id" required class="w-full pl-11 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 appearance-none cursor-pointer">
+                        <option value="" disabled selected>Pilih Keperluan...</option>
+                        @foreach($keperluan as $k)
+                            <option value="{{ $k->id }}" {{ old('keperluan_id') == $k->id ? 'selected' : '' }}>{{ $k->keterangan }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Keperluan (Detail)</label>
+            <textarea id="catatan_keperluan" name="catatan_keperluan" rows="3" class="w-full p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none text-slate-700 dark:text-slate-200 resize-none placeholder:text-slate-400" placeholder="Ceritakan singkat tujuan kedatangan Anda...">{{ old('catatan_keperluan') }}</textarea>
+        </div>
+
+        <button type="submit" id="btnSubmit" {{ (!$statusOperasional['status'] || $isLocked) ? 'disabled' : '' }} class="w-full py-4 mt-4 bg-[#002B5B] text-white font-bold text-lg rounded-full hover:bg-blue-950 transition-all hover:-translate-y-0.5 shadow-md disabled:opacity-40 disabled:bg-slate-400 disabled:cursor-not-allowed">
+            {{ !$statusOperasional['status'] ? 'Sistem Sedang Ditutup' : ($isLocked ? 'Antrean Sedang Penuh' : 'Daftar Kunjungan') }}
+        </button>
+    </form>
+</div>
         </div>
     </main>
 
@@ -354,7 +398,7 @@
     <footer class="w-full px-6 lg:px-12 py-8 mt-auto text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/80 relative z-10 bg-white/40 dark:bg-slate-950/80 backdrop-blur-sm">
         <div class="max-w-[90rem] mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium">
             <div class="text-center md:text-left">
-                <p class="font-bold text-slate-800 dark:text-slate-200 mb-1">Sistem Informasi Pelayanan Publik & Monitoring KPI</p>
+                <p class="font-bold text-slate-800 dark:text-slate-200 mb-1">Sistem Informasi Pelayanan Publik & Monitoring Kinerja Admin</p>
                 <p>&copy; 2026 Jurusan Teknik Elektro - Politeknik Negeri Banjarmasin</p>
             </div>
             <div class="flex gap-6 items-center">
@@ -510,117 +554,190 @@
         });
     </script>
 
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const container = document.getElementById('antrean-container');
-    let antreanList = [];
-    let currentIndex = 0;
-    let animationInterval = null;
-    let isFirstLoad = true;
-
-    function updateDisplay() {
-        // Jika tidak ada data sama sekali
-        if (antreanList.length === 0) {
-            clearInterval(animationInterval);
-            animationInterval = null;
-            container.innerHTML = `<span class="text-slate-400 dark:text-slate-500 font-medium text-sm">Tidak Ada Antrean Diproses</span>`;
-            return;
-        }
-
-        // Jika hanya ada 1 data, tampilkan warna Biru (Statis)
-        if (antreanList.length === 1) {
-            clearInterval(animationInterval);
-            animationInterval = null;
-            container.innerHTML = `
-                <span class="text-xl font-black text-blue-600 dark:text-blue-400 tracking-wider bg-blue-50 dark:bg-blue-950/40 px-4 py-1 rounded-xl border border-blue-100 dark:border-blue-900/50 min-w-[140px] text-center shadow-inner animate-fade-in">
-                    ${antreanList[0].nomor}
-                </span>
-            `;
+<script>
+    function toggleProdiLainnya(value) {
+        const containerProdi = document.getElementById('container_prodi_lainnya');
+        const containerFile = document.getElementById('container_file_surat');
+        const inputProdi = document.getElementById('prodi_lainnya');
+        const inputFile = document.getElementById('file_surat_input');
+        
+        if (value === 'LAINNYA') {
+            containerProdi.classList.remove('hidden');
+            containerFile.classList.remove('hidden');
+            inputProdi.setAttribute('required', 'required');
+            inputFile.setAttribute('required', 'required');
         } else {
-            // Jika data lebih dari 1, jalankan animasi perputaran (Warna Hijau)
-            if (!animationInterval) {
-                startRotation();
-            }
+            containerProdi.classList.add('hidden');
+            containerFile.classList.add('hidden');
+            inputProdi.removeAttribute('required');
+            inputFile.removeAttribute('required');
+            // Opsional: Clear otomatis jika user berubah pikiran
+            clearFileInput(); 
         }
     }
 
-function startRotation() {
-        clearInterval(animationInterval);
+    // Fungsi untuk reset/hapus file yang dipilih
+    function clearFileInput() {
+        const input = document.getElementById('file_surat_input');
+        input.value = ''; // Ini akan menghapus file yang terpilih
+    }
 
-        if (antreanList[currentIndex]) {
-            renderTickerItem(antreanList[currentIndex].nomor);
+    // Jalankan saat load jika ada nilai (untuk edit/gagal validasi)
+    document.addEventListener('DOMContentLoaded', function() {
+        const prodiSelect = document.getElementById('prodi_id');
+        if (prodiSelect.value === 'LAINNYA') {
+            toggleProdiLainnya('LAINNYA');
         }
+    });
 
-        animationInterval = setInterval(() => {
-            // 1. Efek Roda Berputar ke Atas/Belakang (Menghilang)
-            container.style.transition = "all 350s ease-in-out"; // Durasi rotasi keluar cepat
-            container.style.transform = "rotateX(90deg)";
-            container.style.opacity = "0";
+        // 2. Script Ticker Animasi Antrean per Prodi (Update dari versi lamamu)
+        document.addEventListener("DOMContentLoaded", function () {
+            const container = document.getElementById('antrean-container');
+            let prodiGroups = [];
+            let currentIndex = 0;
+            let animationInterval = null;
+            let isFirstLoad = true;
 
-            setTimeout(() => {
-                // 2. Ganti nomor antrean berikutnya saat posisi tidak terlihat
-                currentIndex = (currentIndex + 1) % antreanList.length;
-                renderTickerItem(antreanList[currentIndex].nomor);
+            function updateDisplay() {
+                if (prodiGroups.length === 0) {
+                    clearInterval(animationInterval);
+                    animationInterval = null;
+                    container.innerHTML = `<span class="text-slate-400 dark:text-slate-500 font-medium text-xs">Belum Ada Antrean Masuk</span>`;
+                    return;
+                }
 
-                // 3. Pindahkan sudut roda bersiap masuk menggelinding dari bawah/depan (-90 derajat)
-                container.style.transition = "none";
-                container.style.transform = "rotateX(-90deg)";
-
-                // Trigger reflow browser agar perubahan instan tanpa animasi di atas terbaca
-                container.offsetHeight;
-
-                // 4. Efek Masuk: Gelindingkan roda kembali tegak lurus ke tengah (0 derajat)
-                container.style.transition = "all 450ms ease-out"; // Durasi menggelinding masuk lembut
-                container.style.transform = "rotateX(0deg)";
-                container.style.opacity = "1";
-            }, 350); // Jeda waktu tunggu saat roda berputar hilang
-
-        }, 3500); // Berganti nomor setiap 3.5 detik
-    }
-
-    function renderTickerItem(nomorAntrean) {
-        container.innerHTML = `
-            <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-wider bg-emerald-50 dark:bg-emerald-950/40 px-4 py-1 rounded-xl border border-emerald-100 dark:border-emerald-900/50 min-w-[140px] text-center shadow-inner">
-                ${nomorAntrean}
-            </span>
-        `;
-    }
-
-    function fetchAntreanRealtime() {
-        fetch("/api/antrean-diproses")
-            .then(response => {
-                if (!response.ok) throw new Error('API Bermasalah');
-                return response.json();
-            })
-            .then(res => {
-                if (res.status === 'success') {
-                    const newData = res.data;
-
-                    // Bandingkan isi data secara presisi menggunakan JSON stringify
-                    if (JSON.stringify(newData) !== JSON.stringify(antreanList) || isFirstLoad) {
-                        antreanList = newData;
-
-                        // Jika data berubah atau muatan pertama, set index kembali ke awal
-                        if (isFirstLoad || currentIndex >= antreanList.length) {
-                            currentIndex = 0;
-                        }
-
-                        isFirstLoad = false;
-                        updateDisplay();
+                if (prodiGroups.length === 1) {
+                    clearInterval(animationInterval);
+                    animationInterval = null;
+                    renderTickerItem(prodiGroups[0]);
+                } else {
+                    if (!animationInterval) {
+                        startRotation();
                     }
                 }
-            })
-            .catch(err => {
-                console.error("Gagal memperbarui antrean loket:", err);
-            });
+            }
+
+            function startRotation() {
+                clearInterval(animationInterval);
+                if (prodiGroups[currentIndex]) {
+                    renderTickerItem(prodiGroups[currentIndex]);
+                }
+
+                animationInterval = setInterval(() => {
+                    // Di versi lamamu ada typo 350s (detik), di sini sudah diperbaiki jadi 350ms (mili-detik)
+                    container.style.transition = "all 350ms ease-in-out";
+                    container.style.transform = "rotateX(90deg)";
+                    container.style.opacity = "0";
+
+                    setTimeout(() => {
+                        currentIndex = (currentIndex + 1) % prodiGroups.length;
+                        renderTickerItem(prodiGroups[currentIndex]);
+
+                        container.style.transition = "none";
+                        container.style.transform = "rotateX(-90deg)";
+                        container.offsetHeight; // Reflow browser
+
+                        container.style.transition = "all 450ms ease-out";
+                        container.style.transform = "rotateX(0deg)";
+                        container.style.opacity = "1";
+                    }, 350);
+                }, 4000); // Berganti prodi setiap 4 detik
+            }
+
+            function renderTickerItem(group) {
+                // Menggabungkan array nomor antrean dengan koma (misal: IN-123, IN-124)
+                const nomorDaftar = group.antrean.join(', ');
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center w-full px-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 truncate max-w-[280px]">
+                            Antrean ${group.prodi}
+                        </span>
+                        <span class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight mt-0.5 truncate max-w-[300px]">
+                            ${nomorDaftar}
+                        </span>
+                    </div>
+                `;
+            }
+
+            function fetchAntreanRealtime() {
+                fetch("/api/antrean-diproses")
+                    .then(response => {
+                        if (!response.ok) throw new Error('API Bermasalah');
+                        return response.json();
+                    })
+                    .then(res => {
+                        if (res.status === 'success') {
+                            const newData = res.data;
+                            if (JSON.stringify(newData) !== JSON.stringify(prodiGroups) || isFirstLoad) {
+                                prodiGroups = newData;
+                                if (isFirstLoad || currentIndex >= prodiGroups.length) {
+                                    currentIndex = 0;
+                                }
+                                isFirstLoad = false;
+                                updateDisplay();
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Gagal memperbarui antrean loket:", err));
+            }
+
+            // Ambil data saat web pertama dibuka & update otomatis setiap 5 detik
+            fetchAntreanRealtime();
+            setInterval(fetchAntreanRealtime, 5000);
+        });
+    </script>
+    <script>
+    function pilihTipeTamu(tipe) {
+        const labelIdentitas = document.getElementById('label_identitas');
+        const inputIdentitas = document.getElementById('identitas_no');
+        const inputInstansi = document.getElementById('asal_instansi');
+
+        if (tipe === 'Internal') {
+            // Internal: NIM/NIP, Instansi POLIBAN
+            labelIdentitas.innerHTML = 'NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>';
+            inputIdentitas.placeholder = 'Contoh: C03032...';
+            
+            inputInstansi.value = 'POLIBAN';
+            inputInstansi.readOnly = true;
+            inputInstansi.classList.add('bg-slate-200/70', 'cursor-not-allowed');
+            inputInstansi.classList.remove('bg-slate-50', 'dark:bg-slate-800');
+        } else {
+            // Eksternal: NIK/KTP, Instansi Bebas
+            labelIdentitas.innerHTML = 'NIK / No. KTP / SIM <span class="text-slate-400 dark:text-slate-500 font-normal">(Opsional)</span>';
+            inputIdentitas.placeholder = 'Masukkan No. Identitas';
+            
+            inputInstansi.value = '';
+            inputInstansi.readOnly = false;
+            inputInstansi.classList.remove('bg-slate-200/70', 'cursor-not-allowed');
+            inputInstansi.classList.add('bg-slate-50', 'dark:bg-slate-800');
+            inputInstansi.placeholder = 'Contoh: PT XYZ / Umum';
+        }
+    }
+</script>
+<script>
+    function handleTipeTamuChange() {
+        // Ambil elemen radio button yang terpilih
+        const selectedTipe = document.querySelector('input[name="tipe_tamu"]:checked').value;
+        
+        // Ambil elemen label dan input
+        const labelIdentitas = document.getElementById('label_identitas');
+        const inputIdentitas = document.getElementById('identitas_no');
+
+        if (selectedTipe === 'Internal') {
+            // Update Label & Placeholder untuk Internal
+            labelIdentitas.innerHTML = 'NIM / NIP / NIDN <span class="text-rose-500 font-bold">*</span>';
+            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN';
+        } else {
+            // Update Label & Placeholder untuk Eksternal
+            labelIdentitas.innerHTML = 'NIM / NIP / NIDN / NIK <span class="text-rose-500 font-bold">*</span>';
+            inputIdentitas.placeholder = 'Masukkan NIM/NIP/NIDN/NIK';
+        }
     }
 
-    // Ambil data pertama kali saat web dibuka
-    fetchAntreanRealtime();
-
-    // Lakukan sinkronisasi background polling ke server setiap 5 detik
-    setInterval(fetchAntreanRealtime, 5000);
-});
-    </script>
+    // Jalankan fungsi saat halaman pertama kali dimuat (untuk memastikan state benar)
+    document.addEventListener('DOMContentLoaded', function() {
+        handleTipeTamuChange();
+    });
+</script>
 </body>
 </html>

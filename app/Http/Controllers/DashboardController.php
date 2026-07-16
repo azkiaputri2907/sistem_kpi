@@ -166,6 +166,21 @@ class DashboardController extends Controller
             ->where('prodi_id', request('prodi_id'))
             ->values();
     }
+    
+    // =========================================================
+    // TAMBAHAN BARU: FILTER HANYA BULAN DAN TAHUN SEKARANG
+    // =========================================================
+    $bulanSekarang = Carbon::now()->format('m'); // Ambil angka bulan (misal: 07)
+    $tahunSekarang = Carbon::now()->format('Y'); // Ambil angka tahun (misal: 2026)
+
+    $kunjunganRaw = $kunjunganRaw->filter(function($item) use ($bulanSekarang, $tahunSekarang) {
+        // Ambil data tanggal dari kolom 'tanggal' di Google Sheets
+        $tanggalKunjungan = Carbon::parse($item->tanggal ?? now());
+        
+        // Hanya loloskan data yang bulan dan tahunnya cocok dengan hari ini
+        return $tanggalKunjungan->format('m') === $bulanSekarang && 
+               $tanggalKunjungan->format('Y') === $tahunSekarang;
+    })->values();
 
     // =========================================================
     // MAPPING RELASI DATA
@@ -254,114 +269,73 @@ class DashboardController extends Controller
 
     })->values();
 
+// =========================================================
+    // KPI KUANTITAS (DENGAN TARGET 10 PENGUNJUNG BULANAN)
     // =========================================================
-    // KPI KUANTITAS
-    // =========================================================
-    $totalKunjungan =
-        $kunjunganData->count();
+    $totalKunjungan = $kunjunganData->count();
 
-    $totalDilayani =
-        $kunjunganData
-        ->where('status_layanan', 'Selesai')
-        ->count();
+    $jumlahSelesai = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'SELESAI';
+    })->count();
 
-    $targetTamu = 10;
+    $jumlahDitolakKuantitas = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
+    })->count();
 
-    $skorKuantitas =
-        $targetTamu > 0
-        ? round(($totalDilayani / $targetTamu) * 100, 1)
+    // Data yang dihitung sebagai kinerja pelayanan yang diproses (Selesai + Ditolak)
+    $totalDilayani = $jumlahSelesai + $jumlahDitolakKuantitas;
+    
+    // Target ditetapkan 10 pengunjung sebulan
+    $targetTamu = 10; 
+    
+    // Rumus: (Total Dilayani / Target 10) * 100%
+    $skorKuantitas = $targetTamu > 0 
+        ? round(($totalDilayani / $targetTamu) * 100, 1) 
         : 0;
-
-    $skorKuantitas =
-        max(0, min(100, $skorKuantitas));
+    $skorKuantitas = max(0, min(100, $skorKuantitas)); // Batasi maksimal nilai 100%
 
     // =========================================================
-    // KPI EFEKTIVITAS (SLA)
+    // KPI EFEKTIVITAS (SLA) - TETAP JAGA FUNGSI ASLI 100%
     // =========================================================
-    $jumlahTepatWaktu =
-        $kunjunganData->filter(function($item) {
+    $jumlahTepatWaktu = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TEPAT WAKTU';
+    })->count();
 
-            return strtoupper(
-                trim($item->status_sla ?? '')
-            ) == 'TEPAT WAKTU';
+    $jumlahTerlambat = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_sla ?? '')) == 'TERLAMBAT';
+    })->count();
 
-        })->count();
+    $jumlahDitolak = $kunjunganData->filter(function($item) {
+        return strtoupper(trim($item->status_layanan ?? '')) == 'DITOLAK';
+    })->count();
 
-    $jumlahTerlambat =
-        $kunjunganData->filter(function($item) {
-
-            return strtoupper(
-                trim($item->status_sla ?? '')
-            ) == 'TERLAMBAT';
-
-        })->count();
-
-    $jumlahDitolak =
-        $kunjunganData->filter(function($item) {
-
-            return strtoupper(
-                trim($item->status_layanan ?? '')
-            ) == 'DITOLAK';
-
-        })->count();
-
-    $nilaiEfektivitas =
-        ($jumlahTepatWaktu * 1) +
-        ($jumlahTerlambat * 0.5) +
-        ($jumlahDitolak * 0);
-
-    $efektivitas =
-        $totalKunjungan > 0
-        ? round(
-            ($nilaiEfektivitas / $totalKunjungan) * 100,
-            1
-        )
-        : 0;
-
-    $efektivitas =
-        max(0, min(100, $efektivitas));
+    $nilaiEfektivitas = ($jumlahTepatWaktu * 1) + ($jumlahTerlambat * 0.5) + ($jumlahDitolak * 0);
+    
+    // Efektivitas pembaginya tetap total kunjungan bulan ini agar adil
+    $efektivitas = $totalKunjungan > 0 ? round(($nilaiEfektivitas / $totalKunjungan) * 100, 1) : 0;
+    $efektivitas = max(0, min(100, $efektivitas));
 
     // =========================================================
     // PERSENTASE PENOLAKAN
     // =========================================================
-    $persentasePenolakan =
-        $totalKunjungan > 0
-        ? round(
-            ($jumlahDitolak / $totalKunjungan) * 100,
-            1
-        )
-        : 0;
+    $persentasePenolakan = $totalKunjungan > 0 ? round(($jumlahDitolak / $totalKunjungan) * 100, 1) : 0;
 
+// =========================================================
+    // KPI KUALITAS SURVEY (FIX MURNI SESUAI GAMBAR RUMUS LAPORAN TA)
     // =========================================================
-    // KPI KUALITAS SURVEY
-    // =========================================================
-    $totalBintang = 0;
+    $totalSkorSurvey = 0;
     $jumlahResponden = 0;
 
     foreach ($kunjunganData as $k) {
+        // Cari data survey yang terhubung dengan kunjungan ini
+        $surv = $db['survey']->filter(function($s) use ($k) {
+            return $s->kunjungan_id == $k->id;
+        })->first();
 
-        $surv =
-            $db['survey']
-            ->firstWhere('kunjungan_id', $k->id);
-
-        if ($surv) {
-
-            $detail =
-                $db['detail_survey']
-                ->firstWhere('survey_id', $surv->id);
-
-            if ($detail) {
-
-                $totalBintang += (
-                    $detail->p1 +
-                    $detail->p2 +
-                    $detail->p3 +
-                    $detail->p4 +
-                    $detail->p5
-                );
-
-                $jumlahResponden++;
-            }
+        // Pastikan datanya ada dan kolom skor_total tidak kosong
+        if ($surv && isset($surv->skor_total)) {
+            $totalSkorSurvey += (int)$surv->skor_total;
+            $jumlahResponden++;
         }
     }
 
@@ -369,16 +343,15 @@ class DashboardController extends Controller
     $skorKualitas = 0;
 
     if ($jumlahResponden > 0) {
+        // 1. Nilai KPI Kualitas Kinerja (Rata-rata Skor Total dari Google Sheets)
+        // Contoh: (100 + 100) / 2 = 100
+        $skorKualitas = round($totalSkorSurvey / $jumlahResponden, 1);
+        $skorKualitas = max(0, min(100, $skorKualitas)); // Proteksi maksimal batas nilai 100
 
-        $rataRata =
-            $totalBintang /
-            ($jumlahResponden * 5);
-
-        $kualitasRating =
-            number_format(round($rataRata, 1), 1);
-
-        $skorKualitas =
-            round(($rataRata / 5) * 100, 1);
+        // 2. Rumus dari Gambar TA Anda: Rata-rata Skor Total / 20
+        // Contoh: 100 / 20 = 5.0
+        $ratingAngka = $skorKualitas / 20;
+        $kualitasRating = number_format(round($ratingAngka, 1), 1);
     }
 
     // =========================================================
@@ -421,12 +394,13 @@ class DashboardController extends Controller
         'kpi_total' => $kpiTotal,
 
         // Tambahan
-        'persentase_penolakan' => $persentasePenolakan
+        'persentase_penolakan' => $persentasePenolakan,
+        'target_tamu' => $targetTamu,
     ]);
 }
 public function cekTotal(Request $request)
 {
-    $googleScriptUrl = env('GOOGLE_SCRIPT_URL', 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec');
+    $googleScriptUrl = env('GOOGLE_SCRIPT_URL', 'https://script.google.com/macros/s/AKfycbyjHp0Q2N5Rk-KzpMnZVnAng59gWLEuk2dRi0RrqFS5IwoumA1R8XzMjCP1T2kD6heKDQ/exec');
 
     // Ambil input prodi_id dari request dashboard
     $prodiId = $request->query('prodi_id', '');
@@ -452,7 +426,6 @@ public function analytics()
         return redirect('/login');
     }
 
-    // 1. Ditambahkan sheet 'pengunjung' karena diperlukan oleh kalkulasi Grafik Kinerja
     $db = $this->readMultipleSheets([
         'kunjungan',
         'pengunjung',
@@ -480,6 +453,18 @@ public function analytics()
             ->where('prodi_id', request('prodi_id'))
             ->values();
     }
+
+    // =========================================================
+    // TAMBAHAN BARU: FILTER HANYA BULAN DAN TAHUN SEKARANG
+    // =========================================================
+    $bulanSekarang = Carbon::now()->format('m'); 
+    $tahunSekarang = Carbon::now()->format('Y'); 
+
+    $kunjunganData = $kunjunganData->filter(function($item) use ($bulanSekarang, $tahunSekarang) {
+        $tanggalKunjungan = Carbon::parse($item->tanggal ?? now());
+        return $tanggalKunjungan->format('m') === $bulanSekarang && 
+               $tanggalKunjungan->format('Y') === $tahunSekarang;
+    })->values();
 
     // ==========================================
     // SKOR KEPUASAN (Fungsi Asli Dipertahankan)
@@ -564,7 +549,7 @@ public function analytics()
     }
 
     // ==========================================
-    // CARD STATISTIK ANALYTICS (Fungsi Asli Dipertahankan)
+    // CARD STATISTIK ANALYTICS (MENGGUNAKAN RUMUS SKOR TOTAL REVISI)
     // ==========================================
     $totalKunjunganCard = $kunjunganData->count();
 
@@ -587,39 +572,33 @@ public function analytics()
         : 0;
     $efektivitasPersenCard = max(0, min(100, $efektivitasPersenCard));
 
-    $totalBintangCard = 0;
+    $totalSkorSurveyCard = 0;
     $jumlahRespondenCard = 0;
 
     foreach ($kunjunganData as $k) {
         $surv = $db['survey']->firstWhere('kunjungan_id', $k->id);
-        if ($surv) {
-            $detail = $db['detail_survey']->firstWhere('survey_id', $surv->id);
-            if ($detail) {
-                $totalBintangCard += ($detail->p1 + $detail->p2 + $detail->p3 + $detail->p4 + $detail->p5);
-                $jumlahRespondenCard++;
-            }
+        if ($surv && isset($surv->skor_total)) {
+            $totalSkorSurveyCard += (int)$surv->skor_total;
+            $jumlahRespondenCard++;
         }
     }
 
     $kualitasRatingCard = '-';
     if ($jumlahRespondenCard > 0) {
-        $rataRataCard = $totalBintangCard / ($jumlahRespondenCard * 5);
-        $kualitasRatingCard = number_format(round($rataRataCard, 1), 1);
+        $rataRataSkor = $totalSkorSurveyCard / $jumlahRespondenCard;
+        $kualitasRatingCard = number_format(round($rataRataSkor / 20, 1), 1);
     }
 
-    // =========================================================================
-    // KODE BARU: LOGIKA KODE KHUSUS GRAFIK KINERJA (PEKANAN / BAR KPI)
+// =========================================================================
+    // KODE GRAFIK KINERJA PEKANAN (WARNA BAR & LEGENDA SAMA PERSIS)
     // =========================================================================
 
-    // Tentukan tanggal referensi (jika user filter start_date pakai itu, jika tidak pakai hari ini)
     $startDateParam = request('start_date');
     $referenceDate = $startDateParam ? Carbon::parse($startDateParam) : Carbon::now();
 
-    // Cari hari Senin dan Jumat di minggu tempat tanggal referensi berada
     $startOfWeek = $referenceDate->copy()->startOfWeek(Carbon::MONDAY)->startOfDay();
     $endOfWeek = $referenceDate->copy()->endOfWeek(Carbon::FRIDAY)->endOfDay();
 
-    // Buat Label tanggal dinamis untuk Sumbu X Grafik Kinerja
     $labels = [
         'Senin (' . $startOfWeek->format('d/m') . ')',
         'Selasa (' . $startOfWeek->copy()->addDays(1)->format('d/m') . ')',
@@ -635,12 +614,10 @@ public function analytics()
 
     $chartDatasets = [];
 
-    // PERBAIKAN 1: Filter query diperketat agar HANYA mengambil data yang hari kerjanya Senin s.d Jumat
+    // Filter query: Ambil data rentang Senin s.d Jumat
     $grafikQuery = $kunjunganData->filter(function($k) use ($startOfWeek, $endOfWeek) {
         if (empty($k->created_at)) return false;
         $date = Carbon::parse($k->created_at);
-
-        // Pastikan berada di rentang tanggal dan BUKAN hari Sabtu (6) atau Minggu (7)
         return $date->gte($startOfWeek) && $date->lte($endOfWeek) && $date->dayOfWeekIso <= 5;
     });
 
@@ -657,67 +634,83 @@ public function analytics()
             $createdDate = Carbon::parse($data->created_at ?? now());
             $dayOfWeek = $createdDate->dayOfWeekIso;
 
-            // PERBAIKAN 2: Jika ada data bocor di luar Senin-Jumat (dayOfWeek > 5), langsung LEWATI (skip)
-            if ($dayOfWeek > 5) {
-                continue;
-            }
+            if ($dayOfWeek > 5) continue; 
             $hariIndex = $dayOfWeek - 1;
 
-            // --- PERHITUNGAN ASPEK KPI ---
-            // 1. Kuantitas
-            $skorKuantitas = isset($data->skor_pelayanan) ? floatval($data->skor_pelayanan) : 0;
-            if ($skorKuantitas == 0) $skorKuantitas = 4.5;
-            $nilaiKuantitasSkala100 = $skorKuantitas <= 5 ? $skorKuantitas * 20 : $skorKuantitas;
-
-            // 2. Kualitas (Survey)
-            $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
-            $skorKualitas = 0;
-            if ($nama_pengunjung) {
-                $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
-                    return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
-                           || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
-                });
-                $skorKualitas = $survey ? floatval($survey->skor_total) : 0;
-            }
-            if ($skorKualitas == 0) $skorKualitas = 4.5;
-            $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
-
-            // 3. SLA (Efektivitas)
-            $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
-            if ($statusSlaRaw === 'TEPAT WAKTU' || $statusSlaRaw === '1') {
-                $skorEfektivitas = 100;
+            if (strtoupper(trim($data->status_layanan ?? '')) === 'DITOLAK' && empty($data->waktu_mulai_layanan)) {
+                $nilaiKpiGabunganRow = 0;
             } else {
-                $skorEfektivitas = 70;
-            }
+                // --- 1. ASPEK KUANTITAS (20%) ---
+                $nilaiKuantitasSkala100 = (strtoupper(trim($data->status_layanan ?? '')) === 'SELESAI') ? 100 : 0;
 
-            $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+                // --- 2. ASPEK KUALITAS (40%) ---
+                $nama_pengunjung = $db['pengunjung']->firstWhere('id', $data->pengunjung_id)->nama_lengkap ?? null;
+                $skorKualitas = 0;
+                
+                if ($nama_pengunjung) {
+                    $survey = $db['survey']->first(function($srv) use ($data, $nama_pengunjung) {
+                        return (isset($srv->kunjungan_id) && $srv->kunjungan_id == $data->id)
+                               || (isset($srv->nama_lengkap) && $srv->nama_lengkap == $nama_pengunjung);
+                    });
+                    
+                    if ($survey && isset($survey->skor_total)) {
+                        $skorKualitas = floatval($survey->skor_total);
+                    }
+                }
+                
+                $nilaiKualitasSkala100 = $skorKualitas <= 5 ? $skorKualitas * 20 : $skorKualitas;
+
+                // --- 3. ASPEK EFEKTIVITAS SLA (40%) ---
+                $statusSlaRaw = isset($data->status_sla) ? strtoupper(trim($data->status_sla)) : '';
+                if ($statusSlaRaw === 'TEPAT WAKTU') {
+                    $skorEfektivitas = 100;
+                } elseif ($statusSlaRaw === 'TERLAMBAT') {
+                    $skorEfektivitas = 50; 
+                } else {
+                    $skorEfektivitas = 0;
+                }
+
+                $nilaiKpiGabunganRow = ($nilaiKuantitasSkala100 * 0.20) + ($skorEfektivitas * 0.40) + ($nilaiKualitasSkala100 * 0.40);
+            }
 
             $hariKpiSum[$hariIndex] += $nilaiKpiGabunganRow;
             $hariDataCount[$hariIndex]++;
         }
 
-        // Hitung rata-rata per hari kerja di minggu tersebut
-        for ($i = 0; $i < 5; $i++) {
-            $prodiHariData[$i] = $hariDataCount[$i] > 0
-                ? round($hariKpiSum[$i] / $hariDataCount[$i], 1)
-                : 0;
+// 1. HITUNG RATA-RATA PEKANAN UNTUK MENENTUKAN WARNA UTAMA PRODI
+        $totalSkorPekan = array_sum($hariKpiSum);
+        $totalDataPekan = array_sum($hariDataCount);
+        $skorAkhirPekan = $totalDataPekan > 0 ? round($totalSkorPekan / $totalDataPekan, 1) : 0;
+
+        // Tentukan warna tunggal prodi berdasarkan hasil performa seminggu
+        $warnaProdiTunggal = '#94a3b8'; // Default N/A (Abu-abu)
+        if ($skorAkhirPekan >= 1 && $skorAkhirPekan <= 59) {
+            $warnaProdiTunggal = '#ef4444'; // Kurang (Merah)
+        } elseif ($skorAkhirPekan >= 60 && $skorAkhirPekan <= 75) {
+            $warnaProdiTunggal = '#f59e0b'; // Cukup (Amber)
+        } elseif ($skorAkhirPekan >= 76 && $skorAkhirPekan <= 90) {
+            $warnaProdiTunggal = '#10b981'; // Baik (Emerald)
+        } elseif ($skorAkhirPekan > 90) {
+            $warnaProdiTunggal = '#3b82f6'; // Sangat Baik (Biru)
         }
 
+        // 2. DISTRIBUSIKAN NILAI RATA-RATA PER HARI
+        for ($i = 0; $i < 5; $i++) {
+            $prodiHariData[$i] = $hariDataCount[$i] > 0 ? round($hariKpiSum[$i] / $hariDataCount[$i], 1) : 0;
+        }
+
+        // 3. SET SETIAP PRODI DENGAN SATU WARNA KONSISTEN (BAR & BULAT DISAMAKAN)
         $chartDatasets[] = [
             'label'           => $prodiName,
             'data'            => $prodiHariData,
-            'backgroundColor' => '#6b7280',
+            'backgroundColor' => $warnaProdiTunggal, // <-- WAJIB MENGGUNAKAN VARIABEL INI (Jangan array $prodiHariColors)
             'borderRadius'    => 6,
             'borderSkipped'   => false,
             'barThickness'    => 14
         ];
     }
     
-    // ==========================================
-    // RETURN KE VIEW DENGAN DATA UTAN & BARU
-    // ==========================================
     return view('dashboard.analytics', [
-
         'user' => $user,
         'daftar_prodi' => $daftar_prodi,
         'is_na' => $is_na,
@@ -735,7 +728,6 @@ public function analytics()
             'persen' => $persentasePuas
         ],
 
-        // Keperluan (Tetap Utuh)
         'distribusi_label' => $distribusiLabel,
         'distribusi_data' => $distribusiData,
 
@@ -743,7 +735,6 @@ public function analytics()
         'data_tepat_waktu' => $data_tepat_waktu,
         'data_terlambat' => $data_terlambat,
 
-        // Tambahan Variabel untuk Injeksi Grafik Kinerja Baru di analytics.blade.php
         'labels' => $labels,
         'chartDatasets' => $chartDatasets
     ]);
@@ -1516,49 +1507,67 @@ public function manajemenAntrean(Request $request)
             'Antrean berhasil ditolak.'
         );
     }
+
 public function uploadFile(Request $request, $id)
-    {
-        $kunjungan = $this->readSheet('kunjungan')
-            ->firstWhere('id', $id);
-            
-        if (!$kunjungan) {
-            return back()->with('error', 'Data tidak ditemukan');
-        }
-
-        // 1. Validasi jenis file baru dan batas ukuran maksimal 10 MB (10240 KB)
-        $request->validate([
-            'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240'
-        ]);
-
-        $namaFile = $kunjungan->file_surat ?? '';
-
-        if ($request->hasFile('file_surat')) {
-            $file = $request->file('file_surat');
-            
-            // 2. Ambil ekstensi asli dari file yang diupload secara dinamis
-            $ekstensi = $file->getClientOriginalExtension();
-
-            // 3. Gabungkan nama file dengan ekstensi dinamis tersebut
-            $namaFile = 
-                'surat_' .
-                str_replace('-', '_', $kunjungan->nomor_kunjungan) .
-                '_' .
-                time() .
-                '.' . $ekstensi;
-
-            $file->storeAs('surat', $namaFile, 'public');
-        }
-
-        $this->updateSheet('kunjungan', $kunjungan->id, [
-            // TIDAK UBAH STATUS
-            'file_surat' => $namaFile
-        ]);
-
-        return back()->with(
-            'success_upload_remind',
-            'Berkas pendukung berhasil diunggah! Jangan lupa untuk segera menekan tombol Selesai pada kartu antrean jika pelayanan fisik telah berakhir agar pencatatan SLA KPI akurat.'
-        );
+{
+    // 1. Ambil data kunjungan dari sheet berdasarkan ID
+    $kunjungan = $this->readSheet('kunjungan')->firstWhere('id', $id);
+        
+    if (!$kunjungan) {
+        return back()->with('error', 'Data tidak ditemukan');
     }
+
+    // 2. Validasi file, maksimal 4MB
+    $request->validate([
+        'file_surat' => 'required|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:4096'
+    ]);
+
+    if ($request->hasFile('file_surat')) {
+        $file = $request->file('file_surat');
+        $ekstensi = $file->getClientOriginalExtension();
+        $namaFile = 'surat_' . str_replace('-', '_', $kunjungan->nomor_kunjungan) . '_' . time() . '.' . $ekstensi;
+
+        // Ubah file menjadi string teks Base64
+        $fileBase64 = base64_encode(file_get_contents($file->getRealPath()));
+
+        $urlGas = 'https://script.google.com/macros/s/AKfycbz6QBns1Z3Sh1lhA5tgAJTOLL0sIdrTaudgNoSBitz3PrfCzH80vE36vMLkxTc10Lc1/exec';
+
+        try {
+            // PERBAIKAN UTAMA: Kirim sebagai JSON murni dan selipkan 'action' di dalam body JSON!
+            // Sesuai dengan kemauan baris kode GAS kamu: JSON.parse(e.postData.contents)
+            $response = Http::post($urlGas . '?action=upload_file', [
+                'id'          => $id,
+                'nama_file'   => $namaFile,
+                'tipe_mime'   => $file->getMimeType(),
+                'file_base64' => $fileBase64
+            ]);
+
+            $hasil = $response->json();
+
+            // Jika GAS sukses memproses dan mengembalikan link Drive
+            if (isset($hasil['status']) && $hasil['status'] === 'success') {
+                
+                // Simpan LINK GOOGLE DRIVE tersebut ke Google Sheets
+                $this->updateSheet('kunjungan', $kunjungan->id, [
+                    'file_surat' => $hasil['link']
+                ]);
+
+                return back()->with(
+                    'success_upload_remind',
+                    'Berkas pendukung berhasil diunggah secara permanen ke Google Drive prodi!'
+                );
+            } else {
+                $pesanError = $hasil['message'] ?? 'Respons Google Script tidak valid';
+                return back()->with('error', 'Gagal dari Google Script: ' . $pesanError);
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghubungi server Google: ' . $e->getMessage());
+        }
+    }
+
+    return back()->with('error', 'Tidak ada file yang diunggah.');
+}
 
     public function selesai($id)
     {
@@ -1617,63 +1626,83 @@ public function uploadFile(Request $request, $id)
     }
 
 public function kirimEmailPimpinan(Request $request)
-{
-    $request->validate([
-        'kunjungan_id' => 'required',
-        'email_pimpinan' => 'required|email'
-    ]);
+    {
+        $request->validate([
+            'kunjungan_id' => 'required',
+            'email_pimpinan' => 'required|email'
+        ]);
 
-    $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
+        $db = $this->readMultipleSheets(['kunjungan', 'pengunjung', 'master_prodi_instansi', 'master_keperluan']);
 
-    // 1. Ambil data kunjungan berdasarkan ID
-    $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
-        return isset($item->id) && $item->id == $request->kunjungan_id;
-    });
+        // 1. Ambil data kunjungan berdasarkan ID (Gaya asli kamu yang aman)
+        $kunjungan = $db['kunjungan']->first(function($item) use ($request) {
+            return isset($item->id) && $item->id == $request->kunjungan_id;
+        });
 
-    if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
-    $kunjungan = (object) $kunjungan;
+        if (!$kunjungan) return back()->with('error', 'Kunjungan tidak ditemukan');
+        $kunjungan = (object) $kunjungan;
 
-    // 2. Ambil data pengunjung terkait
-    $pengunjungData = $db['pengunjung']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == $kunjungan->pengunjung_id;
-    });
+        // 2. Ambil data pengunjung terkait
+        $pengunjungData = $db['pengunjung']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == $kunjungan->pengunjung_id;
+        });
 
-    if ($pengunjungData) {
-        $kunjungan->pengunjung = (object) $pengunjungData;
+        if ($pengunjungData) {
+            $kunjungan->pengunjung = (object) $pengunjungData;
+            $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
+        } else {
+            $kunjungan->pengunjung = (object) ['nama_lengkap' => 'Umum', 'instansi' => 'Umum / Mandiri'];
+        }
 
-        // FIX SINKRONISASI: Ambil dari kolom 'asal_instansi' sesuai data sheet pengunjung Anda
-        $kunjungan->pengunjung->instansi = $kunjungan->pengunjung->asal_instansi ?? 'Umum / Mandiri';
-    } else {
-        $kunjungan->pengunjung = (object) ['nama_lengkap' => 'Umum', 'instansi' => 'Umum / Mandiri'];
+        // 3. Ambil data keperluan
+        $masterKeperluan = $db['master_keperluan']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == ($kunjungan->keperluan_id ?? null);
+        });
+        $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
+        $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
+
+// 4. Ambil data prodi terkait
+        $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
+            return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
+        });
+        
+        $namaProdi = '-';
+        if ($prodiData) {
+            $prodiData = (object) $prodiData;
+            // DIUBAH DI SINI: tambahkan $prodiData->nama di urutan paling depan
+            $namaProdi = $prodiData->nama ?? $prodiData->nama_prodi ?? $prodiData->prodi ?? '-';
+        }
+
+        // BIAR BLADE LOKAL BISA MEMBACA PRODI
+        $kunjungan->nama_prodi = $namaProdi;
+
+        // 5. PROSES TEMBAK KE GOOGLE SCRIPT (Menerobos Firewall SMTP Vercel)
+        try {
+            $urlGas = $this->getApiUrl(); // Otomatis mengambil dari env GOOGLE_SCRIPT_URL kamu
+
+            $response = Http::post($urlGas . '?action=kirim_email_pimpinan', [
+                'email_pimpinan' => $request->email_pimpinan,
+                'nomor_kunjungan' => $kunjungan->nomor_kunjungan,
+                'nama_pengunjung' => $kunjungan->pengunjung->nama_lengkap,
+                'instansi' => $kunjungan->pengunjung->instansi,
+                'keperluan' => $kunjungan->nama_keperluan_utama,
+                'detail' => $kunjungan->keperluan_detail,
+                'prodi' => $namaProdi
+            ]);
+
+            $hasil = $response->json();
+
+            if (isset($hasil['status']) && $hasil['status'] === 'success') {
+                $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
+                return back()->with('success', 'Email berhasil diteruskan ke pimpinan via Google Server!');
+            } else {
+                return back()->with('error', 'Gagal dikirim via GAS: ' . ($hasil['message'] ?? 'Error tidak diketahui'));
+            }
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghubungi server Google untuk email: ' . $e->getMessage());
+        }
     }
-
-    // 3. Ambil data dari master_keperluan berdasarkan kolom 'keterangan'
-    $masterKeperluan = $db['master_keperluan']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == ($kunjungan->keperluan_id ?? null);
-    });
-
-    // Mengambil nama layanan dari kolom 'keterangan' milik master_keperluan
-    $kunjungan->nama_keperluan_utama = $masterKeperluan->keterangan ?? 'Kunjungan Umum';
-
-    // Mengambil detail tambahan dari kolom 'keperluan' milik sheet kunjungan ("1 bulan", "SP 4", dll)
-    $kunjungan->keperluan_detail = !empty($kunjungan->keperluan) ? $kunjungan->keperluan : '-';
-
-    // 4. Ambil data prodi terkait
-    $prodiData = $db['master_prodi_instansi']->first(function($item) use ($kunjungan) {
-        return isset($item->id) && $item->id == ($kunjungan->prodi_id ?? null);
-    });
-    $kunjungan->nama_prodi = $prodiData->nama_prodi ?? $prodiData->prodi ?? null;
-
-    try {
-        Mail::to($request->email_pimpinan)->send(new NotifikasiPimpinanMail($kunjungan));
-
-        $this->updateSheet('kunjungan', $kunjungan->id, ['is_email_sent' => 1]);
-        return back()->with('success', 'Email berhasil diteruskan.');
-
-    } catch (\Exception $e) {
-        return back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
-    }
-}
 
     // =========================================================================
     // CONTROL PANEL SETTINGS
@@ -1754,7 +1783,6 @@ public function controlPanel()
             'name'       => $request->name,
             'email'      => $request->email,
             'password'   => $request->password,
-            'foto'       => '',
             'created_at' => now()->format('Y-m-d H:i:s'),
             'updated_at' => now()->format('Y-m-d H:i:s')
         ];
@@ -1795,7 +1823,6 @@ public function controlPanel()
                 'name'       => $request->name,
                 'email'      => $request->email,
                 'password'   => $password,
-                'foto'       => data_get($existingUser, 'foto') ?? '',
                 'created_at' => data_get($existingUser, 'created_at') ?? now()->format('Y-m-d H:i:s'),
                 'updated_at' => now()->format('Y-m-d H:i:s')
             ];
