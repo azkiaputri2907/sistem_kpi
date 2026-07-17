@@ -11,8 +11,8 @@
 {{-- Header Dashboard --}}
 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 md:mb-10">
     <div>
-        <h2 class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tight">Analytics Overview</h2>
-        <p class="text-slate-400 dark:text-slate-400 text-xs md:text-sm font-medium mt-1 md:mt-2">Ringkasan performa layanan institusi.</p>
+<h2 class="text-3xl md:text-4xl font-black text-gray-800 dark:text-white tracking-tight">Pantauan Kinerja</h2>
+        <p class="text-slate-400 dark:text-slate-400 text-xs md:text-sm font-medium mt-1 md:mt-2">Ringkasan evaluasi dan performa layanan.</p>
     </div>
 
     <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -22,10 +22,10 @@
                     <select name="prodi_id"
                         onchange="this.form.submit()"
                         class="w-full sm:w-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 pr-10 text-xs font-black text-slate-700 dark:text-slate-200 shadow-sm outline-none appearance-none transition-colors">
-                        <option value="" class="dark:bg-slate-800">🌍 Semua Prodi</option>
+                        <option value="" class="dark:bg-slate-800">Seluruh Program Studi</option>
                         @foreach($daftar_prodi as $p)
                             <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
-                                🎓 {{ $p->nama }}
+                                {{ $p->nama }}
                             </option>
                         @endforeach
                     </select>
@@ -36,7 +36,7 @@
             </form>
         @else
             <div class="bg-white dark:bg-slate-800 px-5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-black text-slate-700 dark:text-slate-200 shadow-sm flex items-center justify-center gap-2 transition-colors">
-                🎓 {{ $user->prodi->nama ?? 'Program Studi' }}
+                {{ $user->prodi->nama ?? 'Program Studi' }}
             </div>
         @endif
 
@@ -98,7 +98,7 @@
         @endphp
         <div class="mt-2">
             <div class="flex justify-between items-center text-[11px] font-bold mb-1.5">
-                <span class="text-slate-400 dark:text-slate-500">Progres Target Bulan Ini</span>
+                <span class="text-slate-400 dark:text-slate-500">Progres Target Harian</span>
                 <span class="text-blue-600 dark:text-blue-400">{{ $persenKuantitas }}%</span>
             </div>
             <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">

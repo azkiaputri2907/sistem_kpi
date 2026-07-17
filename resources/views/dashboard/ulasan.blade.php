@@ -40,15 +40,15 @@
                         class="w-full sm:w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950/50 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500' : '' }}">
 
                         @if($isSuper)
-                            <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
+                            <option value="" class="dark:bg-slate-800">Seluruh Program Studi</option>
                             @foreach($daftar_prodi as $p)
                                 <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
-                                    🎓 {{ $p->nama }}
+                                    {{ $p->nama }}
                                 </option>
                             @endforeach
                         @else
                             <option value="{{ $user->prodi_id }}" selected class="dark:bg-slate-800">
-                                🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
+                                {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
                             </option>
                         @endif
                     </select>

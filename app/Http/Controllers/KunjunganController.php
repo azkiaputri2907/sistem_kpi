@@ -167,19 +167,18 @@ public function create()
     // 1. Cek Status Jadwal
     $statusOperasional = $this->cekSistemBuka();
 
-    // 2. Ambil semua data kunjungan (untuk menghitung limit per prodi)
+    // 2. Ambil semua data kunjungan
     $semuaKunjungan = $this->readSheet('kunjungan');
 
     // 3. Ambil data Prodi dan hitung jumlah antrean tiap prodi secara real-time
     $semuaProdi = $this->readSheet('master_prodi_instansi');
     $prodi = $semuaProdi->where('jenis', 'Prodi')->map(function ($p) use ($semuaKunjungan) {
-        // Hitung berapa orang yang sedang "Antre" di prodi ini
         $jumlahAntrean = $semuaKunjungan->where('prodi_id', (string)$p->id)
                                         ->where('status_layanan', 'Antre')
                                         ->count();
         
         $p->jumlah_antrean = $jumlahAntrean;
-        $p->is_full = ($jumlahAntrean >= 10); // Logika limit = 10
+        $p->is_full = ($jumlahAntrean >= 10); 
         return $p;
     })->values();
 
@@ -187,7 +186,56 @@ public function create()
     $semuaKeperluan = $this->readSheet('master_keperluan');
     $keperluan = $semuaKeperluan->unique('keterangan')->values();
 
-    return view('landing', compact('prodi', 'keperluan', 'statusOperasional'));
+    // FIX UTAMA: Tambahkan 'semuaKunjungan' ke dalam compact agar bisa dibaca oleh Blade landing page
+    return view('landing', compact('prodi', 'keperluan', 'statusOperasional', 'semuaKunjungan'));
+}
+
+public function getAntreanDiproses()
+{
+    try {
+        $kunjunganList = $this->readSheet('kunjungan');
+        $prodiList = $this->readSheet('master_prodi_instansi');
+
+        // Ambil semua data kunjungan yang berstatus "Diproses"
+        $diproses = $kunjunganList->filter(function($item) {
+            $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
+            return strtolower($status) === 'diproses';
+        });
+
+        // FIX KEDUA: Grouping data berdasarkan prodi_id agar strukturnya sesuai dengan JavaScript Ticker di Landing Page
+        $grouped = $diproses->groupBy('prodi_id');
+        $dataFormatted = [];
+
+        foreach ($grouped as $prodiId => $items) {
+            $prodiObj = $prodiList->firstWhere('id', $prodiId);
+            $prodiName = $prodiObj ? ($prodiObj->nama ?? $prodiObj->nama_prodi) : ($prodiId === 'LAINNYA' ? 'Bagian Lainnya' : 'Umum');
+            
+            $antreanNomors = [];
+            foreach ($items as $item) {
+                if (!empty($item->nomor_kunjungan)) {
+                    $antreanNomors[] = $item->nomor_kunjungan;
+                }
+            }
+
+            if (!empty($antreanNomors)) {
+                $dataFormatted[] = [
+                    'prodi' => $prodiName,
+                    'antrean' => $antreanNomors // Mengembalikan array nomor antrean untuk fungsi .join() di JS
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $dataFormatted
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'data' => []
+        ], 500);
+    }
 }
 
 public function store(Request $request)
@@ -197,6 +245,38 @@ public function store(Request $request)
     if (!$statusOperasional['status']) {
         return back()->withErrors(['sistem_tutup' => 'Pendaftaran ditolak: ' . $statusOperasional['pesan']])->withInput();
     }
+
+    // ===============================================================
+    // 1.5. SISTEM CEK KUOTA (10 TOKEN AKTIF) EFEK DOMINO
+    // ===============================================================
+    $hariIni = \Carbon\Carbon::now('Asia/Makassar')->format('Y-m-d'); 
+
+    // Tarik data tiket & survei hari ini
+    $semuaKunjungan = $this->readSheet('kunjungan')
+        ->filter(function($item) use ($hariIni) {
+            return \Carbon\Carbon::parse($item->created_at ?? now(), 'Asia/Makassar')->format('Y-m-d') === $hariIni;
+        });
+    $semuaSurvei = $this->readSheet('survey');
+
+    $tokenTerpakai = 0;
+    foreach ($semuaKunjungan as $k) {
+        if (strtoupper(trim($k->status_layanan ?? '')) != 'DITOLAK') {
+            $hasSurvey = $semuaSurvei->contains('kunjungan_id', $k->id);
+            
+            // Menghitung tiket yang belum Selesai ATAU (Sudah Selesai TAPI belum disurvei)
+            if (strtoupper(trim($k->status_layanan ?? '')) != 'SELESAI' || !$hasSurvey) {
+                $tokenTerpakai++;
+            }
+        }
+    }
+
+    // JIKA TOKEN PENUH (>= 10), BLOKIR PENDAFTARAN!
+    if ($tokenTerpakai >= 10) {
+        return back()->withErrors([
+            'limit_penuh' => 'Mohon maaf, kuota antrean saat ini penuh (10/10). Sistem sedang menunggu pengunjung sebelumnya menyelesaikan ulasan layanan agar token tiket kembali tersedia. Silakan coba beberapa saat lagi.'
+        ])->withInput();
+    }
+    // ===============================================================
 
     // 2. Validasi Limit Antrean Per-Prodi
     $targetProdi = $request->prodi_id;
@@ -222,22 +302,24 @@ public function store(Request $request)
         'prodi_lainnya'   => 'required_if:prodi_id,LAINNYA|nullable|string|max:100',
         'keperluan_id'    => $request->tipe_tamu === 'Internal' ? 'required' : 'nullable',
         'surat_disposisi' => ($request->tipe_tamu === 'Eksternal' || $request->prodi_id === 'LAINNYA') 
-                            ? 'required|file|mimes:pdf,jpg,jpeg,png|max:2048' 
-                            : 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+                             ? 'required|file|mimes:pdf,jpg,jpeg,png|max:4096' 
+                             : 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
     ], [
         'no_telepon.regex'         => 'No WhatsApp wajib berupa angka 10-15 digit',
         'prodi_lainnya.required_if'=> 'Mohon isi nama prodi/bagian tujuan',
         'surat_disposisi.required' => 'Wajib mengunggah surat disposisi (Untuk Tamu Eksternal / Bagian Lainnya)',
         'surat_disposisi.mimes'    => 'Format file harus PDF, JPG, atau PNG',
-        'surat_disposisi.max'      => 'Ukuran file maksimal 2MB',
+        'surat_disposisi.max'      => 'Ukuran file maksimal 4MB',
     ]);
 
     try {
-        // 4. Proses Upload File
+        // 4. Proses Upload File Lokal (Tersimpan di folder public/uploads/surat)
         $pathFile = '-';
         if ($request->hasFile('surat_disposisi')) {
             $file = $request->file('surat_disposisi');
-            $namaFile = 'surat_' . time() . '_' . $file->getClientOriginalName();
+            // Penamaan file yang aman
+            $namaClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', $file->getClientOriginalName());
+            $namaFile = 'surat_' . time() . '_' . $namaClean;
             $file->move(public_path('uploads/surat'), $namaFile);
             $pathFile = 'uploads/surat/' . $namaFile;
         }
@@ -247,7 +329,7 @@ public function store(Request $request)
         if (str_starts_with($noTeleponInput, '+62')) { $noTeleponInput = substr($noTeleponInput, 3); }
         if (str_starts_with($noTeleponInput, '0')) { $noTeleponInput = substr($noTeleponInput, 1); }
 
-        // 6. Cari atau Buat Pengunjung (TIDAK ADA LOGIKA FILE DI SINI)
+        // 6. Cari atau Buat Pengunjung
         $pengunjungList = $this->readSheet('pengunjung');
         $pengunjungList = $pengunjungList->map(function ($item, $index) {
             $item->id = empty($item->id) ? (int)($index + 1) : (int)$item->id;
@@ -272,7 +354,7 @@ public function store(Request $request)
                 'asal_instansi' => $request->asal_instansi,
                 'no_telepon'    => $noTeleponInput,
                 'tipe_tamu'     => $request->tipe_tamu,
-                'created_at'    => Carbon::now('Asia/Makassar')->toDateTimeString(),
+                'created_at'    => \Carbon\Carbon::now('Asia/Makassar')->toDateTimeString(),
             ]);
         }
 
@@ -289,12 +371,12 @@ public function store(Request $request)
             'nomor_kunjungan' => $nomor_kunjungan,
             'pengunjung_id'   => $pengunjungId,
             'tipe_tamu'       => $request->tipe_tamu,
-            'prodi_id'        => $request->prodi_id ?? 'LAINNYA', // Simpan sebagai LAINNYA
+            'prodi_id'        => $request->prodi_id ?? 'LAINNYA', 
             'keperluan_id'    => $request->keperluan_id ?? '-',
             'keperluan'       => $catatanAkhir,
             'surat_disposisi' => $pathFile,
-            'hari_kunjungan'  => Carbon::now('Asia/Makassar')->locale('id')->isoFormat('dddd'),
-            'tanggal'         => Carbon::now('Asia/Makassar')->toDateString(),
+            'hari_kunjungan'  => \Carbon\Carbon::now('Asia/Makassar')->locale('id')->isoFormat('dddd'),
+            'tanggal'         => \Carbon\Carbon::now('Asia/Makassar')->toDateString(),
             'status_layanan'  => 'Antre',
             'status_pimpinan' => 'Menunggu',
         ];
@@ -305,7 +387,7 @@ public function store(Request $request)
         return redirect('/status/' . $nomor_kunjungan)->with('success', 'Pendaftaran antrean berhasil!');
 
     } catch (\Exception $e) {
-        Log::error("Proses pendaftaran gagal: " . $e->getMessage());
+        \Illuminate\Support\Facades\Log::error("Proses pendaftaran gagal: " . $e->getMessage());
         return back()->withErrors(['error' => 'Gagal memproses data. Coba lagi nanti.'])->withInput();
     }
 }
@@ -511,34 +593,5 @@ public function kirimMassal(Request $request)
         return response()->json([
             'status' => 'not_found'
         ]);
-    }
-    public function getAntreanDiproses()
-    {
-        try {
-            $kunjunganList = $this->readSheet('kunjungan');
-
-            // Ambil SEMUA data tanpa filter tanggal hari ini
-            $antreanAktif = $kunjunganList->filter(function($item) {
-                $status = isset($item->status_layanan) ? trim($item->status_layanan) : '';
-
-                // Ambil semua yang berstatus "Diproses" (tidak peduli tanggal berapa)
-                return strtolower($status) === 'diproses';
-            })->map(function($item) {
-                return [
-                    'nomor' => $item->nomor_kunjungan
-                ];
-            })->values();
-
-            return response()->json([
-                'status' => 'success',
-                'data' => $antreanAktif
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 500);
-        }
     }
 }

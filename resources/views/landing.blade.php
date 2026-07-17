@@ -140,7 +140,41 @@
 
     <div class="w-full h-12 flex items-center justify-center overflow-hidden relative" style="perspective: 1000px;">
         <div id="antrean-container" class="transition-all duration-700 ease-in-out transform flex flex-col items-center justify-center w-full" style="transform-origin: center center -20px; transform: rotateX(0deg); opacity: 1;">
-            <span class="text-slate-400 text-xs italic animate-pulse">Menghubungkan ke sistem...</span>
+            
+            {{-- FIX BINDING: Menggunakan variabel $semuaKunjungan yang dikirim dari Controller --}}
+            @php
+                $antreanDiproses = collect($semuaKunjungan ?? [])->filter(function($item) {
+                    return strtoupper(trim($item->status_layanan ?? '')) === 'DIPROSES';
+                });
+                $firstActive = $antreanDiproses->first();
+            @endphp
+
+            @if($firstActive)
+                @php
+                    // Ambil nama prodi/tujuan antrean pertama untuk inisialisasi awal yang sinkron dengan Ticker JS
+                    $prodiListRaw = collect($prodi ?? []);
+                    $prodiIdTarget = $firstActive->prodi_id ?? '';
+                    $prodiObjTarget = $prodiListRaw->firstWhere('id', $prodiIdTarget);
+                    $namaProdiTampil = $prodiObjTarget ? ($prodiObjTarget->nama ?? $prodiObjTarget->nama_prodi) : ($prodiIdTarget === 'LAINNYA' ? 'Bagian Lainnya' : 'Umum');
+                    
+                    // Kumpulkan semua nomor tiket di bawah prodi yang sama yang juga sedang diproses
+                    $sameProdiAntrean = $antreanDiproses->where('prodi_id', $prodiIdTarget)->pluck('nomor_kunjungan')->implode(', ');
+                @endphp
+                <div class="flex flex-col items-center justify-center w-full px-2">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 truncate max-w-[280px]">
+                        Antrean {{ $namaProdiTampil }}
+                    </span>
+                    <span class="text-base font-black text-slate-800 dark:text-slate-100 tracking-tight mt-0.5 truncate max-w-[300px]">
+                        {{ $sameProdiAntrean }}
+                    </span>
+                </div>
+            @else
+                {{-- TAMPILAN JIKA TIDAK ADA ANTREAN YANG SEDANG DIPROSES --}}
+                <span class="text-slate-400 dark:text-slate-500 text-xs font-bold italic opacity-80 flex items-center gap-1">
+                    <i class="fa-solid fa-folder-open text-[10px]"></i> Belum Ada Antrean Masuk
+                </span>
+            @endif
+
         </div>
     </div>
 
@@ -188,28 +222,6 @@
             <span id="status-cek" class="text-xs font-bold text-amber-500"></span>
         </div>
     </div>
-
-    {{-- Flash Messages --}}
-    @if(session('success'))
-    <div class="mb-8 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl font-medium border border-emerald-100 dark:border-emerald-900/50 flex items-center gap-3">
-        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if ($errors->any())
-    <div class="mb-8 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 p-4 rounded-xl text-sm border border-red-100 dark:border-red-900/50">
-        <div class="font-bold flex items-center gap-2 mb-2">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Gagal menyimpan data:
-        </div>
-        <ul class="list-disc pl-5">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-    @endif
 
     {{-- System Status --}}
 @if(!$statusOperasional['status'])

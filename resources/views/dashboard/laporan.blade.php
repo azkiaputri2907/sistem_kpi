@@ -1,10 +1,11 @@
 @extends('layouts.app')
+
 <style>
     .swal2-backdrop-show {
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
-}
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background-color: rgba(15, 23, 42, 0.4) !important; /* Warna gelap transparan tipis */
+    }
 </style>
 
 @section('content')
@@ -18,47 +19,47 @@
         </div>
 
         {{-- ACTIONS ROW --}}
-<div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
 
-    {{-- FORM FILTER PRODI --}}
-    <form action="{{ route('dashboard.laporan') }}" method="GET" class="w-full sm:w-auto m-0">
-        @php
-            $isSuper = $user->role_id == 1 || $user->role_id == 3;
-        @endphp
+            {{-- FORM FILTER PRODI --}}
+            <form action="{{ route('dashboard.laporan') }}" method="GET" class="w-full sm:w-auto m-0">
+                @php
+                    $isSuper = $user->role_id == 1 || $user->role_id == 3;
+                @endphp
 
-        <div class="relative w-full sm:w-64">
-            <select name="prodi_id"
-                onchange="handleSelectProdiLoading(this)"
-                {{ !$isSuper ? 'disabled' : '' }}
-                class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
+                <div class="relative w-full sm:w-64">
+                    <select name="prodi_id"
+                        onchange="handleSelectProdiLoading(this)"
+                        {{ !$isSuper ? 'disabled' : '' }}
+                        class="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-10 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:focus:ring-indigo-950 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-50 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-800' : '' }}">
 
-                @if($isSuper)
-                    <option value="" class="dark:bg-slate-800">🌍 Seluruh Program Studi</option>
-                    @foreach($daftar_prodi as $p)
-                        <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
-                            🎓 {{ $p->nama }}
-                        </option>
-                    @endforeach
-                @else
-                    <option selected class="dark:bg-slate-800">
-                        🎓 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
-                    </option>
-                @endif
-            </select>
-            <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
-                <i class="fa-solid fa-chevron-down"></i>
-            </div>
-        </div>
-    </form>
+                        @if($isSuper)
+                            <option value="" class="dark:bg-slate-800">Seluruh Program Studi</option>
+                            @foreach($daftar_prodi as $p)
+                                <option value="{{ $p->id }}" {{ request('prodi_id') == $p->id ? 'selected' : '' }} class="dark:bg-slate-800">
+                                     {{ $p->nama }}
+                                </option>
+                            @endforeach
+                        @else
+                            <option selected class="dark:bg-slate-800">
+                                 {{ $user->prodi->nama ?? 'Prodi Tidak Ditemukan' }}
+                            </option>
+                        @endif
+                    </select>
+                    <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 text-xs">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+            </form>
 
-    {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
-    <div class="relative w-full sm:w-auto text-left">
-        <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
-            class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
-            <i class="fa-solid fa-file-export text-base"></i>
-            <span>Ekspor Laporan</span>
-            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
-        </button>
+            {{-- DROPDOWN EKSPOR DENGAN DESAIN GRADASI PREMIUM --}}
+            <div class="relative w-full sm:w-auto text-left">
+                <button type="button" onclick="toggleExportDropdown()" id="btnDropdownTrigger"
+                    class="inline-flex justify-center items-center gap-2 w-full sm:w-auto bg-gradient-to-r from-slate-900 via-blue-900 to-red-600 text-white px-6 py-3 rounded-2xl font-black text-sm shadow-lg hover:scale-[1.02] transition-all duration-300 shadow-blue-900/30">
+                    <i class="fa-solid fa-file-export text-base"></i>
+                    <span>Ekspor Laporan</span>
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 ml-1" id="dropdownArrow"></i>
+                </button>
 
                 {{-- MENU DROPDOWN --}}
                 <div id="exportDropdownMenu"
@@ -87,50 +88,68 @@
 
     {{-- KARTU STATISTIK --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        
+        {{-- KARTU 1: TOTAL LAYANAN SELESAI --}}
         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-300">
             <h3 class="text-slate-400 dark:text-slate-500 text-xs font-bold tracking-wider uppercase mb-3">Total Layanan Selesai</h3>
             <div>
                 <div class="text-4xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
                     {{ number_format($totalSelesai, 0, ',', '.') }}
                 </div>
-                <p class="text-emerald-500 dark:text-emerald-400 text-xs font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-circle-check"></i> Layanan berhasil diproses
+                <p class="text-emerald-500 dark:text-emerald-400 text-xs font-bold flex items-start gap-1.5 mt-2 leading-relaxed">
+                    <i class="fa-solid fa-circle-check mt-0.5"></i> 
+<span>Jumlah antrean yang telah dinyatakan <strong>SELESAI</strong> oleh petugas.</span>
                 </p>
             </div>
         </div>
 
+        {{-- KARTU 2: RATA-RATA SLA (DIUBAH MENJADI FORMAT MANUSIAWI) --}}
         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-300">
-            <h3 class="text-slate-400 dark:text-slate-500 text-xs font-bold tracking-wider uppercase mb-3">Rata-Rata SLA</h3>
+            <h3 class="text-slate-400 dark:text-slate-500 text-xs font-bold tracking-wider uppercase mb-3">Rata-Rata Waktu Pelayanan (SLA)</h3>
             <div>
-                <div class="text-4xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
-                    {{ $rataRataSla }}
+                <div class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
+                    @php
+                        // Memastikan angka berupa integer menit kerja riil
+                        $totalMenit = (int) $rataRataSla; 
+                        $hari = floor($totalMenit / 1440);
+                        $sisaMenit = $totalMenit % 1440;
+                        $jam = floor($sisaMenit / 60);
+                        $menit = $sisaMenit % 60;
+
+                        $hasilSlaReadable = [];
+                        if ($hari > 0) $hasilSlaReadable[] = $hari . ' Hari';
+                        if ($jam > 0) $hasilSlaReadable[] = $jam . ' Jam';
+                        if ($menit > 0 || empty($hasilSlaReadable)) $hasilSlaReadable[] = $menit . ' Menit';
+                    @endphp
+                    {{ implode(' ', $hasilSlaReadable) }}
                 </div>
-                <p class="text-blue-500 dark:text-blue-400 text-xs font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-clock"></i> Kecepatan waktu respons
+                <p class="text-blue-500 dark:text-blue-400 text-xs font-bold flex items-center gap-1 mt-2">
+                    <i class="fa-solid fa-clock"></i> Kecepatan rata-rata penyelesaian berkas
                 </p>
             </div>
         </div>
 
+        {{-- KARTU 3: TINGKAT PENOLAKAN --}}
         <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between transition-colors duration-300">
             <h3 class="text-slate-400 dark:text-slate-500 text-xs font-bold tracking-wider uppercase mb-3">Tingkat Penolakan</h3>
             <div>
                 <div class="text-4xl font-black text-slate-800 dark:text-white tracking-tight mb-1">
                     {{ $tingkatPenolakan }}%
                 </div>
-                <p class="{{ $tingkatPenolakan > 10 ? 'text-rose-500 dark:text-rose-400' : 'text-amber-500 dark:text-amber-400' }} text-xs font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-circle-xmark"></i> Persentase berkas ditolak
+                <p class="{{ $tingkatPenolakan > 10 ? 'text-rose-500 dark:text-rose-400' : 'text-amber-500 dark:text-amber-400' }} text-xs font-bold flex items-center gap-1 mt-2">
+                    <i class="fa-solid fa-circle-xmark"></i> Persentase berkas tidak valid/ditolak
                 </p>
             </div>
         </div>
     </div>
 
-{{-- Bar Chart Bawah --}}
-<div class="bg-white dark:bg-slate-800 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-50 dark:border-slate-700/50 shadow-sm transition-colors mb-6">
-    <h3 class="text-xl font-black text-gray-800 dark:text-white tracking-tight mb-6 md:mb-10">Distribusi Kunjungan per Keperluan</h3>
-    <div class="h-[300px] md:h-[350px] w-full">
-        <canvas id="keperluanChart"></canvas>
+    {{-- Bar Chart Bawah --}}
+    <div class="bg-white dark:bg-slate-800 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-50 dark:border-slate-700/50 shadow-sm transition-colors mb-6">
+        <h3 class="text-xl font-black text-gray-800 dark:text-white tracking-tight mb-2">Distribusi Kunjungan per Keperluan</h3>
+        <div class="h-[340px] md:h-[380px] w-full">
+            <canvas id="keperluanChart"></canvas>
+        </div>
     </div>
-</div>
 
 </div>
 
@@ -199,24 +218,19 @@
     </div>
 </div>
 
+{{-- CARRIER JAVASCRIPT & UTILITIES ENGINE --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{-- AMAN: Menambahkan library pendukung datalabels untuk mematangkan chart --}}
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
-// ==========================================
-// SAKLAR UTAMA PENGENDALI AUTO-REFRESH
-// ==========================================
-// =======================================================
-// VARIABEL KONTROL AUTOMATISASI REFRESH
-// =======================================================
 let refreshTimer = null; // Tempat menyimpan ID dari setInterval
 let isModalOpen = false; // Flag pengunci cadangan
 
 // Fungsi untuk MENYALAKAN auto-refresh (Reset dari nol lagi)
 function startAutoRefreshEngine() {
-    // Bersihkan dulu timer yang lama jika ada agar tidak double
     if (refreshTimer) clearInterval(refreshTimer);
 
-    // Set timer baru (3 Menit = 180.000 ms)
     refreshTimer = setInterval(() => {
         if (!isModalOpen) {
             console.log("[Auto-Refresh] Menjalankan reload halaman...");
@@ -238,7 +252,6 @@ function stopAutoRefreshEngine() {
 
 // Jalankan pertama kali saat halaman selesai dimuat
 document.addEventListener("DOMContentLoaded", function(){
-    // Menyalakan engine auto-refresh halaman
     startAutoRefreshEngine();
 
     // Event listener klik luar untuk menutup dropdown ekspor secara aman
@@ -265,7 +278,7 @@ function toggleExportDropdown() {
 }
 
 function triggerExport(laporan) {
-    stopAutoRefreshEngine(); // AMAN 1: Matikan mesin refresh total saat menu di-klik
+    stopAutoRefreshEngine(); 
     isModalOpen = true;
     openExportModal(laporan);
     toggleExportDropdown();
@@ -276,13 +289,13 @@ let exportRoute = '';
 function openExportModal(laporan){
     exportRoute = laporan;
     isModalOpen = true;
-    stopAutoRefreshEngine(); // AMAN 2: Pastikan mati saat modal input tanggal muncul
+    stopAutoRefreshEngine(); 
 
     document.getElementById('exportStartDate').value = '';
     document.getElementById('exportEndDate').value = '';
 
     const modal = document.getElementById('exportModal');
-    modal.classList.remove('hidden');
+    modal.remove('hidden');
     modal.classList.add('flex');
 }
 
@@ -292,7 +305,7 @@ function closeExportModal(){
     modal.classList.remove('flex');
 
     isModalOpen = false;
-    startAutoRefreshEngine(); // Hidupkan kembali timer dari 0 jika user batal/klik X
+    startAutoRefreshEngine(); 
 }
 
 document.getElementById('btnExcel').addEventListener('click', function(){
@@ -315,7 +328,6 @@ function downloadLaporan(type){
         return;
     }
 
-    // 1. Matikan mesin refresh total! Tidak boleh ada reload berjalan selama proses ini.
     stopAutoRefreshEngine();
     isModalOpen = true;
 
@@ -324,72 +336,50 @@ function downloadLaporan(type){
         loadingModal.classList.remove('hidden');
     }
 
-    // Tutup modal input tanggal secara visual saja
     const modal = document.getElementById('exportModal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 
     const prodi = document.querySelector('[name=prodi_id]')?.value ?? '';
 
-    // 2. Tembak Route Download Laravel
     window.location = '/laporan/' + exportRoute +
                       '?type=' + type +
                       '&start_date=' + startDate +
                       '&end_date=' + endDate +
                       '&prodi_id=' + prodi;
 
-    // 3. Berikan waktu jeda longgar (20 detik) untuk browser memunculkan dialog save file,
-    //    setelah itu hilangkan loading spinner dan hidupkan kembali mesin refresh dari detik 0.
     setTimeout(function() {
         if (loadingModal) {
             loadingModal.classList.add('hidden');
         }
         isModalOpen = false;
-        startAutoRefreshEngine(); // Mesin refresh hidup kembali dengan aman dari nol!
-    }, 20000);
-}
-
-// HANDLER PRODI LOADING (Agar sejalan dan menggunakan sistem pengunci yang sama)
-function handleSelectProdiLoading(selectElement) {
-    isModalOpen = true; // Matikan auto-refresh seketika saat prodi diganti
-
-    const loadingModal = document.getElementById('loading-modal');
-    if (loadingModal) {
-        loadingModal.classList.remove('hidden');
-    }
-
-    selectElement.form.submit();
-
-    // Tahan gembok tetap OFF selama 20 detik sampai halaman baru selesai di-render Laravel
-    setTimeout(function() {
-        isModalOpen = false;
+        startAutoRefreshEngine(); 
     }, 20000);
 }
 
 // HANDLER PRODI LOADING (MENGIKUTI LOGIKA CONTOH DENGAN SETTIMEOUT AMAN)
 function handleSelectProdiLoading(selectElement) {
-    // KUNCI AKTIF: Matikan auto-refresh agar tidak bertabrakan saat memuat data prodi
     isModalOpen = true;
 
-    // Munculkan salah satu modal spinner loading yang tersedia di HTML Anda
     const loadingModal = document.getElementById('loading-modal');
     if (loadingModal) {
         loadingModal.classList.remove('hidden');
     }
 
-    // Submit form filter prodi ke backend Laravel
     selectElement.form.submit();
 
-    // Jaga agar auto-refresh tetap OFF selama 20 detik untuk transisi muat halaman baru prodi
     setTimeout(function() {
         isModalOpen = false;
     }, 20000);
 }
 </script>
-{{-- SCRIPT RENDERING CHART --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{{-- SCRIPT RENDERING CHART DENGAN INJEKSI DATA KUNJUNGAN SELALU MUNCUL --}}
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // Daftarkan plugin Datalabels ke core Chart.js
+        Chart.register(ChartDataLabels);
+
         // ==========================================
         // CHART DISTRIBUSI KEPERLUAN (BAR)
         // ==========================================
@@ -402,29 +392,53 @@ function handleSelectProdiLoading(selectElement) {
                     data: {!! json_encode($distribusi_data) !!},
                     backgroundColor: '#3b82f6',
                     borderRadius: 12,
-                    maxBarThickness: 45,
+                    maxBarThickness: 50, // Balok dibuat sedikit tebal agar tegas
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
+                layout: {
+                    padding: {
+                        top: 35 // Ruang kosong di atas balok agar tulisan nilai data tidak terpotong bingkai
+                    }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    // PENYELARASAN UTAMA: MEMAKSA ANGKA DATASET MUNCUL UTUH TANPA PERLU DI-HOVER
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#0f172a',
+                        font: {
+                            weight: '900',
+                            size: 13 // Ukuran teks angka diperbesar agar mempermudah dosen senior
+                        },
+                        formatter: function(value) {
+                            return value + ' Kunjungan'; // Menambahkan label eksplisit di ujung balok
+                        }
+                    }
+                },
+scales: {
                     y: {
+                        beginAtZero: true,
+                        suggestedMax: 5, // Memberikan ruang napas di atas grafik jika datanya masih sedikit
                         grid: { 
                             color: document.documentElement.classList.contains('dark') ? '#334155' : '#f1f5f9', 
                             drawBorder: false 
                         },
                         ticks: { 
-                            color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#64748b', 
-                            font: { size: 10, weight: '600' } 
+                            color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569', 
+                            font: { size: 12, weight: '700' },
+                            stepSize: 1, // Memaksa kelipatan 1 (1, 2, 3...)
+                            precision: 0 // Wajib 0 agar angka desimal (0.2, 0.5) tidak akan pernah muncul
                         }
                     },
                     x: {
                         grid: { display: false },
                         ticks: { 
-                            color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#cbd5e1', 
-                            font: { size: 10, weight: '700' } 
+                            color: document.documentElement.classList.contains('dark') ? '#94a3b8' : '#1e293b', 
+                            font: { size: 12, weight: '800' }
                         }
                     }
                 }

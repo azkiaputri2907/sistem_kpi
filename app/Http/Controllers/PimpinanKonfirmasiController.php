@@ -50,7 +50,7 @@ class PimpinanKonfirmasiController extends Controller
     // CORE LOGIC
     // =========================================================================
 
-    public function index()
+public function index()
     {
         // Ambil user dari helper manual (Sudah dibungkus Object)
         $user = $this->getSessionUser();
@@ -62,6 +62,8 @@ class PimpinanKonfirmasiController extends Controller
         // 1. Ambil data mentah dari Spreadsheet
         $allKunjungan = $this->readSheet('kunjungan');
         $allPengunjung = $this->readSheet('pengunjung');
+        // TAMBAHAN: Ambil data master keperluan
+        $allKeperluan = $this->readSheet('master_keperluan');
 
         // 2. Filter data (Pengganti query WHERE di SQL)
         $data_konfirmasi = $allKunjungan->filter(function ($item) use ($user) {
@@ -81,9 +83,14 @@ class PimpinanKonfirmasiController extends Controller
             return false;
         });
 
-        // 3. Gabungkan dengan data pengunjung (Pengganti with('pengunjung'))
-        $data_konfirmasi = $data_konfirmasi->map(function ($kunjungan) use ($allPengunjung) {
+        // 3. Gabungkan dengan data pengunjung & keperluan
+        $data_konfirmasi = $data_konfirmasi->map(function ($kunjungan) use ($allPengunjung, $allKeperluan) {
             $kunjungan->pengunjung = $allPengunjung->firstWhere('id', $kunjungan->pengunjung_id);
+            
+            // PENCARIAN KEPERLUAN UTAMA BERDASARKAN ID
+            $master = $allKeperluan->firstWhere('id', $kunjungan->keperluan_id);
+            $kunjungan->nama_keperluan_utama = $master ? $master->keterangan : 'Layanan Umum';
+
             return $kunjungan;
         });
 

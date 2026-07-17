@@ -112,39 +112,6 @@
     {{-- KARTU KANAN: MASTER DATA & KEAMANAN --}}
     <div class="lg:col-span-5 space-y-6 lg:space-y-8 w-full overflow-hidden">
 
-        {{-- DATA MASTER KEPERLUAN --}}
-        <div class="bg-white dark:bg-slate-800 rounded-[1.5rem] md:rounded-[2.5rem] p-5 sm:p-8 shadow-md shadow-slate-100 dark:shadow-none border border-slate-100 dark:border-slate-700/50 transition-colors duration-300 w-full overflow-hidden">
-            <h3 class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white mb-1 truncate">Master Keperluan</h3>
-            <p class="text-xs sm:text-sm text-slate-400 dark:text-slate-500 font-semibold mb-6">Kelola opsi tujuan kunjungan tamu.</p>
-
-            {{-- FORM INPUT DENGAN FITUR SHOW LOADING --}}
-            <form action="{{ route('keperluan.store') }}" method="POST" onsubmit="showLoadingOverlay()" class="relative mb-8 flex flex-col sm:block gap-3 w-full">
-                @csrf
-                <input type="text" name="keterangan" required
-                       class="w-full bg-slate-50 dark:bg-slate-900 border-2 border-transparent rounded-2xl px-5 py-4 pr-4 sm:pr-28 focus:bg-white dark:focus:bg-slate-800 focus:border-red-600 dark:focus:border-amber-500 outline-none transition-all font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 text-sm sm:text-base"
-                       placeholder="Ketik keperluan baru...">
-                <button type="submit" class="w-full sm:w-auto sm:absolute sm:right-2 sm:top-2 sm:bottom-2 bg-slate-900 dark:bg-red-600 hover:bg-slate-950 dark:hover:bg-red-700 text-white px-5 py-3.5 sm:py-0 rounded-xl font-black text-sm tracking-wider uppercase transition-all shadow-md active:scale-95 sm:active:scale-100 flex-shrink-0">
-                    Simpan
-                </button>
-            </form>
-
-            {{-- BADGE TAG WRAPPER --}}
-            <div class="flex flex-wrap gap-2.5 w-full">
-                @foreach($data_keperluan as $k)
-                <div class="flex items-center justify-between sm:justify-start gap-2 pl-4 pr-2 py-2 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-xl border border-slate-200/70 dark:border-slate-700/80 transition-all group max-w-full overflow-hidden">
-                    <span class="font-bold text-xs sm:text-sm truncate min-w-0 flex-1 break-words pr-1">{{ $k->keterangan }}</span>
-                    <form action="{{ route('keperluan.destroy', $k->id) }}" method="POST" class="delete-keperluan-form inline flex-shrink-0">
-                        @csrf
-                        @method('DELETE')
-                        <button type="button" onclick="konfirmasiHapusKeperluan(this)" class="w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 shadow-sm border border-slate-200/60 dark:border-slate-600 transition-all hover:scale-105 flex-shrink-0">
-                            <i class="fa-solid fa-xmark text-xs"></i>
-                        </button>
-                    </form>
-                </div>
-                @endforeach
-            </div>
-        </div>
-
         {{-- KARTU KANAN: MASTER DATA & KEAMANAN --}}
         <div class="lg:col-span-5 space-y-6 lg:space-y-8">
 

@@ -24,7 +24,7 @@
             }
         }
     </script>
-
+    <script src="[https://cdn.jsdelivr.net/npm/sweetalert2@11](https://cdn.jsdelivr.net/npm/sweetalert2@11)"></script>
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -176,7 +176,7 @@
                 <nav class="space-y-2">
 
                     {{-- DASHBOARD --}}
-                    @if(in_array($userSession->role_id, [1, 2, 3]))
+                    @if(in_array($userSession->role_id, [1, 2]))
                         <a href="{{ route('dashboard') }}" onclick="handleNavClick(event, this)"
                             class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 menu-link
                             {{ request()->routeIs('dashboard') ? 'menu-active shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
@@ -196,12 +196,17 @@
                     @endif
 
                     {{-- ANALYTICS KPI --}}
-                    @if($userSession->email === 'kajur.elektro@poliban.ac.id' || $userSession->role_id == 3)
+                    @if($userSession->email === 'kajur.elektro@poliban.ac.id' || in_array($userSession->role_id, [3, 4]))
+                        @php
+                            // Cek apakah sedang di route analytics ATAU di dashboard tapi rolenya pimpinan/koprodi (bukan 1 & 2)
+                            $isAnalyticsActive = request()->routeIs('dashboard.analytics') || (request()->routeIs('dashboard') && !in_array($userSession->role_id, [1, 2]));
+                        @endphp
+                        
                         <a href="{{ route('dashboard.analytics') }}" onclick="handleNavClick(event, this)"
                             class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 group menu-link
-                            {{ request()->routeIs('dashboard.analytics') ? 'menu-active shadow-lg' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
-                            <i class="fa-solid fa-chart-simple text-lg flex-shrink-0 transition-colors {{ request()->routeIs('dashboard.analytics') ? 'text-indigo-500 dark:text-purple-400' : 'text-slate-400 group-hover:text-blue-600' }}"></i>
-                            <span class="font-bold text-sm truncate">Analytics KPI</span>
+                            {{ $isAnalyticsActive ? 'menu-active shadow-lg' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
+                            <i class="fa-solid fa-chart-simple text-lg flex-shrink-0 transition-colors {{ $isAnalyticsActive ? 'text-indigo-500 dark:text-purple-400' : 'text-slate-400 group-hover:text-blue-600' }}"></i>
+                            <span class="font-bold text-sm truncate">Pantauan Kinerja</span>
                         </a>
                     @endif
 
@@ -225,7 +230,7 @@
                         </a>
                     @endif
 
-                    {{-- FITUR KHUSUS PIMPINAN --}}
+{{-- FITUR KHUSUS PIMPINAN --}}
                     @if($userSession->role_id == 3)
                         <div class="pt-5 mt-5 border-t-2 border-red-500/30">
                             <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
@@ -236,7 +241,8 @@
                                 {{ request()->routeIs('pimpinan.konfirmasi') ? 'menu-active shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
                                 <i class="fa-solid fa-file-signature text-lg flex-shrink-0"></i>
                                 <span class="font-bold text-sm truncate">Konfirmasi Masuk</span>
-                                <span class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                {{-- PERBAIKAN: Ditambahkan ID & class hidden bawaan awal --}}
+                                <span id="pimpinan-notif-dot" class="absolute right-5 w-2 h-2 rounded-full bg-amber-500 animate-pulse hidden"></span>
                             </a>
                         </div>
                     @endif
@@ -390,27 +396,62 @@
 
 <div id="confirm-logout-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-4">
     <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-full text-center">
-        <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mb-4 text-rose-500 dark:text-rose-400">
+        
+        {{-- IKON LOGOUT --}}
+        <div id="logout-icon-box" class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/30 flex items-center justify-center mb-4 text-rose-500 dark:text-rose-400 transition-all duration-300">
             <i class="fa-solid fa-arrow-right-from-bracket text-xl"></i>
         </div>
-        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Keluar dari sistem?</h3>
-        <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-5">Sesi login Anda akan diakhiri. Anda harus memasukkan akun kembali untuk mengakses dashboard.</p>
-        <div class="flex gap-2 w-full">
-            <button onclick="tutupConfirmModal()" class="flex-1 py-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Batal</button>
-            <button onclick="eksekusiLogout()" class="flex-1 py-3 rounded-full bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all">Ya, Keluar</button>
+        
+        <h3 id="logout-title" class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Keluar dari sistem?</h3>
+        <p id="logout-desc" class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-5">Sesi login Anda akan diakhiri. Anda harus memasukkan akun kembali untuk mengakses dashboard.</p>
+        
+        {{-- GRUP TOMBOL AKSI ASLI --}}
+        <div id="logout-action-buttons" class="flex gap-2 w-full">
+            <button type="button" onclick="tutupConfirmModal()" class="flex-1 py-3 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+                Batal
+            </button>
+            <button type="button" onclick="eksekusiLogout()" class="flex-1 py-3 rounded-full bg-indigo-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-indigo-700 shadow-md shadow-indigo-600/20 transition-all">
+                Ya, Keluar
+            </button>
         </div>
+
+        {{-- PREMIUM LOADING PROGRESS BAR (Tersembunyi secara bawaan) --}}
+        <div id="logout-progress-container" class="w-full hidden px-1 transition-all duration-300">
+            <div class="flex justify-between items-center text-[10px] font-bold mb-1.5">
+                <span class="text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-spinner fa-spin text-[9px]"></i> Mengakhiri Sesi...
+                </span>
+                <span id="logout-progress-text" class="text-slate-400 dark:text-slate-500">0%</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div id="logout-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-rose-500 rounded-full w-0 transition-all duration-100 ease-out"></div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- ELEMENT FORM TERSEMBUNYI UNTUK PROSES POST LOGOUT LARAVEL (SESUAIKAN JIKA MENGGUNAKAN METHOD POST) --}}
+<form id="logout-form-action" action="/logout" method="POST" class="hidden">
+    @csrf
+</form>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- MODAL LOADING PERPINDAHAN HALAMAN (CUSTOM THEME) --}}
+<div id="nav-loading-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm p-4 transition-all duration-300">
+    <div class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center max-w-xs w-full text-center animate-modal-up">
+        <div class="w-12 h-12 border-4 border-indigo-600 border-t-transparent dark:border-indigo-400 dark:border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1">Memuat Halaman</h3>
+        <p class="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">Mohon tunggu...</p>
+    </div>
+</div>
 {{-- MODIFIKASI SCRIPT GLOBAL --}}
 <script>
 // =========================================================================
-// LOGIKA LOADING SAAT PERPINDAHAN MENU NAVIGASI (ANTI GANDA)
+// LOGIKA LOADING SAAT PERPINDAHAN MENU NAVIGASI (CUSTOM THEME)
 // =========================================================================
 function handleNavClick(event, element) {
-    // Jika tombol yang diklik adalah link yang memang sedang aktif, batalkan perpindahan demi efisiensi
+    // Jika tombol yang diklik adalah link yang memang sedang aktif, batalkan perpindahan
     if (element.classList.contains('menu-active')) {
         event.preventDefault();
         return false;
@@ -418,76 +459,82 @@ function handleNavClick(event, element) {
 
     event.preventDefault();
     const destinationUrl = element.getAttribute('href');
-    const isDarkMode = document.documentElement.classList.contains('dark');
 
-    // Kunci variabel state auto-refresh
+    // Kunci variabel state auto-refresh agar tidak memicu refresh saat pindah halaman
     isLoadingActive = true; 
 
-    // Tampilkan animasi pemuatan data
-    Swal.fire({
-        title: 'Memuat Halaman',
-        text: 'Menyinkronkan data sistem, mohon tunggu...',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        background: isDarkMode ? '#1e293b' : '#ffffff',
-        color: isDarkMode ? '#f8fafc' : '#1f2937',
-        didOpen: () => {
-            Swal.showLoading();
-            // Lakukan perpindahan rute url
-            window.location.href = destinationUrl;
-        }
-    });
+    // Tampilkan modal custom berdesain [2rem] Anda
+    const navModal = document.getElementById('nav-loading-modal');
+    if (navModal) {
+        navModal.classList.remove('hidden');
+        navModal.classList.add('flex');
+    }
+
+    // Beri jeda 150 milidetik agar efek blur latar belakang dan spinner sempat 
+    // di-render oleh browser sebelum berpindah ke URL baru
+    setTimeout(() => {
+        window.location.href = destinationUrl;
+    }, 150);
 }
 </script>
 
-@if($userSession->role_id == 2)
+{{-- PERBAIKAN: Diperluas agar pimpinan (role 3) juga ikut menjalankan script pengecekan --}}
+@if(in_array($userSession->role_id, [2, 3]))
 <script>
-const notifAudio=new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-notifAudio.preload='auto';
+const notifAudio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+notifAudio.preload = 'auto';
 
-document.addEventListener('click',function initAudio(){
-    notifAudio.play().then(()=>{
+function initAudio() {
+    notifAudio.play().then(() => {
         notifAudio.pause();
-        notifAudio.currentTime=0;
-    }).catch(err=>console.log(err));
+        notifAudio.currentTime = 0;
+    }).catch(err => console.log('Audio unlock silent:', err));
 
-    document.addEventListener('click',initAudio);
-});
+    document.removeEventListener('click', initAudio);
+    document.removeEventListener('keydown', initAudio);
+}
 
-function playNotifSound(){
-    notifAudio.currentTime=0;
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('keydown', initAudio, { once: true });
+
+function playNotifSound() {
+    notifAudio.currentTime = 0;
     notifAudio.play()
-    .then(()=>console.log('Notif bunyi'))
-    .catch(err=>console.log('Audio gagal:',err));
+        .then(() => console.log('Notif bunyi'))
+        .catch(err => console.log('Audio gagal:', err));
 }
 
 let lastNotifCount = 0;
 let isFirstLoad = true;
 let lastReminderTime = Date.now();
 
-function fetchNotifications(){
+function fetchNotifications() {
     fetch("{{ route('dashboard.check-notif') }}")
-    .then(response=>response.json())
-    .then(data=>{
-        const countBadge=document.getElementById('notif-count');
-        const notifDot=document.getElementById('notif-dot');
-        const notifContainer=document.getElementById('notifContainer');
-        const notifFooterLink=document.getElementById('notifFooterLink');
+    .then(response => response.json())
+    .then(data => {
+        const countBadge = document.getElementById('notif-count');
+        const notifDot = document.getElementById('notif-dot');
+        const notifContainer = document.getElementById('notifContainer');
+        const notifFooterLink = document.getElementById('notifFooterLink');
+        const pimpinanDot = document.getElementById('pimpinan-notif-dot'); // Selector Dot Pimpinan
 
         const userRoleId = "{{ session('user')['role_id'] ?? 2 }}";
         const isDarkMode = document.documentElement.classList.contains('dark');
 
-        if(data.count>0){
-            countBadge.innerText=data.count;
-            countBadge.classList.remove('hidden');
-            notifDot.classList.remove('hidden');
+        if (data.count > 0) {
+            // Amankan dengan null-check jika element topbar tidak di-render di halaman pimpinan
+            if (countBadge) { countBadge.innerText = data.count; countBadge.classList.remove('hidden'); }
+            if (notifDot) notifDot.classList.remove('hidden');
+            
+            // JIKA ADA DATA: Nyalakan penanda pimpinan jika element-nya eksis
+            if (pimpinanDot) pimpinanDot.classList.remove('hidden');
 
-            if(notifFooterLink) {
+            if (notifFooterLink) {
                 notifFooterLink.classList.remove('hidden');
             }
 
-            if(notifContainer) {
-                if(userRoleId == 2) {
+            if (notifContainer) {
+                if (userRoleId == 2) {
                     notifContainer.innerHTML = `
                         <div class="p-4 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex gap-3 items-start">
                             <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
@@ -513,16 +560,18 @@ function fetchNotifications(){
                     `;
                 }
             }
-        }else{
-            countBadge.innerText='0';
-            countBadge.classList.add('hidden');
-            notifDot.classList.add('hidden');
+        } else {
+            if (countBadge) { countBadge.innerText = '0'; countBadge.classList.add('hidden'); }
+            if (notifDot) notifDot.classList.add('hidden');
+            
+            // JIKA KOSONG: Matikan penanda pimpinan
+            if (pimpinanDot) pimpinanDot.classList.add('hidden');
 
-            if(notifFooterLink) {
+            if (notifFooterLink) {
                 notifFooterLink.classList.add('hidden');
             }
 
-            if(notifContainer) {
+            if (notifContainer) {
                 notifContainer.innerHTML = `
                     <div class="p-6 text-center bg-white dark:bg-slate-900 text-slate-400 dark:text-slate-500">
                         <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/60 flex items-center justify-center mx-auto mb-3">
@@ -536,10 +585,10 @@ function fetchNotifications(){
         }
 
         const alertTitle = (userRoleId == 2) ? 'Antrean Baru!' : 'Disposisi Baru!';
-        const alertText  = (userRoleId == 2) ? `Ada ${data.count-lastNotifCount} antrean baru masuk.` : `Ada ${data.count-lastNotifCount} kunjungan tamu yang diteruskan ke Anda.`;
+        const alertText  = (userRoleId == 2) ? `Ada ${data.count - lastNotifCount} antrean baru masuk.` : `Ada ${data.count - lastNotifCount} kunjungan tamu yang diteruskan ke Anda.`;
         const remindText = (userRoleId == 2) ? 'Masih ada antrean yang belum diproses.' : 'Masih ada disposisi tamu yang menunggu persetujuan Anda.';
 
-        if(!isFirstLoad && data.count > lastNotifCount){
+        if (!isFirstLoad && data.count > lastNotifCount) {
             playNotifSound();
             Swal.fire({
                 title: alertTitle,
@@ -552,15 +601,13 @@ function fetchNotifications(){
                 timerProgressBar: true,
                 background: isDarkMode ? '#0f172a' : '#ffffff',
                 color: isDarkMode ? '#f1f5f9' : '#1e293b',
-                customClass: {
-                    popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl'
-                }
+                customClass: { popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl' }
             });
         }
 
-        if(data.count > 0 && data.has_pending === true){
+        if (data.count > 0 && data.has_pending === true) {
             const now = Date.now();
-            if(now - lastReminderTime >= 180000){
+            if (now - lastReminderTime >= 180000) {
                 playNotifSound();
                 Swal.fire({
                     title: (userRoleId == 2) ? 'Reminder Antrean' : 'Reminder Disposisi',
@@ -573,9 +620,7 @@ function fetchNotifications(){
                     timerProgressBar: true,
                     background: isDarkMode ? '#0f172a' : '#ffffff',
                     color: isDarkMode ? '#f1f5f9' : '#1e293b',
-                    customClass: {
-                        popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl'
-                    }
+                    customClass: { popup: 'border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl' }
                 });
                 lastReminderTime = now;
             }
@@ -583,17 +628,17 @@ function fetchNotifications(){
             lastReminderTime = Date.now();
         }
 
-        lastNotifCount=data.count;
-        isFirstLoad=false;
+        lastNotifCount = data.count;
+        isFirstLoad = false;
     })
-    .catch(error=>{
-        console.error('Fetch notif error:',error);
+    .catch(error => {
+        console.error('Fetch notif error:', error);
     });
 }
 
-document.addEventListener('DOMContentLoaded',function(){
+document.addEventListener('DOMContentLoaded', function() {
     fetchNotifications();
-    setInterval(fetchNotifications,60000);
+    setInterval(fetchNotifications, 60000);
 });
 </script>
 @endif
@@ -790,6 +835,69 @@ function toggleNotifDropdown() {
             isModalOpen = false;
         }, 200);
     }
+}
+
+let isLoggingOut = false; // Guard agar user tidak bisa menutup modal saat loading jalan
+
+function bukaConfirmModal() {
+    if (isLoggingOut) return;
+    const modal = document.getElementById('confirm-logout-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function tutupConfirmModal() {
+    // Kunci tombol Batal jika progress bar pembersihan sesi sedang berjalan
+    if (isLoggingOut) return; 
+    
+    const modal = document.getElementById('confirm-logout-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function eksekusiLogout() {
+    if (isLoggingOut) return;
+    isLoggingOut = true;
+
+    const actionButtons = document.getElementById('logout-action-buttons');
+    const progressContainer = document.getElementById('logout-progress-container');
+    const progressBar = document.getElementById('logout-progress-bar');
+    const progressText = document.getElementById('logout-progress-text');
+    const iconBox = document.getElementById('logout-icon-box');
+
+    // 1. Sembunyikan Tombol Aksi & Ubah warna ikon box menjadi Indigo
+    actionButtons.classList.add('hidden');
+    progressContainer.classList.remove('hidden');
+    if(iconBox) {
+        iconBox.className = "w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center mb-4 text-indigo-500 dark:text-indigo-400 animate-pulse";
+    }
+
+    // 2. Animasi Progress Bar Simulasi Waktu Pengakhiran Sesi (Durasi: 1.5 Detik)
+    let progress = 0;
+    const duration = 1500; 
+    const intervalTime = 30; 
+    const step = (intervalTime / duration) * 100;
+
+    const timer = setInterval(() => {
+        progress += step;
+        if (progress >= 100) {
+            progress = 100;
+            clearInterval(timer);
+            
+            // 3. Trigger submit form asli Laravel setelah bar penuh 100%
+            const form = document.getElementById('logout-form-action');
+            if (form) {
+                form.submit();
+            } else {
+                // Alternatif fallback jika route berupa tautan GET biasa
+                window.location.href = '/logout';
+            }
+        }
+        
+        // Update visual width bar dan persentase teks
+        progressBar.style.width = `${progress}%`;
+        progressText.innerText = `${Math.floor(progress)}%`;
+    }, intervalTime);
 }
 </script>
 
