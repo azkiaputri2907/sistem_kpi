@@ -28,7 +28,7 @@
             </p>
         </div>
 
-<div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
 
             {{-- FILTER PRODI --}}
             <form action="{{ route('dashboard.ulasan') }}" method="GET" class="w-full sm:w-auto m-0 flex items-center">
@@ -36,7 +36,6 @@
                     <select name="prodi_id"
                         onchange="this.form.submit()"
                         {{ !$isSuper ? 'disabled' : '' }}
-                        {{-- PERBAIKAN: py-3 agar sama tinggi dengan tombol laporan ulasan --}}
                         class="w-full sm:w-[280px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-950/50 outline-none appearance-none transition-all shadow-sm {{ !$isSuper ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed text-slate-400 dark:text-slate-500' : '' }}">
 
                         @if($isSuper)
@@ -87,10 +86,18 @@
                         @endfor
                     </div>
 
-                    {{-- ASAL INSTANSI DIUBAH JADI DIRAHASIAKAN --}}
-                    <span class="bg-slate-50 dark:bg-slate-700 text-slate-400 dark:text-slate-300 text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-slate-100 dark:border-slate-600 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/50 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 group-hover:border-indigo-100 dark:group-hover:border-indigo-900 transition-colors">
-                        Dirahasiakan
-                    </span>
+                    {{-- BADGE JENIS TAMU DINAMIS (PENGGANTI DIRAHASIAKAN) --}}
+                    <div class="flex gap-2">
+                        @if(isset($item->jenis_tamu) && $item->jenis_tamu === 'Internal')
+                            <span class="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-indigo-100 dark:border-indigo-800 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-800/60">
+                                Tamu Internal
+                            </span>
+                        @else
+                            <span class="bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-emerald-100 dark:border-emerald-800 transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-800/60">
+                                Tamu Eksternal
+                            </span>
+                        @endif
+                    </div>
                 </div>
 
                 <div class="flex-grow">
@@ -100,7 +107,7 @@
                 </div>
 
                 <div class="mt-auto pt-6 border-t border-gray-50 dark:border-slate-700/50 flex flex-col text-left">
-                    {{-- NAMA PENGUNJUNG DIUBAH JADI ANONIM --}}
+                    {{-- NAMA PENGUNJUNG TETAP ANONIM --}}
                     <span class="text-slate-900 dark:text-white font-black text-base">
                         Anonim
                     </span>

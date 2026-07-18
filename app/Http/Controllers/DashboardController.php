@@ -1120,16 +1120,27 @@ public function laporan(Request $request)
                 ->firstWhere('kunjungan_id',$k->id);
 
             if($survey){
-
                 $survey->detail = $db['detail_survey']
                     ->firstWhere('survey_id',$survey->id);
             }
 
             $k->survey = $survey;
 
-            $k->created_at = Carbon::parse(
+            $k->created_at = \Carbon\Carbon::parse(
                 $k->created_at ?? now()
             );
+
+            // LOGIKA TAMBAHAN: Tentukan jenis tamu
+            $k->jenis_tamu = 'Eksternal';
+            if ($k->pengunjung) {
+                // Cek dari kolom kategori (jika ada) atau asal instansi
+                $kategori = strtolower($k->pengunjung->kategori ?? '');
+                $instansi = strtolower($k->pengunjung->asal_instansi ?? '');
+                
+                if (str_contains($kategori, 'internal') || $instansi === 'poliban') {
+                    $k->jenis_tamu = 'Internal';
+                }
+            }
 
             return $k;
 
