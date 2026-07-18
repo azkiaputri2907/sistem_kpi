@@ -313,15 +313,42 @@ public function store(Request $request)
     ]);
 
     try {
-        // 4. Proses Upload File Lokal (Tersimpan di folder public/uploads/surat)
+        // 4. Proses Upload File ke Google Drive via Base64
         $pathFile = '-';
         if ($request->hasFile('surat_disposisi')) {
             $file = $request->file('surat_disposisi');
-            // Penamaan file yang aman
             $namaClean = preg_replace('/[^A-Za-z0-9_\-]/', '_', $file->getClientOriginalName());
             $namaFile = 'surat_' . time() . '_' . $namaClean;
-            $file->move(public_path('uploads/surat'), $namaFile);
-            $pathFile = 'uploads/surat/' . $namaFile;
+            
+            // Konversi ke base64
+            $fileData = base64_encode(file_get_contents($file->getRealPath()));
+            $mimeType = $file->getMimeType();
+
+            try {
+                // SAMA PERSIS DENGAN PARAMETER DI UPLOADFILE(), PLUS TARGET KOLOM
+                $responseUpload = \Illuminate\Support\Facades\Http::timeout(60)->post($this->getApiUrl() . '?action=upload_file', [
+                    'action'       => 'upload_file',
+                    'id'           => 0, 
+                    'target_kolom' => 'surat_disposisi', // Kasih tahu GAS ini untuk surat disposisi
+                    'nama_file'    => $namaFile,
+                    'tipe_mime'    => $mimeType,
+                    'file_base64'  => $fileData
+                ]);
+
+                $resUploadData = $responseUpload->json();
+
+                if ($responseUpload->successful() && isset($resUploadData['status']) && $resUploadData['status'] === 'success') {
+                    $pathFile = $resUploadData['link']; 
+                } else {
+                    $pesanError = $resUploadData['message'] ?? 'Respons Google Script tidak valid';
+                    throw new \Exception($pesanError);
+                }
+            } catch (\Exception $e) {
+                // FALLBACK: Jika API Drive error/timeout
+                \Illuminate\Support\Facades\Log::warning("Upload Google Drive gagal, beralih ke penyimpanan lokal: " . $e->getMessage());
+                $file->move(public_path('uploads/surat'), $namaFile);
+                $pathFile = url('uploads/surat/' . $namaFile); 
+            }
         }
 
         // 5. Normalisasi No Telepon

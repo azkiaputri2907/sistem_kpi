@@ -330,6 +330,16 @@
                             <td class="px-6 md:px-8 py-4 md:py-6 text-center">
                                 <div class="flex justify-center gap-1.5 md:gap-2 items-center">
                                     <a href="{{ url('/status/'.$k->nomor_kunjungan) }}?view=admin" target="_blank" class="flex-shrink-0 w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-gray-50 dark:bg-slate-700 text-gray-400 dark:text-slate-300 rounded-lg md:rounded-xl hover:bg-slate-800 dark:hover:bg-slate-900 hover:text-white transition-all shadow-sm"><i class="fa-solid fa-eye text-[10px] md:text-xs"></i></a>
+{{-- TAMBAHAN: TOMBOL UNDUH SURAT DISPOSISI AWAL (KHUSUS TAMU EKSTERNAL) --}}
+                                    @if(!empty($k->surat_disposisi) && $k->surat_disposisi !== '-')
+                                        @php
+                                            // Deteksi apakah file berupa URL Google Drive atau direktori folder upload lokal
+                                            $linkDisposisi = filter_var($k->surat_disposisi, FILTER_VALIDATE_URL) ? $k->surat_disposisi : asset($k->surat_disposisi);
+                                        @endphp
+                                        <a href="{{ $linkDisposisi }}" target="_blank" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center bg-sky-50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400 rounded-lg md:rounded-xl hover:bg-sky-600 hover:text-white transition-all shadow-sm" title="Lihat/Unduh Surat Disposisi Pengunjung">
+                                            <i class="fa-solid fa-file-arrow-down text-[10px] md:text-xs"></i>
+                                        </a>
+                                    @endif
 
                                     @if($user->role_id == 2)
                                         @if($statusLayananClean === 'ANTRE')
