@@ -702,22 +702,22 @@
             const kepDetail   = currentDataInput.keperluan_detail || '-';
 
             const pesanWa = `*NOTIFIKASI LAYANAN PUBLIK ELEKTRO*\n\n` +
-                            `Halo, *Bapak/Ibu Pimpinan*\n\n` +
-                            `Terdapat permintaan persetujuan atau konfirmasi antrean kunjungan baru yang diteruskan kepada Anda. Berikut rincian datanya:\n\n` +
-                            `*RINCIAN DATA ANTREAN:*\n` +
-                            `• *Nomor Kunjungan:* ${noKunjungan}\n` +
-                            `• *Nama Pengunjung:* ${namaTamu}\n` +
-                            `• *Asal Instansi:* ${asalInstansi}\n` +
-                            `• *Program Studi Terkait:* ${prodiTujuan}\n\n` +
-                            `*KEPERLUAN & DETAIL LAYANAN:*\n` +
-                            `• *Layanan Utama:* ${kepUtama}\n` +
-                            `• *Keterangan Detail:* "${kepDetail}"\n\n` +
-                            `Silakan berikan tanggapan, instruksi, atau konfirmasi Anda secara langsung dengan mengakses tautan di bawah ini:\n\n` +
-                            `*Beri Tanggapan Sekarang:*\n` +
-                            `${tautanKonfirmasi}\n\n` +
-                            `-----------------------------------------\n` +
-                            `_*Notifikasi Otomatis - Jurusan Teknik Elektro Poliban*_`;
-
+    `Halo, *Bapak/Ibu Pimpinan*\n\n` +
+    `Terdapat permintaan persetujuan atau konfirmasi antrean kunjungan baru yang diteruskan kepada Anda. Berikut rincian datanya:\n\n` +
+    `*RINCIAN DATA ANTREAN:*\n` +
+    `• *Nomor Kunjungan:* ${nomor_kunjungan}\n` +
+    `• *Nama Pengunjung:* ${nama_lengkap}\n` +
+    `• *Asal Instansi:* ${asal_instansi}\n` +
+    `• *Program Studi Terkait:* ${nama_prodi}\n\n` +
+    `*KEPERLUAN & DETAIL LAYANAN:*\n` +
+    `• *Layanan Utama:* ${nama_keperluan_utama}\n` +
+    `• *Keterangan Detail:* "${keperluan}"\n\n` +
+    `Silakan berikan tanggapan, instruksi, atau konfirmasi Anda secara langsung dengan mengakses tautan di bawah ini:\n\n` +
+    `*Beri Tanggapan Sekarang:*\n` +
+    `${tautanKonfirmasi}\n\n` +
+    `-----------------------------------------\n` +
+    `_*Notifikasi Otomatis - Jurusan Teknik Elektro Poliban*_`;
+    
             window.open(`https://wa.me/${noWa}?text=${encodeURIComponent(pesanWa)}`, '_blank');
         }
 
