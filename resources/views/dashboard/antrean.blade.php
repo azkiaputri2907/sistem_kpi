@@ -351,12 +351,14 @@
                                         @elseif($statusLayananClean === 'DIPROSES')
                                             @if(!$k->is_email_sent)
                                                 <button type="button" 
-                                                    onclick="bukaModalEmail('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '') }}', this)" 
-                                                    data-nomor="{{ $k->nomor_kunjungan }}"
-                                                    data-prodi="{{ $k->nama_prodi ?? '-' }}"
-                                                    data-keperluan-utama="{{ $k->keperluan_master->keterangan ?? 'Kunjungan Umum' }}"
-                                                    data-instansi="{{ $k->pengunjung->asal_instansi ?? 'Umum / Mandiri' }}"
-                                                    class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white" title="Kirim Email ke Pimpinan"><i class="fa-solid fa-envelope text-xs"></i></button>
+    onclick="bukaModalEmail('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '') }}', this)" 
+    data-nomor="{{ $k->nomor_kunjungan }}"
+    data-prodi="{{ $k->prodi->nama ?? '-' }}"
+    data-keperluan-utama="{{ $k->keperluan_master->keterangan ?? 'Kunjungan Umum' }}"
+    data-instansi="{{ $k->pengunjung->asal_instansi ?? 'Umum / Mandiri' }}"
+    class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-blue-50 dark:bg-blue-950/30 text-blue-500 dark:text-blue-400 hover:bg-blue-600 dark:hover:bg-blue-500 hover:text-white" title="Kirim Email ke Pimpinan">
+    <i class="fa-solid fa-envelope text-xs"></i>
+</button>
                                             @endif
                                             @if(!$k->is_forwarded)
                                                 <button type="button" onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white" title="Teruskan ke Pimpinan"><i class="fa-solid fa-share-nodes text-xs"></i></button>
@@ -666,7 +668,7 @@
         isModalOpen = false; 
     }
 
-    function validasiFormNotifikasi(event) {
+function validasiFormNotifikasi(event) {
         event.preventDefault();
         const emailInput = document.getElementById('email_pimpinan').value.trim();
         let waInput = document.getElementById('wa_pimpinan').value.trim();
@@ -702,22 +704,22 @@
             const kepDetail   = currentDataInput.keperluan_detail || '-';
 
             const pesanWa = `*NOTIFIKASI LAYANAN PUBLIK ELEKTRO*\n\n` +
-    `Halo, *Bapak/Ibu Pimpinan*\n\n` +
-    `Terdapat permintaan persetujuan atau konfirmasi antrean kunjungan baru yang diteruskan kepada Anda. Berikut rincian datanya:\n\n` +
-    `*RINCIAN DATA ANTREAN:*\n` +
-    `• *Nomor Kunjungan:* ${nomor_kunjungan}\n` +
-    `• *Nama Pengunjung:* ${nama_lengkap}\n` +
-    `• *Asal Instansi:* ${asal_instansi}\n` +
-    `• *Program Studi Terkait:* ${nama_prodi}\n\n` +
-    `*KEPERLUAN & DETAIL LAYANAN:*\n` +
-    `• *Layanan Utama:* ${nama_keperluan_utama}\n` +
-    `• *Keterangan Detail:* "${keperluan}"\n\n` +
-    `Silakan berikan tanggapan, instruksi, atau konfirmasi Anda secara langsung dengan mengakses tautan di bawah ini:\n\n` +
-    `*Beri Tanggapan Sekarang:*\n` +
-    `${tautanKonfirmasi}\n\n` +
-    `-----------------------------------------\n` +
-    `_*Notifikasi Otomatis - Jurusan Teknik Elektro Poliban*_`;
-    
+            `Halo, *Bapak/Ibu Pimpinan*\n\n` +
+            `Terdapat permintaan persetujuan atau konfirmasi antrean kunjungan baru yang diteruskan kepada Anda. Berikut rincian datanya:\n\n` +
+            `*RINCIAN DATA ANTREAN:*\n` +
+            `• *Nomor Kunjungan:* ${noKunjungan}\n` +
+            `• *Nama Pengunjung:* ${namaTamu}\n` +
+            `• *Asal Instansi:* ${asalInstansi}\n` +
+            `• *Program Studi Terkait:* ${prodiTujuan}\n\n` +
+            `*KEPERLUAN & DETAIL LAYANAN:*\n` +
+            `• *Layanan Utama:* ${kepUtama}\n` +
+            `• *Keterangan Detail:* "${kepDetail}"\n\n` +
+            `Silakan berikan tanggapan, instruksi, atau konfirmasi Anda secara langsung dengan mengakses tautan di bawah ini:\n\n` +
+            `*Beri Tanggapan Sekarang:*\n` +
+            `${tautanKonfirmasi}\n\n` +
+            `-----------------------------------------\n` +
+            `_*Notifikasi Otomatis - Jurusan Teknik Elektro Poliban*_`;
+            
             window.open(`https://wa.me/${noWa}?text=${encodeURIComponent(pesanWa)}`, '_blank');
         }
 
