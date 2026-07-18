@@ -211,7 +211,7 @@
                     @endif
 
                     {{-- LAPORAN EKSPOR --}}
-                    @if(in_array($userSession->role_id, [1, 2, 3]))
+                    @if(in_array($userSession->role_id, [1, 2, 3, 4]))
                         <a href="{{ route('dashboard.laporan') }}" onclick="handleNavClick(event, this)"
                             class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 menu-link
                             {{ request()->routeIs('dashboard.laporan') ? 'menu-active shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
@@ -221,7 +221,7 @@
                     @endif
 
                     {{-- ULASAN PENGUNJUNG --}}
-                    @if(in_array($userSession->role_id, [2, 3]))
+                    @if(in_array($userSession->role_id, [2, 3, 4]))
                         <a href="{{ route('dashboard.ulasan') }}" onclick="handleNavClick(event, this)"
                             class="flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-200 menu-link
                             {{ request()->routeIs('dashboard.ulasan') ? 'menu-active shadow-md' : 'text-slate-400 hover:bg-slate-100 hover:text-blue-600 dark:text-slate-500 dark:hover:bg-slate-800' }}">
@@ -231,7 +231,7 @@
                     @endif
 
 {{-- FITUR KHUSUS PIMPINAN --}}
-                    @if($userSession->role_id == 3)
+                    @if($userSession->email === 'kajur.elektro@poliban.ac.id' || in_array($userSession->role_id, [3, 4]))
                         <div class="pt-5 mt-5 border-t-2 border-red-500/30">
                             <p class="px-4 mb-3 text-[10px] uppercase tracking-[0.3em] text-red-600 dark:text-red-400 font-black">
                                 Tugas Pimpinan
