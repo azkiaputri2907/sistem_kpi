@@ -306,7 +306,7 @@
                         </div>
                         <div class="w-full overflow-hidden relative flex items-center h-4">
                             <div class="absolute whitespace-nowrap text-xs font-semibold text-slate-600 dark:text-slate-300 animate-marquee">
-                                📢 Demi menjaga keamanan dan konsistensi data, mohon <span class="text-amber-600 dark:text-amber-400 font-black">jangan mengunduh laporan atau mengekspor data</span> saat hitung mundur Auto-Refresh hampir berakhir. Arahkan kursor ke area input untuk menjeda sementara proses Auto-Refresh. Silakan muat ulang (refresh) halaman apabila terjadi kendala atau data tidak tampil dengan semestinya.
+                                📢 Demi menjaga keamanan dan konsistensi data, mohon jangan mengunduh laporan atau mengekspor data saat hitung mundur Auto-Refresh hampir berakhir. Arahkan kursor ke area input untuk menjeda sementara proses Auto-Refresh. Silakan muat ulang (refresh) halaman apabila terjadi kendala atau data tidak tampil dengan semestinya. Jika Token Aktif sudah berstatus 10/10, maka form pendaftaran tamu baru akan ditutup otomatis. Arahkan pengunjung untuk segera menyelesaikan layanan dan mengisi survei kepuasan agar slot antrean kembali tersedia.
                             </div>
                         </div>
                     </div>
