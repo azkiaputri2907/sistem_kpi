@@ -129,11 +129,11 @@ private function createSheet($sheetName, $data)
         }
 
         return [
-        'status'       => true,
-        'pesan'        => 'Buka (Mode Testing Aktif)',
-        'is_istirahat' => false,
-        'target_buka'  => null
-    ];
+            'status'       => $statusBuka,
+            'pesan'        => $pesan,
+            'is_istirahat' => $jamIstirahat,
+            'target_buka'  => $waktuBukaSelanjutnya
+        ];
     }
 
 public function cekLimitAntreanPerProdi($prodi_id)
