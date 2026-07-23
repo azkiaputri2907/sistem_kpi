@@ -364,8 +364,16 @@
                                                 <button type="button" onclick="bukaModalForward('{{ $k->id }}', '{{ $k->pengunjung->nama_lengkap ?? 'Umum' }}')" class="w-9 h-9 flex items-center justify-center rounded-xl shadow-sm transition-all bg-violet-50 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400 hover:bg-violet-600 dark:hover:bg-violet-500 hover:text-white" title="Teruskan ke Pimpinan"><i class="fa-solid fa-share-nodes text-xs"></i></button>
                                             @endif
                                             @if($k->is_forwarded && !$k->is_email_sent)
-                                                <button type="button" onclick="peringatanEmailWajib('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '-') }}')" class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Wajib Email Konfirmasi"><i class="fa-solid fa-triangle-exclamation text-xs"></i></button>
-                                            @endif
+    <button type="button" 
+        onclick="peringatanEmailWajib('{{ $k->id }}', '{{ addslashes($k->pengunjung->nama_lengkap ?? 'Umum') }}', '{{ addslashes($k->keperluan ?? '-') }}', this)" 
+        data-nomor="{{ $k->nomor_kunjungan }}"
+        data-prodi="{{ $k->prodi->nama ?? '-' }}"
+        data-keperluan-utama="{{ $k->keperluan_master->keterangan ?? 'Kunjungan Umum' }}"
+        data-instansi="{{ $k->pengunjung->asal_instansi ?? 'Umum / Mandiri' }}"
+        class="w-9 h-9 flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl hover:bg-amber-500 dark:hover:bg-amber-600 hover:text-white transition-all shadow-sm" title="Wajib Email Konfirmasi">
+        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+    </button>
+@endif
                                             @if($k->is_email_sent)
                                                 <button type="button" disabled class="w-9 h-9 flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 rounded-xl cursor-not-allowed shadow-sm" title="Email Sudah Terkirim"><i class="fa-solid fa-envelope-circle-check text-xs"></i></button>
                                             @endif
@@ -412,10 +420,18 @@
                 </button>
             </div>
             <form id="formEmail" action="{{ route('kunjungan.kirim-email') }}" method="POST" class="p-6" onsubmit="validasiFormNotifikasi(event)">
-                @csrf
-                <input type="hidden" name="kunjungan_id" id="modal_kunjungan_id">
-                
-                <div class="mb-5 bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-100/50">
+    @csrf
+    <input type="hidden" name="kunjungan_id" id="modal_kunjungan_id">
+    
+    <!-- Hidden input penampung data WA Pimpinan -->
+    <input type="hidden" id="modal_wa_nomor">
+    <input type="hidden" id="modal_wa_prodi">
+    <input type="hidden" id="modal_wa_kep_utama">
+    <input type="hidden" id="modal_wa_instansi">
+    <input type="hidden" id="modal_wa_nama">
+    <input type="hidden" id="modal_wa_kep_detail">
+
+    <div class="mb-5 bg-indigo-50/50 dark:bg-indigo-950/30 p-4 rounded-2xl border border-indigo-100/50">
                     <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Informasi Kunjungan</p>
                     <p class="font-bold text-gray-800 dark:text-gray-200 text-sm" id="modal_nama_pengunjung"></p>
                     <p class="text-xs text-gray-500 mt-1 italic" id="modal_keperluan_pengunjung"></p>
@@ -644,22 +660,23 @@
         });
     }
 
-    function bukaModalEmail(id, nama, keperluan, btnElement) {
+function bukaModalEmail(id, nama, keperluan, btnElement) {
         isModalOpen = true;
         document.getElementById('modal_kunjungan_id').value = id;
         document.getElementById('modal_nama_pengunjung').innerText = nama;
         document.getElementById('modal_keperluan_pengunjung').innerText = keperluan ? `"${keperluan}"` : '-';
         
+        // Simpan data untuk WA
+        document.getElementById('modal_wa_nama').value = nama || '-';
+        document.getElementById('modal_wa_kep_detail').value = keperluan || '-';
+
         if (btnElement) {
-            currentDataInput = {
-                nomor_kunjungan: btnElement.getAttribute('data-nomor') || '-',
-                nama_pengunjung: nama,
-                keperluan_detail: keperluan || '-',
-                prodi: btnElement.getAttribute('data-prodi') || '-',
-                keperluan_utama: btnElement.getAttribute('data-keperluan-utama') || 'Kunjungan Umum',
-                instansi: btnElement.getAttribute('data-instansi') || 'Umum / Mandiri'
-            };
+            document.getElementById('modal_wa_nomor').value = btnElement.getAttribute('data-nomor') || '-';
+            document.getElementById('modal_wa_prodi').value = btnElement.getAttribute('data-prodi') || '-';
+            document.getElementById('modal_wa_kep_utama').value = btnElement.getAttribute('data-keperluan-utama') || '-';
+            document.getElementById('modal_wa_instansi').value = btnElement.getAttribute('data-instansi') || '-';
         }
+
         document.getElementById('modalEmailPimpinan').classList.remove('hidden');
     }
 
@@ -695,13 +712,13 @@ function validasiFormNotifikasi(event) {
             const baseUrl = window.location.origin;
             const tautanKonfirmasi = `${baseUrl}/dashboard/pimpinan/konfirmasi`;
             
-            // PROTEKSI UNDEFINED: Gunakan fallback string kosong ('') atau tanda strip ('-')
-            const noKunjungan = currentDataInput.nomor_kunjungan || '-';
-            const namaTamu    = currentDataInput.nama_pengunjung || 'Umum';
-            const asalInstansi= currentDataInput.instansi || '-';
-            const prodiTujuan = currentDataInput.prodi || '-';
-            const kepUtama    = currentDataInput.keperluan_utama || '-';
-            const kepDetail   = currentDataInput.keperluan_detail || '-';
+            // Ambil data langsung dari hidden input, BUKAN dari variabel let currentDataInput
+            const noKunjungan = document.getElementById('modal_wa_nomor').value || '-';
+            const namaTamu    = document.getElementById('modal_wa_nama').value || 'Umum';
+            const asalInstansi= document.getElementById('modal_wa_instansi').value || '-';
+            const prodiTujuan = document.getElementById('modal_wa_prodi').value || '-';
+            const kepUtama    = document.getElementById('modal_wa_kep_utama').value || '-';
+            const kepDetail   = document.getElementById('modal_wa_kep_detail').value || '-';
 
             const pesanWa = `*NOTIFIKASI LAYANAN PUBLIK ELEKTRO*\n\n` +
             `Halo, *Bapak/Ibu Pimpinan*\n\n` +
@@ -733,6 +750,8 @@ function validasiFormNotifikasi(event) {
                 title: 'Berhasil',
                 text: 'Tautan chat WhatsApp pimpinan berhasil dibuka!',
                 confirmButtonColor: '#10b981'
+            }).then(() => {
+                window.location.reload(); 
             });
         }
     }
@@ -802,7 +821,7 @@ function validasiFormNotifikasi(event) {
     function handleSelectProdiLoading(selectElement) { showGlobalLoading("Memfilter prodi..."); selectElement.form.submit(); }
     function handleResetLoading() { showGlobalLoading("Memuat ulang data..."); }
 
-    function peringatanEmailWajib(id, nama, keperluan) {
+function peringatanEmailWajib(id, nama, keperluan, btnElement) {
         Swal.fire({
             ...getSwalConfig(),
             title: 'Email Belum Terkirim!',
@@ -813,7 +832,8 @@ function validasiFormNotifikasi(event) {
             confirmButtonColor: '#f59e0b'
         }).then((result) => { 
             if (result.isConfirmed) {
-                bukaModalEmail(id, nama, keperluan, null); 
+                // Teruskan btnElement ke bukaModalEmail
+                bukaModalEmail(id, nama, keperluan, btnElement); 
             }
         });
     }
