@@ -663,18 +663,50 @@
 function bukaModalEmail(id, nama, keperluan, btnElement) {
         isModalOpen = true;
         document.getElementById('modal_kunjungan_id').value = id;
-        document.getElementById('modal_nama_pengunjung').innerText = nama;
+        
+        // 1. CARI TOMBOL SECARA SPESIFIK & AKURAT (Mencegah ID 1 tertukar dengan ID 10/11)
+        if (!btnElement) {
+            const buttons = document.querySelectorAll('button[data-nomor]');
+            for (let btn of buttons) {
+                const attr = btn.getAttribute('onclick') || '';
+                if (attr.includes(`bukaModalEmail('${id}',`) || attr.includes(`peringatanEmailWajib('${id}',`)) {
+                    btnElement = btn;
+                    break;
+                }
+            }
+        }
+
+        // 2. EKSTRAK DATA ASLI DARI TOMBOL (Menyamakan data yang hilang akibat trigger Session otomatis)
+        if (btnElement && (!keperluan || keperluan.trim() === '' || keperluan === '-')) {
+            const attr = btnElement.getAttribute('onclick') || '';
+            const matchStrings = attr.match(/'([^'\\]*(?:\\.[^'\\]*)*)'/g);
+            if (matchStrings && matchStrings.length >= 3) {
+                const extractedNama = matchStrings[1].replace(/^'|'$/g, '').replace(/\\'/g, "'");
+                const extractedKep = matchStrings[2].replace(/^'|'$/g, '').replace(/\\'/g, "'");
+                
+                if (extractedNama) nama = extractedNama;
+                if (extractedKep) keperluan = extractedKep;
+            }
+        }
+
+        document.getElementById('modal_nama_pengunjung').innerText = nama || 'Umum';
         document.getElementById('modal_keperluan_pengunjung').innerText = keperluan ? `"${keperluan}"` : '-';
         
-        // Simpan data untuk WA
+        // Simpan data utama ke hidden form untuk WA
         document.getElementById('modal_wa_nama').value = nama || '-';
         document.getElementById('modal_wa_kep_detail').value = keperluan || '-';
 
+        // Ambil atribut lengkap agar WA Pimpinan 100% sama dengan saat diklik manual
         if (btnElement) {
             document.getElementById('modal_wa_nomor').value = btnElement.getAttribute('data-nomor') || '-';
             document.getElementById('modal_wa_prodi').value = btnElement.getAttribute('data-prodi') || '-';
             document.getElementById('modal_wa_kep_utama').value = btnElement.getAttribute('data-keperluan-utama') || '-';
             document.getElementById('modal_wa_instansi').value = btnElement.getAttribute('data-instansi') || '-';
+        } else {
+            document.getElementById('modal_wa_nomor').value = '-';
+            document.getElementById('modal_wa_prodi').value = '-';
+            document.getElementById('modal_wa_kep_utama').value = '-';
+            document.getElementById('modal_wa_instansi').value = '-';
         }
 
         document.getElementById('modalEmailPimpinan').classList.remove('hidden');
