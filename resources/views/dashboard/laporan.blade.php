@@ -295,7 +295,8 @@ function openExportModal(laporan){
     document.getElementById('exportEndDate').value = '';
 
     const modal = document.getElementById('exportModal');
-    modal.remove('hidden');
+    // PERBAIKAN: Menambahkan '.classList' agar class hidden terhapus dan modal muncul
+    modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
 
